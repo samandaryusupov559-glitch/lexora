@@ -1031,7 +1031,7 @@ a.btn{text-decoration:none}
 <div id="toast" class="toast" hidden role="status" aria-live="polite"></div>
 
 <script type="module">
-import { LANGS, DICT } from './i18n.js?v=2026.11.08b';
+import { LANGS, DICT } from './i18n.js?v=2026.11.08c';
 /* ---------------- constants ---------------- */
 const TYPES = [['gr','Gr'],['t','T'],['art','Art'],['prep','Prep'],['ww','WW'],['sp','Sp'],['p','P'],['wo','WO'],['agr','Agr'],['st','St'],['good','★']]
   .map(([k,code])=>({k, code, get name(){ return tr('type.'+k); }}));
@@ -3735,6 +3735,7 @@ function mailCard(){
   <div class="card em-card">
     <p class="muted">${ready?tr('em.ready',{n:nC,m:nS}):tr('em.p')}</p>
     ${ready&&S.mailOld?`<div class="notice" style="margin-top:12px">${tr('em.oldH')} <button class="btn sm pen" data-act="em-setup">${tr('em.update')}</button></div>`:''}
+    ${ready&&!S.mailOld&&(+M.v||0)<6?`<div class="notice" style="margin-top:12px;display:flex;gap:10px;align-items:center;flex-wrap:wrap"><span>${tr('em.newV',{v:6})}</span><button class="btn sm pen" data-act="em-setup">${tr('em.update')}</button></div>`:''}
     ${ready?`<details class="em-who"><summary>${tr('em.whoH')}</summary><ul>${Object.entries(S.profiles).map(([uid,p])=>{ const c=S.contacts[uid]; return `<li><b>${esc(p.name||'?')}</b> <span class="small ${c?.email&&!c.off?'muted':'faint'}">${c?.email ? esc(c.email)+(c.off?' · '+tr('em.off'):'') : tr('em.noEmail')}</span></li>`; }).join('')}</ul></details>`:''}
     ${ready?`<div class="em-ev">${MAIL_EVENTS.map(ev=>`<label class="row" style="gap:8px"><input type="checkbox" data-act="em-ev" data-ev="${ev}" ${M.on[ev]!==false?'checked':''}> <span>${tr('em.ev.'+ev)}</span></label>`).join('')}</div>
       <div class="row" style="margin-top:14px"><button class="btn primary sm" data-act="em-test">${tr('em.test')}</button><button class="btn ghost sm" data-act="em-setup">${tr('em.change')}</button></div>`
