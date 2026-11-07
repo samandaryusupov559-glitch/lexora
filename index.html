@@ -1005,6 +1005,8 @@ td.nwc.off{color:var(--ink-3);font-size:18px}
 .lib-ic{font-size:30px;line-height:1;width:48px;height:48px;display:grid;place-items:center;border-radius:14px;background:var(--sheet-2);flex:none}
 .lib-frame{width:min(860px,82vw);height:70vh;border:0;border-radius:12px;background:var(--sheet-2)}
 .lib-frame.audio{height:140px}
+.lib-drop{display:flex;flex-direction:column;align-items:center;gap:4px;padding:18px;border:2px dashed var(--line);border-radius:14px;cursor:pointer;text-align:center;background:var(--sheet-2)}
+.lib-drop:hover{border-color:var(--blue)}
 .lib-thumb{position:relative;flex:none;width:132px;aspect-ratio:16/9;border:0;padding:0;border-radius:12px;overflow:hidden;cursor:pointer;background:#000}
 .lib-thumb img{width:100%;height:100%;object-fit:cover;display:block}
 .lib-thumb span{position:absolute;inset:0;display:grid;place-items:center;color:#fff;font-size:26px;text-shadow:0 2px 8px rgba(0,0,0,.6)}
@@ -1029,7 +1031,7 @@ a.btn{text-decoration:none}
 <div id="toast" class="toast" hidden role="status" aria-live="polite"></div>
 
 <script type="module">
-import { LANGS, DICT } from './i18n.js';
+import { LANGS, DICT } from './i18n.js?v=2026.11.08a';
 /* ---------------- constants ---------------- */
 const TYPES = [['gr','Gr'],['t','T'],['art','Art'],['prep','Prep'],['ww','WW'],['sp','Sp'],['p','P'],['wo','WO'],['agr','Agr'],['st','St'],['good','★']]
   .map(([k,code])=>({k, code, get name(){ return tr('type.'+k); }}));
@@ -3547,9 +3549,10 @@ seller = a person who sells things | The seller gave me a free melon. | sotuvchi
    private/mail:   {url, secret, on:{...}} teacher only. url = the teacher's Google Apps Script web app,
                    which checks the secret and sends with GmailApp, BCC to the students. */
 const MAIL_EVENTS = ['ann','post','task','prompt','review','pay','book','order','news','live'];
-const SCRIPT_SRC = secret => `// Lexora email script, version 4: each student gets their own email from your Gmail,
+const SCRIPT_SRC = secret => `// Lexora email script, version 5: each student gets their own email from your Gmail,
 // readers of the daily newspaper get a note every morning when their paper comes out,
-// and booked lessons get a Google Meet link (an event in your Google Calendar).
+// booked lessons get a Google Meet link (an event in your Google Calendar),
+// and teachers can upload library files (saved to a "Lexora library" folder in your Google Drive).
 // 1) Paste all of this into a new project at https://script.google.com
 // 2) Deploy > New deployment > Web app. Execute as: Me. Who has access: Anyone.
 // 3) Copy the Web app URL into Lexora > Noticeboard > Email.
@@ -3558,23 +3561,38 @@ const SECRET = '${secret}';
 function doPost(e) {
   try {
     const d = JSON.parse(e.postData.contents);
+    if (d.action === 'upload') return out(d.key && d.key === uploadKey() ? saveFile(d) : { ok: false, v: 5, error: 'wrong key' });
     if (d.secret !== SECRET) return out({ ok: false, error: 'wrong secret' });
     if (d.action === 'news') return out(saveNews(d));
     if (d.action === 'meet') return out(makeMeet(d));
-    if (d.test && !(d.to || d.bcc || []).length) { let timer = true; try { ensureTrigger(); } catch (err) { timer = false; } return out({ ok: true, v: 4, timer: timer, left: MailApp.getRemainingDailyQuota() }); }
+    if (d.test && !(d.to || d.bcc || []).length) { let timer = true; try { ensureTrigger(); } catch (err) { timer = false; } return out({ ok: true, v: 5, timer: timer, left: MailApp.getRemainingDailyQuota() }); }
     const ok = x => /^[^@\\s,;<>]+@[^@\\s,;<>]+\\.[^@\\s,;<>]+$/.test(x);
     const list = (d.to || d.bcc || []).filter(ok).slice(0, 50);
-    if (!list.length) return out({ ok: false, v: 4, error: 'no recipients' });
+    if (!list.length) return out({ ok: false, v: 5, error: 'no recipients' });
     const subject = String(d.subject || '').slice(0, 200), text = String(d.text || '').slice(0, 10000);
     const opts = { htmlBody: String(d.html || '').slice(0, 30000), name: String(d.from || 'Lexora').slice(0, 60) };
     let sent = 0;
     list.forEach(to => { GmailApp.sendEmail(to, subject, text, opts); sent++; });  // each student gets their own email
-    return out({ ok: true, v: 4, sent: sent, left: MailApp.getRemainingDailyQuota() });
+    return out({ ok: true, v: 5, sent: sent, left: MailApp.getRemainingDailyQuota() });
   } catch (err) {
     return out({ ok: false, error: String(err) });
   }
 }
 function out(o) { return ContentService.createTextOutput(JSON.stringify(o)).setMimeType(ContentService.MimeType.JSON); }
+// Library uploads: teachers use a key made from the secret, so the secret itself stays with you.
+function uploadKey() {
+  return Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, SECRET + ':upload')
+    .map(function (b) { return ('0' + (b & 255).toString(16)).slice(-2); }).join('');
+}
+function saveFile(d) {
+  if (!d.data || d.data.length > 45000000) return { ok: false, v: 5, error: 'file too big' };
+  const it = DriveApp.getFoldersByName('Lexora library');
+  const folder = it.hasNext() ? it.next() : DriveApp.createFolder('Lexora library');
+  const blob = Utilities.newBlob(Utilities.base64Decode(d.data), String(d.mime || 'application/octet-stream'), String(d.name || 'file').slice(0, 150));
+  const f = folder.createFile(blob);
+  f.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+  return { ok: true, v: 5, id: f.getId(), url: 'https://drive.google.com/file/d/' + f.getId() + '/view' };
+}
 function okMail(x) { return /^[^@\\s,;<>]+@[^@\\s,;<>]+\\.[^@\\s,;<>]+$/.test(x); }
 
 // Google Meet: a Calendar event with a Meet link; the guests get Google's invitation too.
@@ -3587,13 +3605,13 @@ function makeMeet(d) {
   const api = 'https://www.googleapis.com/calendar/v3/calendars/primary/events', head = { Authorization: 'Bearer ' + ScriptApp.getOAuthToken() };
   let res = UrlFetchApp.fetch(api + '?conferenceDataVersion=1&sendUpdates=' + (guests.length ? 'all' : 'none'),
     { method: 'post', contentType: 'application/json', payload: JSON.stringify(body), headers: head, muteHttpExceptions: true });
-  if (res.getResponseCode() >= 300) return { ok: false, v: 4, error: res.getContentText().slice(0, 300) };
+  if (res.getResponseCode() >= 300) return { ok: false, v: 5, error: res.getContentText().slice(0, 300) };
   let ev = JSON.parse(res.getContentText());
   for (let i = 0; i < 5 && !ev.hangoutLink; i++) {
     Utilities.sleep(1500);
     ev = JSON.parse(UrlFetchApp.fetch(api + '/' + ev.id, { headers: head, muteHttpExceptions: true }).getContentText());
   }
-  return ev.hangoutLink ? { ok: true, v: 4, url: ev.hangoutLink, id: ev.id } : { ok: false, v: 4, error: 'no Meet link yet' };
+  return ev.hangoutLink ? { ok: true, v: 5, url: ev.hangoutLink, id: ev.id } : { ok: false, v: 5, error: 'no Meet link yet' };
 }
 
 // Daily newspaper: Lexora sends the plan for the next days; sendNews() runs every 15 minutes
@@ -3611,8 +3629,8 @@ function saveNews(d) {
     try { if (JSON.parse(all[k]).date >= from) P.deleteProperty(k); } catch (e) { P.deleteProperty(k); }
   });
   if (Object.keys(keep).length) P.setProperties(keep, false);
-  try { ensureTrigger(); } catch (err) { return { ok: true, v: 4, saved: Object.keys(keep).length, timer: false }; }
-  return { ok: true, v: 4, saved: Object.keys(keep).length };
+  try { ensureTrigger(); } catch (err) { return { ok: true, v: 5, saved: Object.keys(keep).length, timer: false }; }
+  return { ok: true, v: 5, saved: Object.keys(keep).length };
 }
 function ensureTrigger() {
   const has = ScriptApp.getProjectTriggers().some(function (t) { return t.getHandlerFunction() === 'sendNews'; });
@@ -3723,7 +3741,7 @@ function openMailSetup(){
     const prev={...S.mail}; S.mail={...S.mail, url, secret};
     const r = S.demo ? {ok:true} : await mailPost({test:true});
     if(!r.ok){ S.mail=prev; btn.disabled=false; err.textContent = r.error==='wrong secret' ? tr('em.badSecret') : tr('em.noReach'); return; }
-    try{ await S.db.doc('private/mail').set({url, secret, on:S.mail.on||{}, v:S.demo?3:(r.v>=2?r.v:1)}); closeDlg(); toast(tr('em.saved')); refresh(); }catch(e2){ btn.disabled=false; dbErr(e2,'mail'); }
+    try{ await S.db.doc('private/mail').set({url, secret, on:S.mail.on||{}, v:S.demo?3:(r.v>=2?r.v:1)}); publishUpload(url, secret).catch(()=>{}); closeDlg(); toast(tr('em.saved')); refresh(); }catch(e2){ btn.disabled=false; dbErr(e2,'mail'); }
   });
 }
 async function mailTest(){
@@ -4329,14 +4347,14 @@ function startCentre(role){
   if(role==='owner'){
     col('leads','leads'); col('staffReq','sreq'); col('teacherPriv','tpriv'); col('applications','apps');
     col('enroll','enrolls'); col('enrollStatus','enrollSt'); col('roster','rosters'); col('live','lives'); col('torders','torders'); one('site/promo','promo',{});
-    one('groups/'+MAIN_TID,'myGroups',null); startClub(); col('library','lib');
+    one('groups/'+MAIN_TID,'myGroups',null); startClub(); col('library','lib'); one('centre/upload','upCfg',null);
     col('staff','staffEmails', ()=>{ S.staffMap={}; for(const [em,x] of Object.entries(S.staffEmails||{})) if(x?.tid) S.staffMap[x.tid]=em; });
     one('centre/offers','offers',{items:[]}); one('private/meet','meetDoc',{});
   }
   if(role==='staff'){
     const t=S.staffTid;
     one('centre/offers','offers',{items:[]}); one('staffReq/'+t,'mySreq',null); one('teacherPriv/'+t,'myTPriv',null);
-    one('roster/'+t,'myRoster',null); one('live/'+t,'myLive',null); where1('torders','tid',t,'torders'); one('groups/'+t,'myGroups',null); startClub(); col('library','lib');
+    one('roster/'+t,'myRoster',null); one('live/'+t,'myLive',null); where1('torders','tid',t,'torders'); one('groups/'+t,'myGroups',null); startClub(); col('library','lib'); one('centre/upload','upCfg',null);
     S.unsubs.push(S.db.collection('leads').where('tid',t).onSnapshot(q=>{ const o={}; q.docs.forEach(d=>{ if(d.exists) o[d.id]=d.data(); }); S.leads=o; refreshAny(); }, quiet));
   }
   if(role==='student'){
@@ -5078,11 +5096,17 @@ const clubNow = () => ({...clubDef(S.clubDay||todayStr()), ...(S.club||{})});
 const clubVideoOn = () => isLive(S.club?.video);
 const isMod = () => S.mode==='teacher';
 function startClub(){
-  S.clubDay=todayStr(); S.club=null; S.clubMsgs={};
-  S.unsubs.push(S.db.doc('club/'+S.clubDay).onSnapshot(s=>{ S.club=s.exists?s.data():null; if(S.view.name==='club') drawClubTop(); else refreshAny(); }, ()=>{}));
-  S.unsubs.push(S.db.collection('club/'+S.clubDay+'/msgs').onSnapshot(q=>{ const o={}; q.docs.forEach(d=>{ if(d.exists) o[d.id]=d.data(); }); const n=Object.keys(o).length>Object.keys(S.clubMsgs||{}).length; S.clubMsgs=o;
-    if(S.view.name==='club') drawClubMsgs(n); else refreshAny(); }, ()=>{}));
+  (S._clubUn||[]).forEach(u=>{ try{ u(); }catch(e){} });
+  if(!S._clubHooked){ S._clubHooked=true; S.unsubs.push(()=>{ (S._clubUn||[]).forEach(u=>{ try{ u(); }catch(e){} }); S._clubUn=[]; S._clubHooked=false; }); }
+  S.clubDay=todayStr(); S.club=null; S.clubMsgs={}; S.clubErr=null;
+  const fail = e => { S.clubErr=(e&&e.code)||'error'; if(S.view.name==='club'){ drawClubMsgs(); } };
+  S._clubUn=[
+    S.db.doc('club/'+S.clubDay).onSnapshot(s=>{ S.club=s.exists?s.data():null; if(S.view.name==='club') drawClubTop(); else refreshAny(); }, fail),
+    S.db.collection('club/'+S.clubDay+'/msgs').onSnapshot(q=>{ const o={}; q.docs.forEach(d=>{ if(d.exists) o[d.id]=d.data(); }); const n=Object.keys(o).length>Object.keys(S.clubMsgs||{}).length; S.clubMsgs=o; S.clubErr=null;
+      if(S.view.name==='club') drawClubMsgs(n); else refreshAny(); }, fail)];
 }
+// a new day starts a new club (if the page stayed open past midnight)
+const clubDayCheck = () => { if(S.clubDay && S.clubDay!==todayStr()) startClub(); };
 function clubTopHtml(){
   const c=clubNow(), v=S.club?.video, on=clubVideoOn();
   return `<div class="club-topic card"><span class="label">${tr('c.clubToday',{d:fmtDate(S.clubDay,{weekday:'long',day:'numeric',month:'long'})})} · ${esc(c.lang||'')}</span>
@@ -5094,6 +5118,7 @@ function clubTopHtml(){
       : `<b>${tr('c.clubVideoOff')}</b><span class="small muted">${isMod()?tr('c.clubVideoModHint'):tr('c.clubVideoHint')}</span>${isMod()?`<button class="btn primary sm" data-act="c-club-video">${I.video} ${tr('c.clubVideoStart')}</button>`:''}`}</div>`;
 }
 function clubMsgsHtml(){
+  if(S.clubErr) return `<div class="notice" style="margin:auto">${tr('c.clubErr',{code:esc(String(S.clubErr))})}</div>`;
   const list=Object.entries(S.clubMsgs||{}).map(([id,m])=>({id,...m})).sort((a,b)=>a.at-b.at);
   if(!list.length) return `<p class="faint club-empty">${tr('c.clubNoMsgs')}</p>`;
   return list.map(m=>{ const mine=m.uid===S.uid;
@@ -5109,12 +5134,12 @@ function vClub(){
 }
 function drawClubTop(){ const el=$('#club-top'); if(el) el.innerHTML=clubTopHtml(); }
 function drawClubMsgs(grew){ const el=$('#club-msgs'); if(!el) return; const atEnd=el.scrollHeight-el.scrollTop-el.clientHeight<80; el.innerHTML=clubMsgsHtml(); if(atEnd||grew&&Object.values(S.clubMsgs).some(m=>m.uid===S.uid&&Date.now()-m.at<5000)) el.scrollTop=el.scrollHeight; }
-after.club = () => { const el=$('#club-msgs'); if(el) el.scrollTop=el.scrollHeight; const f=$('#club-form'); if(!f) return;
+after.club = () => { clubDayCheck(); const el=$('#club-msgs'); if(el) el.scrollTop=el.scrollHeight; const f=$('#club-form'); if(!f) return;
   const ta=$('#club-text'); ta.addEventListener('keydown', e=>{ if(e.key==='Enter' && !e.shiftKey){ e.preventDefault(); f.requestSubmit(); } });
-  f.addEventListener('submit', async e=>{ e.preventDefault(); const text=ta.value.trim(); if(!text) return;
+  f.addEventListener('submit', async e=>{ e.preventDefault(); const text=ta.value.trim(); if(!text) return; clubDayCheck();
     const name = S.mode==='student' ? (S.myProfile?.name||tr('student')) : (S.team?.[myTid()]?.name || S.me?.name || tr('teacher'));
     const d={uid:S.uid, name:name.slice(0,80), text:text.slice(0,500), at:Date.now()}; if(isMod()) d.mod=true;
-    ta.value=''; try{ await S.db.collection('club/'+S.clubDay+'/msgs').doc().set(d); }catch(err){ ta.value=text; toast(lgErrText(err)); } }); };
+    ta.value=''; try{ await S.db.collection('club/'+S.clubDay+'/msgs').doc().set(d); }catch(err){ ta.value=text; toast(tr('c.clubSendFail',{code:esc(String(err?.code||err?.message||err))}), 8000); } }); };
 function openClubTopic(){
   const c=clubNow();
   showDlg(`<form id="ct-form" novalidate>${dlgHead(tr('c.clubH'), tr('c.clubEdit'))}<div class="dlg-body">
@@ -5177,6 +5202,20 @@ function openLibItem(id){
   showDlg(`<div>${dlgHead(tr('c.lib.'+x.kind), esc(x.title))}<div class="dlg-body"><iframe class="lib-frame ${x.kind==='audio'?'audio':''}" src="${esc(pv)}" allow="autoplay; fullscreen" allowfullscreen loading="lazy"></iframe></div>
     <div class="dlg-foot">${driveId(x.url)?`<a class="btn" href="${esc(driveDownload(x.url))}" target="_blank" rel="noopener">${I.up} ${tr('c.libDl')}</a>`:''}<a class="btn ghost" href="${esc(x.url)}" target="_blank" rel="noopener">${tr('c.libNewTab')}</a><button type="button" class="btn primary" data-act="dlg-close">${tr('close')}</button></div></div>`, {type:'libview', wide:true});
 }
+async function uploadKeyFor(secret){ const b=await crypto.subtle.digest('SHA-256', new TextEncoder().encode(secret+':upload')); return [...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join(''); }
+// the owner shares the upload address and key (not the email secret) with teachers
+async function publishUpload(url, secret){ if(!url||!secret||S.demo) return; const key=await uploadKeyFor(secret); if(S.upCfg?.url===url && S.upCfg?.key===key) return; await S.db.doc('centre/upload').set({url, key}); S.upCfg={url, key}; }
+const LIB_MAX = 30*1024*1024;
+async function uploadFile(file){
+  if(S.demo) return {ok:true, url:'https://drive.google.com/file/d/1DemoUploadedFileForTheExample00/view'};
+  const cfg = S.role==='owner' && S.mail?.url && S.mail?.secret ? {url:S.mail.url, key:await uploadKeyFor(S.mail.secret)} : S.upCfg;
+  if(!cfg?.url || !cfg?.key) return {ok:false, error:'nocfg'};
+  if(file.size>LIB_MAX) return {ok:false, error:'big'};
+  const data=await new Promise((ok,bad)=>{ const r=new FileReader(); r.onload=()=>ok(String(r.result).split(',')[1]||''); r.onerror=bad; r.readAsDataURL(file); });
+  try{ const res=await fetch(cfg.url,{method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body:JSON.stringify({action:'upload', key:cfg.key, name:file.name, mime:file.type, data})});
+    const j=await res.json(); if(!j.ok && !(j.v>=5)) return {ok:false, error:'old'}; return j; }catch(e){ return {ok:false, error:String(e&&e.message||e)}; }
+}
+const kindOf = f => /^audio\//.test(f.type)?'audio' : /^video\//.test(f.type)?'video' : 'book';
 function openLibEdit(id){
   const x=id?S.lib?.[id]||{}:{kind:'book', level:'A1', lang:(S.team?.[myTid()]?.langs||[])[0]||'English'};
   const langs=[...new Set([...CLANGS, ...Object.values(S.lib||{}).map(y=>y.lang).filter(Boolean)])];
@@ -5185,12 +5224,24 @@ function openLibEdit(id){
       <label class="field"><span>${tr('c.fLevel')}</span><select class="inp" id="lb-level">${LIB_LEVELS.map(l=>`<option value="${l}" ${l===x.level?'selected':''}>${l==='all'?tr('c.libAllLv'):l}</option>`).join('')}</select></label></div>
     <label class="field"><span>${tr('c.libKind')}</span><select class="inp" id="lb-kind">${LIB_KINDS.map(k=>`<option value="${k}" ${k===x.kind?'selected':''}>${libIcon(k)} ${tr('c.lib.'+k)}</option>`).join('')}</select></label>
     <label class="field"><span>${tr('c.oTitle')}</span><input class="inp" id="lb-title" maxlength="120" value="${esc(x.title||'')}" placeholder="${tr('c.libTitlePh')}"></label>
-    <label class="field"><span>${tr('c.libUrl')}</span><input class="inp" id="lb-url" value="${esc(x.url||'')}" placeholder="https://drive.google.com/file/d/…/view"></label>
+    ${id?'':`<label class="lib-drop"><input type="file" id="lb-file" accept=".pdf,.epub,.doc,.docx,.ppt,.pptx,audio/*,video/*" hidden><b>📤 ${tr('c.libPick')}</b><span class="small faint" id="lb-fname">${tr('c.libPickHint')}</span></label>
+    <p class="small faint" style="text-align:center;margin:-4px 0 0">${tr('c.libOr')}</p>`}
+    <label class="field"><span>${tr('c.libUrl')}</span><input class="inp" id="lb-url" value="${esc(x.url||'')}" placeholder="https://youtu.be/… / https://drive.google.com/…"></label>
     <label class="field"><span>${tr('mk.desc')} <span class="faint">${tr('optional')}</span></span><textarea class="inp" id="lb-desc" rows="2" maxlength="400">${esc(x.desc||'')}</textarea></label>
     <p class="small faint">${tr('c.libShare')}</p><p class="lg-err" id="lb-err"></p></div>
     <div class="dlg-foot"><button type="button" class="btn ghost" data-act="dlg-close">${tr('cancel')}</button><button class="btn primary">${tr('save')}</button></div></form>`, {type:'libedit'});
-  $('#lb-form').addEventListener('submit', async e=>{ e.preventDefault(); const err=$('#lb-err'), title=$('#lb-title').value.trim(), url=$('#lb-url').value.trim();
-    if(!title){ err.textContent=tr('c.needTitle'); return; } if(!/^https:\/\//.test(url)){ err.textContent=tr('c.libBadUrl'); return; }
+  if(S.role==='owner') publishUpload(S.mail?.url, S.mail?.secret).catch(()=>{});
+  const fi=$('#lb-file'); if(fi) fi.addEventListener('change', ()=>{ const f=fi.files[0]; if(!f) return;
+    $('#lb-fname').textContent=f.name+' · '+(f.size/1048576).toFixed(1)+' MB'+(f.size>LIB_MAX?' — '+tr('c.libBig'):'');
+    if(!$('#lb-title').value.trim()) $('#lb-title').value=f.name.replace(/\.[^.]+$/,'').replace(/[_-]+/g,' ');
+    $('#lb-kind').value=kindOf(f); $('#lb-url').value=''; });
+  $('#lb-form').addEventListener('submit', async e=>{ e.preventDefault(); const err=$('#lb-err'), title=$('#lb-title').value.trim(), file=fi?.files?.[0]; let url=$('#lb-url').value.trim();
+    if(!title){ err.textContent=tr('c.needTitle'); return; }
+    if(file){ const btn=$('#lb-form .btn.primary'); btn.disabled=true; err.textContent=''; $('#lb-fname').textContent=tr('c.libUploading');
+      const r=await uploadFile(file); btn.disabled=false;
+      if(!r.ok){ err.textContent = r.error==='nocfg'?tr(S.role==='owner'?'c.libNoCfgOwner':'c.libNoCfg') : r.error==='old'?tr('c.libOld') : r.error==='big'?tr('c.libBig') : tr('c.libUpFail',{e:esc(r.error||'')}); $('#lb-fname').textContent=file.name; return; }
+      url=r.url; }
+    if(!/^https:\/\//.test(url)){ err.textContent=tr(fi?'c.libNeedFile':'c.libBadUrl'); return; }
     const d={lang:$('#lb-lang').value, level:$('#lb-level').value, kind:$('#lb-kind').value, title, url, desc:$('#lb-desc').value.trim(),
       by:id?(x.by||myTid()):myTid(), byName:id?(x.byName||''):(S.team?.[myTid()]?.name||S.me?.name||''), at:id?(x.at||Date.now()):Date.now()};
     try{ await S.db.doc('library/'+(id||newId())).set(d); closeDlg(); toast(tr('c.saved')); }catch(x2){ err.textContent=lgErrText(x2); } });
