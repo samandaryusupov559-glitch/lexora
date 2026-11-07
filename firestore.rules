@@ -221,7 +221,7 @@ service cloud.firestore {
       allow write: if isTeacher();
       allow update: if isStaff() && staffTid() == tid
         && request.resource.data.diff(resource.data).affectedKeys()
-             .hasOnly(['name', 'photo', 'headline', 'langs', 'levels', 'years', 'bio', 'achievements', 'lastSeen']);
+             .hasOnly(['name', 'photo', 'headline', 'langs', 'levels', 'years', 'bio', 'achievements', 'lessonLen', 'lastSeen']);
     }
     // A teacher's own Google Meet link: the owner, that teacher and that teacher's students.
     match /teacherPriv/{tid} {
@@ -235,6 +235,24 @@ service cloud.firestore {
     match /staff/{email} {
       allow read: if isTeacher() || (signedIn() && request.auth.token.email.lower() == email);
       allow write: if isTeacher();
+    }
+    // "Become a teacher" applications from visitors. Anyone may send one; only the owner reads them.
+    match /applications/{id} {
+      allow create: if request.resource.data.keys().hasOnly(['name', 'contact', 'email', 'photo', 'langs', 'levels', 'years', 'lessonLen', 'bio', 'achievements', 'msg', 'at'])
+        && request.resource.data.keys().hasAll(['name', 'contact', 'langs', 'years', 'at'])
+        && request.resource.data.name is string && request.resource.data.name.size() > 0 && request.resource.data.name.size() <= 80
+        && request.resource.data.contact is string && request.resource.data.contact.size() >= 3 && request.resource.data.contact.size() <= 120
+        && request.resource.data.get('email', '') is string && request.resource.data.get('email', '').size() <= 120
+        && request.resource.data.get('photo', '') is string && request.resource.data.get('photo', '').size() <= 300000
+        && request.resource.data.langs is list && request.resource.data.langs.size() > 0 && request.resource.data.langs.size() <= 12
+        && request.resource.data.get('levels', '') is string && request.resource.data.get('levels', '').size() <= 40
+        && request.resource.data.years is int && request.resource.data.years >= 0 && request.resource.data.years <= 60
+        && request.resource.data.get('lessonLen', 60) is int && request.resource.data.get('lessonLen', 60) >= 15 && request.resource.data.get('lessonLen', 60) <= 240
+        && request.resource.data.get('bio', '') is string && request.resource.data.get('bio', '').size() <= 1500
+        && request.resource.data.get('achievements', []) is list && request.resource.data.get('achievements', []).size() <= 20
+        && request.resource.data.get('msg', '') is string && request.resource.data.get('msg', '').size() <= 500
+        && request.resource.data.at is int;
+      allow read, update, delete: if isTeacher();
     }
     // Trial-lesson requests from visitors. Anyone may send one; only the owner and the chosen teacher read it.
     match /leads/{id} {

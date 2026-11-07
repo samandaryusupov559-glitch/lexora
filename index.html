@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Lexora · English with your teacher</title>
-<meta name="description" content="Lexora: your English journal, lessons, payments and shop in one place.">
+<title>Lexora · Online til markazi</title>
+<meta name="description" content="Lexora: ustozlar, onlayn darslar, kundalik, to'lovlar va do'kon — bir joyda.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 32 32%22%3E%3Crect width=%2232%22 height=%2232%22 rx=%228%22 fill=%22%2316245F%22/%3E%3Cpath d=%22M16 6l6 10-6 10-6-10z%22 fill=%22none%22 stroke=%22%23F4F2EA%22 stroke-width=%222%22/%3E%3Ccircle cx=%2216%22 cy=%2216%22 r=%221.8%22 fill=%22%23D11F3B%22/%3E%3C/svg%3E">
 <link rel="manifest" href="manifest.webmanifest">
 <meta name="theme-color" content="#16245F">
@@ -954,6 +954,12 @@ td.nwc.off{color:var(--ink-3);font-size:18px}
 @media (max-width:700px){.tme-lv{grid-template-columns:1fr}}
 .tform{display:flex;flex-direction:column;gap:14px}
 .meet-b{padding:4px 9px}
+.lp-join{padding:22px;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:18px;align-items:center;background:linear-gradient(135deg,var(--blue-soft),var(--sheet))}
+.lp-join h2{font-family:var(--f-display);font-weight:500;font-size:clamp(24px,3vw,32px);letter-spacing:-.02em;margin-top:4px}
+@media (max-width:700px){.lp-join{grid-template-columns:1fr}}
+.tapps{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:14px}
+.tapp{padding:18px}.tapp.ok,.tapp.no{opacity:.72}
+.ap-lv{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 a.btn{text-decoration:none}
 .tform .row > .inp{flex:1;min-width:0}
 .tform .field > .row{flex-wrap:nowrap}
@@ -1430,7 +1436,7 @@ function renderNav(){
   if(S.mode==='teacher'){
     const waiting = allEntries().filter(e=>e.status==='submitted').length;
     document.title = (waiting?`(${waiting}) `:'')+'Lexora · '+tr('title.teacher');
-    n.innerHTML = navBtn('inbox',tr('nav.inbox'),'inbox',waiting) + navBtn('students',tr('nav.students'),'people',myStudentIds().length,true) + navBtn('team',tr('c.teamH'),'team',newLeads()+pendingStaffReq()) + navBtn('ledger',tr('nav.ledger'),'coin',pendingClaims()||lgOwing(),!pendingClaims()) + navBtn('bookings',tr('nav.book'),'spark',pendingRequests()) + navBtn('market',tr('nav.shop'),'bag',pendingOrders()+pendingPasses()) + navBtn('rating',tr('rt.h'),'trophy') + navBtn('board',tr('nav.board'),'flag') + navBtn('insights',tr('nav.insights'),'chart') + navBtn('prompt',tr('nav.prompt'),'bulb') + navBtn('bank',tr('nav.bank'),'bank') +
+    n.innerHTML = navBtn('inbox',tr('nav.inbox'),'inbox',waiting) + navBtn('students',tr('nav.students'),'people',myStudentIds().length,true) + navBtn('team',tr('c.teamH'),'team',newLeads()+pendingStaffReq()+pendingApps()) + navBtn('ledger',tr('nav.ledger'),'coin',pendingClaims()||lgOwing(),!pendingClaims()) + navBtn('bookings',tr('nav.book'),'spark',pendingRequests()) + navBtn('market',tr('nav.shop'),'bag',pendingOrders()+pendingPasses()) + navBtn('rating',tr('rt.h'),'trophy') + navBtn('board',tr('nav.board'),'flag') + navBtn('insights',tr('nav.insights'),'chart') + navBtn('prompt',tr('nav.prompt'),'bulb') + navBtn('bank',tr('nav.bank'),'bank') +
       `<div class="nav-foot">${tr('nav.foot')}</div>`;
   } else {
     const unseen = studentEntries().filter(e=>e.isNew).length;
@@ -4238,7 +4244,7 @@ function teacherStats(tid){
     if(Object.values(p.index||{}).some(e=>(e.submittedAt||0)>monthAgo)) active++;
   }
   const bonus=+(S.team[tid]?.bonus)||0;
-  const score = sids.length*TPTS.student + reviews*TPTS.entry + Math.round(gainSum*TPTS.gain) + bonus;
+  const score = expPts(S.team[tid]?.years) + sids.length*TPTS.student + reviews*TPTS.entry + Math.round(gainSum*TPTS.gain) + bonus;
   return {students:sids.length, active, reviews, gain: gains? round1(gainSum/gains) : 0, band: bands.length? round1(bands.reduce((a,b)=>a+b,0)/bands.length) : null, score: Math.max(0,score)};
 }
 let centreT=null;
@@ -4266,7 +4272,7 @@ function startCentre(role){
   const col = (path, key, after) => S.unsubs.push(S.db.collection(path).onSnapshot(q=>{ const o={}; q.docs.forEach(d=>{ if(d.exists) o[d.id]=d.data(); }); S[key]=o; after&&after(); refreshAny(); }, quiet));
   const one = (path, key, def) => S.unsubs.push(S.db.doc(path).onSnapshot(s=>{ S[key]=s.exists?s.data():def; refreshAny(); }, ()=>{ S[key]=def; }));
   if(role==='owner'){
-    col('leads','leads'); col('staffReq','sreq'); col('teacherPriv','tpriv');
+    col('leads','leads'); col('staffReq','sreq'); col('teacherPriv','tpriv'); col('applications','apps');
     col('staff','staffEmails', ()=>{ S.staffMap={}; for(const [em,x] of Object.entries(S.staffEmails||{})) if(x?.tid) S.staffMap[x.tid]=em; });
     one('centre/offers','offers',{items:[]}); one('private/meet','meetDoc',{});
   }
@@ -4331,14 +4337,14 @@ function vLanding(){
       ${levelBadge(st)}
       <span class="tchips">${(t.langs||[]).map(l=>`<span class="lchip">${esc(l)}</span>`).join('')}${t.levels?`<span class="lchip ghost">${esc(t.levels)}</span>`:''}</span>
       ${t.bio?`<span class="small tcard-bio">${esc(t.bio.slice(0,150))}${t.bio.length>150?'…':''}</span>`:''}
-      <span class="tkv"><span><b class="num">${+st.students||0}</b>${tr('c.kStudents')}</span><span><b class="num">${st.gain>0?'+'+st.gain:'–'}</b>${tr('c.kGain')}</span><span><b class="num">${+t.years||'–'}</b>${tr('c.kYears')}</span></span>
+      <span class="tkv"><span><b class="num">${+st.students||0}</b>${tr('c.kStudents')}</span><span><b class="num">${st.gain>0?'+'+st.gain:'–'}</b>${tr('c.kGain')}</span><span><b class="num">${+t.years||'–'}</b>${tr('c.kYears')}</span>${t.lessonLen?`<span><b class="num">${t.lessonLen}</b>${tr('c.kMin')}</span>`:''}</span>
       <span class="tcard-go">${tr('c.viewProfile')} →</span></button>`; };
   const loading = !S.teamLoaded;
   return `<section class="lp-hero"><div class="lp-hero-in">
       <span class="lp-kicker">${tr('c.kicker')}</span>
       <h1>${tr('c.h')}</h1>
       <p>${tr('c.p')}</p>
-      <div class="row lp-cta"><button class="btn pen" data-act="c-trial">${I.spark} ${tr('c.trial')}</button><a class="btn lp-ghost" href="#teachers">${tr('c.meet')}</a></div>
+      <div class="row lp-cta"><button class="btn pen" data-act="c-trial">${I.spark} ${tr('c.trial')}</button><a class="btn lp-ghost" href="#teachers">${tr('c.meet')}</a><button class="btn lp-ghost" data-act="c-apply">${tr('c.joinBtn')}</button></div>
       <div class="lp-stats"><div><b class="num">${all.length||'–'}</b><span>${tr('c.sTeachers')}</span></div><div><b class="num">${students||'–'}</b><span>${tr('c.sStudents')}</span></div><div><b class="num">${langs.length||'–'}</b><span>${tr('c.sLangs')}</span></div></div>
     </div><div class="lp-art" aria-hidden="true">${I.nib}</div></section>
     <section class="section" id="teachers"><div class="page-head" style="margin-bottom:14px"><div><h1>${tr('c.teachersH')}</h1><p>${tr('c.teachersP')}</p></div></div>
@@ -4349,6 +4355,8 @@ function vLanding(){
       ${[1,2,3,4].map(i=>`<div class="card lp-step"><span class="lp-n">${i}</span><h3>${tr('c.how'+i+'H')}</h3><p class="muted small">${tr('c.how'+i+'P')}</p></div>`).join('')}</div></section>
     <section class="section lp-levels card"><div><h2>${tr('c.lvH')}</h2><p class="muted">${tr('c.lvP')}</p></div>
       <div class="lp-lv">${[1,2,3,4,5].map(n=>`<span class="tlevel lv${n}">${stars(n)}<b>${tr('lv.'+n)}</b></span>`).join('')}</div></section>
+    <section class="section card lp-join"><div><span class="label">${tr('c.joinK')}</span><h2>${tr('c.joinH')}</h2><p class="muted">${tr('c.joinP')}</p></div>
+      <button class="btn primary" data-act="c-apply">${I.team} ${tr('c.joinBtn')}</button></section>
     <section class="section lp-end"><h2>${tr('c.endH')}</h2><p class="muted">${tr('c.endP')}</p>
       <div class="row" style="justify-content:center;gap:10px;flex-wrap:wrap;margin-top:14px"><button class="btn pen" data-act="c-trial">${tr('c.trial')}</button><button class="btn" data-act="c-signin">${tr('c.signin')}</button>${S.demo?'':`<button class="btn ghost" data-act="explore">${tr('lo.example')}</button>`}</div></section>`;
 }
@@ -4359,7 +4367,7 @@ function openTeacherProfile(tid){
       <div class="row" style="gap:16px;align-items:flex-start">${tPhoto(t,tid,'tph lg')}<div style="min-width:0">
         ${t.headline?`<p style="font-weight:600">${esc(t.headline)}</p>`:''}${levelBadge(st)}
         <div class="tchips" style="margin-top:8px">${(t.langs||[]).map(l=>`<span class="lchip">${esc(l)}</span>`).join('')}${t.levels?`<span class="lchip ghost">${esc(t.levels)}</span>`:''}</div></div></div>
-      <div class="tkv big"><span><b class="num">${+st.students||0}</b>${tr('c.kStudents')}</span><span><b class="num">${st.gain>0?'+'+st.gain:'–'}</b>${tr('c.kGain')}</span><span><b class="num">${st.band!=null?fmtBand(st.band):'–'}</b>${tr('c.kBand')}</span><span><b class="num">${+t.years||'–'}</b>${tr('c.kYears')}</span></div>
+      <div class="tkv big"><span><b class="num">${+st.students||0}</b>${tr('c.kStudents')}</span><span><b class="num">${st.gain>0?'+'+st.gain:'–'}</b>${tr('c.kGain')}</span><span><b class="num">${st.band!=null?fmtBand(st.band):'–'}</b>${tr('c.kBand')}</span><span><b class="num">${+t.years||'–'}</b>${tr('c.kYears')}</span>${t.lessonLen?`<span><b class="num">${lenText(t.lessonLen)}</b>${tr('c.kLen')}</span>`:''}</div>
       ${t.bio?`<div><span class="label">${tr('c.bio')}</span><p style="margin-top:6px;white-space:pre-line">${esc(t.bio)}</p></div>`:''}
       ${(t.achievements||[]).length?`<div><span class="label">${tr('c.ach')}</span><ul class="tach">${t.achievements.map(a=>`<li>${esc(a)}</li>`).join('')}</ul></div>`:''}
       <p class="small faint">${tr('c.lvNote',{level:L.name})}</p>
@@ -4404,6 +4412,7 @@ function teacherFields(t, opt){
       <input class="inp" id="tf-lang-x" placeholder="${tr('c.fLangOther')}" style="margin-top:6px"></div>
     <div class="grid2" style="gap:12px"><label class="field"><span>${tr('c.fLevels')}</span><input class="inp" id="tf-levels" maxlength="40" placeholder="A1 – C1, IELTS" value="${esc(t.levels||'')}"></label>
       <label class="field"><span>${tr('c.fYears')}</span><input class="inp" id="tf-years" type="number" min="0" max="60" value="${esc(t.years??'')}"></label></div>
+    <label class="field"><span>${tr('c.fLen')}</span><select class="inp" id="tf-len"><option value="">–</option>${[...new Set([...LESSON_LENS, ...(t.lessonLen?[+t.lessonLen]:[])])].sort((a,b)=>a-b).map(m=>`<option value="${m}" ${+t.lessonLen===m?'selected':''}>${lenText(m)}</option>`).join('')}</select></label>
     <label class="field"><span>${tr('c.fBio')}</span><textarea class="inp" id="tf-bio" rows="4" maxlength="1500" placeholder="${tr('c.fBioPh')}">${esc(t.bio||'')}</textarea></label>
     <label class="field"><span>${tr('c.fAch')}</span><textarea class="inp" id="tf-ach" rows="4" maxlength="1500" placeholder="${tr('c.fAchPh')}">${esc((t.achievements||[]).join('\n'))}</textarea></label>
     <label class="field"><span>${tr('c.fMeet')} <span class="faint">${tr('c.fMeetHint')}</span></span><span class="row" style="gap:6px"><input class="inp" id="tf-meet" placeholder="https://meet.google.com/abc-defg-hij" value="${esc(opt.meet||'')}"><a class="btn sm" href="https://meet.google.com/new" target="_blank" rel="noopener">${tr('c.newMeet')}</a></span></label>
@@ -4433,7 +4442,7 @@ function readTeacherFields(){
   const meet=$('#tf-meet').value.trim();
   if(meet && !/^https:\/\/(meet\.google\.com|[\w.-]+\.(zoom\.us|jit\.si|8x8\.vc))\//.test(meet)) return {err:tr('c.badMeet')};
   const d={name, photo:$('#tf-photo').value.trim(), headline:$('#tf-headline').value.trim(), langs, levels:$('#tf-levels').value.trim(),
-    years: $('#tf-years').value==='' ? null : Math.max(0,Math.min(60,Math.round(+$('#tf-years').value||0))), bio:$('#tf-bio').value.trim(),
+    years: $('#tf-years').value==='' ? null : Math.max(0,Math.min(60,Math.round(+$('#tf-years').value||0))), lessonLen: $('#tf-len').value ? +$('#tf-len').value : null, bio:$('#tf-bio').value.trim(),
     achievements:$('#tf-ach').value.split('\n').map(x=>x.replace(/^[-•*]\s*/,'').trim()).filter(Boolean).slice(0,20)};
   return {d, meet};
 }
@@ -4451,7 +4460,7 @@ function openTeacherEdit(tid){
     const taken=email && Object.entries(S.staffMap||{}).find(([t2,em])=>em===email && t2!==id); if(taken){ $('#tf-err').textContent=tr('c.emailTaken'); return; }
     const btn=$('#tf-go'); btn.disabled=true;
     try{
-      const base=isNew?{visible:true, order:Date.now(), stats:{students:0,active:0,reviews:0,gain:0,band:null,score:0}}:clone(S.team[id]);
+      const base=isNew?{visible:true, order:Date.now(), stats:{students:0,active:0,reviews:0,gain:0,band:null,score:expPts(r.d.years)}}:clone(S.team[id]);
       await S.db.doc('teachers/'+id).set({...base, ...r.d, visible: $('#tf-visible')? $('#tf-visible').checked : true});
       await S.db.doc('teacherPriv/'+id).set({meet:r.meet});
       if(id!==MAIN_TID){ const old=S.staffMap?.[id];
@@ -4504,6 +4513,7 @@ function vTeam(){
   return `<div class="page-head"><div><h1>${tr('c.teamH')}</h1><p>${tr('c.teamP')}</p></div><button class="btn primary" data-act="c-tedit">+ ${tr('c.addTeacher')}</button></div>${centreRulesNote()}
     ${hasMain?'':`<div class="notice info" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"><span>${tr('c.mainFirst')}</span><button class="btn sm primary" data-act="c-tedit" data-tid="${MAIN_TID}">${tr('c.mainBtn')}</button></div>`}
     ${list.length?`<div class="tlist">${list.map(row).join('')}</div>`:`<div class="empty"><h3>${tr('c.teamEmptyH')}</h3><p>${tr('c.teamEmptyP')}</p></div>`}
+    ${appsSection()}
     <div class="section"><h2>${tr('c.leadsH')}</h2>${leads.length?`<div class="list">${leads.map(l=>`<div class="req ${l.st?'ok':'wait'}">${avatar(l.name,l.id)}<div style="min-width:0"><b>${esc(l.name)}</b> <span class="faint">·</span> <span class="num">${esc(l.contact)}</span>
         <div class="small muted">${[l.lang, l.level==='beginner'?tr('c.beginner'):l.level, l.tid?tr('c.forT',{name:esc(tName(l.tid))}):tr('c.anyTeacher')].filter(Boolean).map(x=>x).join(' · ')} · ${ago(l.at)}</div>${l.msg?`<div class="small req-note">“${esc(l.msg)}”</div>`:''}</div>
         <div class="req-act">${l.st?`<span class="pill bk-ok">${tr('c.contacted')}</span><button class="btn ghost sm" data-act="c-lead-del" data-id="${esc(l.id)}" style="color:var(--pen)">${tr('delete')}</button>`:`<button class="btn sm primary" data-act="c-lead-done" data-id="${esc(l.id)}">${tr('c.markContacted')}</button>`}</div></div>`).join('')}</div>`:`<p class="faint">${tr('c.noLeads')}</p>`}</div>
@@ -4516,7 +4526,7 @@ function vTeam(){
       ${reqs.length?`<h3 style="margin-top:20px">${tr('c.reqsH')}</h3><div class="list">${reqs.map(r=>{ const o=offers.find(x=>x.id===r.offerId);
         return `<div class="req ${r.st}">${avatar(tName(r.tid),r.tid)}<div style="min-width:0"><b>${esc(tName(r.tid))}</b> <span class="faint">·</span> ${esc(o?.title||r.title||'–')}<div class="small muted">${ago(r.at)}${o?' · '+priceText(o.price):''}</div>${r.note?`<div class="small req-note">“${esc(r.note)}”</div>`:''}</div>
           <div class="req-act"><span class="pill bk-${r.st}">${tr('bk.st.'+r.st)}</span>${r.st==='wait'?`<span class="row" style="gap:6px"><button class="btn sm ghost" data-act="c-sreq" data-tid="${esc(r.tid)}" data-id="${esc(r.id)}" data-st="no">${tr('bk.decline')}</button><button class="btn sm primary" data-act="c-sreq" data-tid="${esc(r.tid)}" data-id="${esc(r.id)}" data-st="ok">${tr('c.accept')}</button></span>`:''}</div></div>`; }).join('')}</div>`:''}</div>
-    <div class="card section rank-how"><h3>${tr('c.lvHowH')}</h3><ul class="small muted"><li>${tr('c.lvHow1',{n:TPTS.student})}</li><li>${tr('c.lvHow2',{n:TPTS.entry})}</li><li>${tr('c.lvHow3',{n:TPTS.gain})}</li><li>${tr('c.lvHow4')}</li>
+    <div class="card section rank-how"><h3>${tr('c.lvHowH')}</h3><ul class="small muted"><li>${tr('c.lvHow1',{n:TPTS.student})}</li><li>${tr('c.lvHow2',{n:TPTS.entry})}</li><li>${tr('c.lvHow3',{n:TPTS.gain})}</li><li>${tr('c.lvHow4')}</li><li>${tr('c.lvHowExp')}</li>
       <li>${[1,2,3,4,5].map(n=>`${tr('lv.'+n)} ${TLEVEL_STEPS[n-1]}+`).join(' · ')}</li></ul></div>`;
 }
 const centreRulesNote = () => S.demo ? `<div class="notice info">${tr('c.demoNote')}</div>` : '';
@@ -4642,6 +4652,77 @@ async function meetOnConfirm(uid, r){
   d.links[slot.id]={url:m.url, date:slot.date, from:slot.from, to:slot.to}; await S.db.doc('lessons/'+uid).set(d);
 }
 
+/* ---------- "Become a teacher": visitors apply, the owner accepts; experience sets the starting level ---------- */
+// years of teaching -> starting points: 0–2 Starter, 3–4 Rising, 5–7 Skilled, 8+ Expert. Master is earned with students.
+const expPts = y => { y=+y||0; return y>=8?300 : y>=5?150 : y>=3?60 : 0; };
+const LESSON_LENS = [30,45,60,80,90,120];
+const lenText = m => m ? tr('c.min',{n:m}) : '';
+const pendingApps = () => S.role==='owner' ? Object.values(S.apps||{}).filter(a=>!a.st).length : 0;
+function openApply(){
+  showDlg(`<form id="ap-form" novalidate>${dlgHead(tr('c.apK'), tr('c.apH'))}
+    <div class="dlg-body"><p class="muted">${tr('c.apP')}</p>
+      <div class="row" style="gap:14px;align-items:center"><span class="tph lg ini" id="ap-ph">${avatar('?','new')}</span>
+        <label class="btn sm" style="cursor:pointer">${I.up} ${tr('c.fPhoto')}<input type="file" accept="image/*" id="ap-file" hidden></label><input type="hidden" id="ap-photo"></div>
+      <label class="field"><span>${tr('c.fName')}</span><input class="inp" id="ap-name" maxlength="80" autocomplete="name"></label>
+      <div class="grid2" style="gap:12px"><label class="field"><span>${tr('c.fContact')}</span><input class="inp" id="ap-contact" maxlength="120" placeholder="+998 90 123 45 67 / @telegram"></label>
+        <label class="field"><span>Email <span class="faint">${tr('optional')}</span></span><input class="inp" id="ap-email" type="email" maxlength="120" placeholder="name@gmail.com"></label></div>
+      <div class="field"><span>${tr('c.fLangs')}</span><div class="lpick">${CLANGS.map(l=>`<label class="lchip pick"><input type="checkbox" class="ap-lang" value="${esc(l)}"> ${esc(l)}</label>`).join('')}</div>
+        <input class="inp" id="ap-lang-x" placeholder="${tr('c.fLangOther')}" style="margin-top:6px"></div>
+      <div class="grid2" style="gap:12px"><label class="field"><span>${tr('c.fLevels')}</span><input class="inp" id="ap-levels" maxlength="40" placeholder="A1 – C1, IELTS"></label>
+        <label class="field"><span>${tr('c.fLen')}</span><select class="inp" id="ap-len">${LESSON_LENS.map(m=>`<option value="${m}" ${m===80?'selected':''}>${lenText(m)}</option>`).join('')}</select></label></div>
+      <label class="field"><span>${tr('c.fYears')}</span><input class="inp" id="ap-years" type="number" min="0" max="60" value="0"></label>
+      <div class="notice info ap-lv" style="margin:0" id="ap-lv"></div>
+      <label class="field"><span>${tr('c.apBio')}</span><textarea class="inp" id="ap-bio" rows="4" maxlength="1500" placeholder="${tr('c.fBioPh')}"></textarea></label>
+      <label class="field"><span>${tr('c.apAch')}</span><textarea class="inp" id="ap-ach" rows="3" maxlength="1500" placeholder="${tr('c.fAchPh')}"></textarea></label>
+      <label class="field"><span>${tr('c.apMsg')} <span class="faint">${tr('optional')}</span></span><textarea class="inp" id="ap-msg" rows="2" maxlength="500" placeholder="${tr('c.apMsgPh')}"></textarea></label>
+      <p class="lg-err" id="ap-err" role="alert"></p></div>
+    <div class="dlg-foot"><button type="button" class="btn ghost" data-act="dlg-close">${tr('cancel')}</button><button class="btn pen" id="ap-go">${tr('c.apSend')}</button></div></form>`, {type:'apply'});
+  const lv = () => { const y=Math.max(0,Math.round(+$('#ap-years').value||0)), L=tLevel(expPts(y)); $('#ap-lv').innerHTML=`${tr('c.apLv')} <span class="tlevel lv${L.n}">${stars(L.n)}<b>${L.name}</b></span> <span class="small faint">${tr('c.apLvNote')}</span>`; };
+  $('#ap-years').addEventListener('input', lv); lv();
+  $('#ap-file').addEventListener('change', async e=>{ const f=e.target.files[0]; if(!f) return;
+    try{ const u=await shrinkPhoto(f); $('#ap-photo').value=u; const img=document.createElement('img'); img.className='tph lg'; img.id='ap-ph'; img.src=u; img.alt=''; $('#ap-ph').replaceWith(img); }catch(err){ toast(tr('c.photoFail')); } });
+  $('#ap-form').addEventListener('submit', async e=>{
+    e.preventDefault(); const err=$('#ap-err'), name=$('#ap-name').value.trim(), contact=$('#ap-contact').value.trim(), email=$('#ap-email').value.trim().toLowerCase();
+    const langs=[...document.querySelectorAll('.ap-lang:checked')].map(x=>x.value);
+    $('#ap-lang-x').value.split(',').map(x=>x.trim()).filter(Boolean).forEach(x=>{ const l=x[0].toUpperCase()+x.slice(1); if(!langs.includes(l)) langs.push(l); });
+    if(!name){ err.textContent=tr('c.needName'); return; } if(contact.length<3){ err.textContent=tr('c.needContact'); return; }
+    if(email && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)){ err.textContent=tr('auth.email'); return; }
+    if(!langs.length){ err.textContent=tr('c.needLang'); return; }
+    const bio=$('#ap-bio').value.trim(); if(bio.length<20){ err.textContent=tr('c.needBio'); return; }
+    const d={name, contact, email, photo:$('#ap-photo').value, langs:langs.slice(0,12), levels:$('#ap-levels').value.trim(), years:Math.max(0,Math.min(60,Math.round(+$('#ap-years').value||0))),
+      lessonLen:+$('#ap-len').value, bio, achievements:$('#ap-ach').value.split('\n').map(x=>x.replace(/^[-•*]\s*/,'').trim()).filter(Boolean).slice(0,20), msg:$('#ap-msg').value.trim(), at:Date.now()};
+    const b=$('#ap-go'); b.disabled=true;
+    try{ await S.db.collection('applications').doc().set(d);
+      $('#ap-form').innerHTML=`${dlgHead(tr('c.apK'), tr('c.thanksH'))}<div class="dlg-body"><p>${tr('c.apThanks',{name:esc(name.split(' ')[0])})}</p></div><div class="dlg-foot"><button type="button" class="btn primary" data-act="dlg-close">${tr('app.ok')}</button></div>`;
+    }catch(x){ b.disabled=false; err.textContent=tr('c.sendFail'); } });
+}
+function appsSection(){
+  const list=Object.entries(S.apps||{}).map(([id,a])=>({id,...a})).sort((a,b)=>(!!a.st-!!b.st)||(b.at-a.at));
+  if(!list.length) return `<div class="section"><h2>${tr('c.appsH')}</h2><p class="faint">${tr('c.noApps')}</p></div>`;
+  return `<div class="section"><h2>${tr('c.appsH')}</h2><div class="tapps">${list.map(a=>{ const L=tLevel(expPts(a.years));
+    return `<article class="card tapp ${a.st||'wait'}"><div class="row" style="gap:14px;align-items:flex-start">${tPhoto(a,a.id)}<div style="min-width:0;flex:1">
+      <div class="row" style="gap:8px;flex-wrap:wrap;align-items:center"><b style="font-size:17px">${esc(a.name)}</b><span class="tlevel lv${L.n}">${stars(L.n)}<b>${L.name}</b></span>${a.st?`<span class="pill bk-${a.st==='ok'?'ok':'no'}">${tr(a.st==='ok'?'c.apAccepted':'c.apDeclined')}</span>`:''}</div>
+      <div class="small muted num">${esc(a.contact)}${a.email?' · '+esc(a.email):''} · ${ago(a.at)}</div>
+      <div class="tchips" style="margin-top:8px">${(a.langs||[]).map(l=>`<span class="lchip">${esc(l)}</span>`).join('')}${a.levels?`<span class="lchip ghost">${esc(a.levels)}</span>`:''}</div>
+      <div class="tkv" style="margin-top:10px"><span><b class="num">${+a.years||0}</b>${tr('c.kYears')}</span><span><b class="num">${lenText(a.lessonLen)||'–'}</b>${tr('c.kLen')}</span></div>
+      ${a.bio?`<p class="small" style="margin-top:10px;white-space:pre-line">${esc(a.bio)}</p>`:''}
+      ${(a.achievements||[]).length?`<ul class="tach small">${a.achievements.map(x=>`<li>${esc(x)}</li>`).join('')}</ul>`:''}
+      ${a.msg?`<p class="small req-note">“${esc(a.msg)}”</p>`:''}</div></div>
+      <div class="row" style="gap:6px;justify-content:flex-end;margin-top:12px;flex-wrap:wrap">${a.st?`<button class="btn ghost sm" data-act="c-app-del" data-id="${esc(a.id)}" style="color:var(--pen)">${tr('delete')}</button>`:
+        `<button class="btn ghost sm" data-act="c-app-no" data-id="${esc(a.id)}">${tr('bk.decline')}</button><button class="btn primary sm" data-act="c-app-ok" data-id="${esc(a.id)}">${tr('c.apAccept')}</button>`}</div></article>`; }).join('')}</div></div>`;
+}
+async function acceptApp(id){
+  const a=S.apps?.[id]; if(!a) return; const tid='t-'+newId();
+  const t={name:a.name, photo:a.photo||'', headline:'', langs:a.langs||[], levels:a.levels||'', years:+a.years||0, lessonLen:+a.lessonLen||60, bio:a.bio||'', achievements:a.achievements||[],
+    visible:true, order:Date.now(), stats:{students:0,active:0,reviews:0,gain:0,band:null,score:expPts(a.years)}};
+  await S.db.doc('teachers/'+tid).set(t);
+  await S.db.doc('teacherPriv/'+tid).set({meet:''});
+  const em=(a.email||'').toLowerCase(); let login=false;
+  if(em && em!==S.teacherEmail && !Object.values(S.staffMap||{}).includes(em)){ await S.db.doc('staff/'+em).set({tid, name:a.name}); login=true; }
+  await S.db.doc('applications/'+id).update({st:'ok', tid});
+  toast(login?tr('c.apOkLogin',{email:esc(em)}):tr('c.apOk'), 6000);
+}
+
 /* ---------- example data for the demo ---------- */
 function seedCentre(db){
   const day = n => { const d=new Date(); d.setDate(d.getDate()+n); return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate()); };
@@ -4654,6 +4735,8 @@ function seedCentre(db){
   db.m.set('teacherPriv/main', {meet:'https://meet.google.com/abc-defg-hij'}); db.m.set('teacherPriv/t-dilnoza', {meet:'https://meet.google.com/xyz-abcd-efg'});
   db.m.set('staff/dilnoza@example.com', {tid:'t-dilnoza', name:'Dilnoza R. (example)'});
   db.m.set('leads/l1', {name:'Kamola', contact:'+998 90 111 22 33', lang:'English', level:'A2', tid:'main', msg:'I want IELTS 6.5 by summer.', at:Date.now()-3*3600e3});
+  db.m.set('applications/a1', {name:'Malika T. (example)', contact:'+998 93 555 44 33', email:'malika@example.com', photo:'', langs:['English','German'], levels:'A1 – B2', years:5, lessonLen:60,
+    bio:'I graduated from UzSWLU and have taught English and German at a private school for five years. My lessons are built around speaking and short daily homework.', achievements:['IELTS 7.5','Goethe-Zertifikat B2'], msg:'I can teach evenings and weekends.', at:Date.now()-2*3600e3});
   db.m.set('leads/l2', {name:'Bekzod', contact:'@bekzod_k', lang:'Korean', level:'beginner', tid:'', msg:'', at:Date.now()-26*3600e3});
   db.m.set('centre/offers', {items:[{id:'of1', title:'Classroom for group lessons', desc:'A room at the centre with a whiteboard and projector, per lesson.', price:50000},
     {id:'of2', title:'Ads for your course', desc:'We post your course on the centre’s Instagram and Telegram.', price:100000},
@@ -5083,6 +5166,10 @@ document.addEventListener('click', async ev => {
     case 'c-ask': openOfferAsk(b.dataset.id); break;
     case 'c-move': { const v=$('#stu-tid')?.value; if(!v) break; try{ await S.db.doc('journals/'+b.dataset.sid).update({teacher:v}); toast(tr('c.moved',{name:esc(tName(v))})); }catch(e){ dbErr(e,'journal'); } break; }
     case 'c-meet': openMeet(b.dataset.id); break;
+    case 'c-apply': openApply(); break;
+    case 'c-app-ok': b.disabled=true; try{ await acceptApp(b.dataset.id); }catch(e){ b.disabled=false; dbErr(e,'svc'); } break;
+    case 'c-app-no': try{ await S.db.doc('applications/'+b.dataset.id).update({st:'no'}); }catch(e){ dbErr(e,'svc'); } break;
+    case 'c-app-del': if(!b.dataset.armed){ b.dataset.armed='1'; b.textContent=tr('del.sure'); break; } try{ await S.db.doc('applications/'+b.dataset.id).delete(); }catch(e){ dbErr(e,'svc'); } break;
     case 'c-verify-again': try{ await S.au.sendEmailVerification(S.user); toast(tr('c.verifySent')); }catch(e){ toast(authMsg(e)); } break;
     case 'c-verified': { b.disabled=true; try{ await S.user.reload(); await S.user.getIdToken(true); }catch(e){}
       if(S.auth.currentUser?.emailVerified){ teardown(); startStaff(S.staffTid); } else { toast(tr('c.notYet')); b.disabled=false; } break; }
