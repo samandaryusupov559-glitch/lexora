@@ -1,6 +1,6 @@
 {
   "id": "./",
-  "name": "Lexora · English with your teacher",
+  "name": "Lexora · Online til markazi",
   "short_name": "Lexora",
   "description": "Your English journal, lessons, payments and shop in one place.",
   "start_url": "./",
@@ -9,7 +9,7 @@
   "orientation": "portrait",
   "background_color": "#E7ECF5",
   "theme_color": "#16245F",
-  "lang": "en",
+  "lang": "uz",
   "categories": ["education"],
   "icons": [
     { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },

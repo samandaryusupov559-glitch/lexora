@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Lexora · English with your teacher</title>
+<title>Lexora · Online til markazi</title>
 <meta name="description" content="Lexora: your English journal, lessons, payments and shop in one place.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 32 32%22%3E%3Crect width=%2232%22 height=%2232%22 rx=%228%22 fill=%22%2316245F%22/%3E%3Cpath d=%22M16 6l6 10-6 10-6-10z%22 fill=%22none%22 stroke=%22%23F4F2EA%22 stroke-width=%222%22/%3E%3Ccircle cx=%2216%22 cy=%2216%22 r=%221.8%22 fill=%22%23D11F3B%22/%3E%3C/svg%3E">
 <link rel="manifest" href="manifest.webmanifest">
@@ -954,6 +954,28 @@ td.nwc.off{color:var(--ink-3);font-size:18px}
 @media (max-width:700px){.tme-lv{grid-template-columns:1fr}}
 .tform{display:flex;flex-direction:column;gap:14px}
 .meet-b{padding:4px 9px}
+.lp-join{padding:22px;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:18px;align-items:center;background:linear-gradient(135deg,var(--blue-soft),var(--sheet))}
+.lp-join h2{font-family:var(--f-display);font-weight:500;font-size:clamp(24px,3vw,32px);letter-spacing:-.02em;margin-top:4px}
+@media (max-width:700px){.lp-join{grid-template-columns:1fr}}
+.tapps{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:14px}
+.tapp{padding:18px}.tapp.ok,.tapp.no{opacity:.72}
+.ap-lv{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.promo{display:flex;gap:12px;align-items:flex-start;padding:14px 18px;border-radius:16px;background:linear-gradient(135deg,#FFF1C9,#FFE0E6);color:#5A3A00;margin:18px 0 0;border:1px solid #F3D48A}
+.promo svg{width:20px;height:20px;flex:none;margin-top:2px}
+.livebar{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:14px;align-items:center;padding:14px 18px;border-radius:16px;background:var(--hero,#16245F);color:var(--on-hero,#fff);margin-top:16px;box-shadow:var(--lift)}
+.livedot{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:#FF5A6E}
+.livedot::before{content:"";width:9px;height:9px;border-radius:50%;background:#FF3B55;box-shadow:0 0 0 0 rgba(255,59,85,.6);animation:livep 1.6s infinite}
+@keyframes livep{70%{box-shadow:0 0 0 9px rgba(255,59,85,0)}100%{box-shadow:0 0 0 0 rgba(255,59,85,0)}}
+@media (max-width:620px){.livebar{grid-template-columns:1fr}}
+.tmine2{display:flex;gap:14px;align-items:center;padding:14px 18px;flex-wrap:wrap}.tmine2 .tph{width:54px;height:54px;border-radius:16px}
+.tcard.as-div:hover{transform:none}
+.pr-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-top:12px}
+@media (max-width:700px){.pr-grid{grid-template-columns:1fr}}
+.promo-ed{padding:20px}
+.lv-steps{margin:0 0 4px 18px;display:flex;flex-direction:column;gap:10px}
+.live-b{white-space:nowrap}
+.tsvc-list{display:flex;flex-direction:column;gap:8px;margin-top:8px}
+.tsvc{display:flex;justify-content:space-between;gap:12px;align-items:center;padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:var(--sheet-2)}
 a.btn{text-decoration:none}
 .tform .row > .inp{flex:1;min-width:0}
 .tform .field > .row{flex-wrap:nowrap}
@@ -1411,6 +1433,7 @@ function renderTop(){
   } else if(S.realDb){
     right = S.view.name==='landing' ? `<button class="btn sm primary" data-act="c-signin">${tr('c.signin')}</button>` : `<button class="btn sm ghost" data-act="c-landing">${I.back} ${tr('c.toCentre')}</button>`;
   }
+  if(S.mode==='teacher' && (S.user||S.demo)) right = liveTopBtn() + right;
   const langs = `<div class="seg lang" role="group" aria-label="${tr('lang.label')}"><span class="lang-ic" aria-hidden="true">${I.globe}</span>${LANGS.map(l=>`<button data-act="lang" data-l="${l.k}" aria-pressed="${l.k===LANG}" title="${l.full}" lang="${l.k}">${l.n}</button>`).join('')}</div>`;
   $('#top').innerHTML = `<div class="brand"><span class="mark" aria-hidden="true">${I.pen}</span><span class="logo">Lex<i>ora</i></span><span class="sub">${S.mode==='guest'?tr('c.sub'):S.view.name==='login'?tr('sub.login'):S.role==='staff'?tr('c.subStaff'):S.mode==='teacher'?tr('sub.teacher'):tr('sub.student')}</span></div>${installBtn()}${langs}${right}`;
 }
@@ -1424,19 +1447,19 @@ function renderNav(){
   if(S.role==='staff'){
     const waiting = allEntries().filter(e=>e.status==='submitted').length;
     document.title = (waiting?`(${waiting}) `:'')+'Lexora · '+tr('title.teacher');
-    n.innerHTML = navBtn('inbox',tr('nav.inbox'),'inbox',waiting) + navBtn('students',tr('nav.students'),'people',Object.keys(S.profiles).length,true) + navBtn('me',tr('c.meH'),'team') + navBtn('centre',tr('c.centreH'),'spark',Object.values(S.leads||{}).filter(l=>!l.st).length) + navBtn('bank',tr('nav.bank'),'bank') + `<div class="nav-foot">${tr('c.navFootStaff')}</div>`;
+    n.innerHTML = navBtn('inbox',tr('nav.inbox'),'inbox',waiting) + navBtn('students',tr('nav.students'),'people',Object.keys(S.profiles).length,true) + navBtn('me',tr('c.meH'),'team') + navBtn('centre',tr('c.centreH'),'spark',Object.values(S.leads||{}).filter(l=>!l.st).length+pendingTorders()) + navBtn('bank',tr('nav.bank'),'bank') + `<div class="nav-foot">${tr('c.navFootStaff')}</div>`;
     return;
   }
   if(S.mode==='teacher'){
     const waiting = allEntries().filter(e=>e.status==='submitted').length;
     document.title = (waiting?`(${waiting}) `:'')+'Lexora · '+tr('title.teacher');
-    n.innerHTML = navBtn('inbox',tr('nav.inbox'),'inbox',waiting) + navBtn('students',tr('nav.students'),'people',myStudentIds().length,true) + navBtn('team',tr('c.teamH'),'team',newLeads()+pendingStaffReq()) + navBtn('ledger',tr('nav.ledger'),'coin',pendingClaims()||lgOwing(),!pendingClaims()) + navBtn('bookings',tr('nav.book'),'spark',pendingRequests()) + navBtn('market',tr('nav.shop'),'bag',pendingOrders()+pendingPasses()) + navBtn('rating',tr('rt.h'),'trophy') + navBtn('board',tr('nav.board'),'flag') + navBtn('insights',tr('nav.insights'),'chart') + navBtn('prompt',tr('nav.prompt'),'bulb') + navBtn('bank',tr('nav.bank'),'bank') +
+    n.innerHTML = navBtn('inbox',tr('nav.inbox'),'inbox',waiting) + navBtn('students',tr('nav.students'),'people',myStudentIds().length,true) + navBtn('team',tr('c.teamH'),'team',newLeads()+pendingStaffReq()+pendingApps()+pendingEnrolls()+pendingTorders()) + (S.team?.[MAIN_TID]?navBtn('me',tr('c.meH'),'pen'):'') + navBtn('ledger',tr('nav.ledger'),'coin',pendingClaims()||lgOwing(),!pendingClaims()) + navBtn('bookings',tr('nav.book'),'spark',pendingRequests()) + navBtn('market',tr('nav.shop'),'bag',pendingOrders()+pendingPasses()) + navBtn('rating',tr('rt.h'),'trophy') + navBtn('board',tr('nav.board'),'flag') + navBtn('insights',tr('nav.insights'),'chart') + navBtn('prompt',tr('nav.prompt'),'bulb') + navBtn('bank',tr('nav.bank'),'bank') +
       `<div class="nav-foot">${tr('nav.foot')}</div>`;
   } else {
     const unseen = studentEntries().filter(e=>e.isNew).length;
     document.title = (unseen?`(${unseen}) `:'')+'Lexora · '+tr('title.student');
     const owe = S.myBalance && S.myBalance.left>0;
-    n.innerHTML = navBtn('home',tr('nav.home'),'home',unseen) + navBtn('write',tr('nav.write'),'pen') + navBtn('mistakes',tr('nav.mistakes'),'flag') + navBtn('words',tr('nav.words'),'book',(S.myFeedback?.vocab||[]).length,true) + navBtn('learn',tr('nav.learn'),'bulb',(S.board?.posts||[]).length,true) + navBtn('book',tr('nav.book'),'spark') + (S.rating?.on!==false && (S.rating?.list||[]).length ? navBtn('rating',tr('rt.h'),'trophy') : '') + navBtn('market',tr('nav.shop'),'bag') + (S.myBalance? navBtn('pay',tr('nav.pay'),'coin',owe?'!':0,false) : '');
+    n.innerHTML = navBtn('home',tr('nav.home'),'home',unseen) + navBtn('write',tr('nav.write'),'pen') + navBtn('mistakes',tr('nav.mistakes'),'flag') + navBtn('words',tr('nav.words'),'book',(S.myFeedback?.vocab||[]).length,true) + navBtn('learn',tr('nav.learn'),'bulb',(S.board?.posts||[]).length,true) + navBtn('teachers',tr('c.navTeachers'),'team',myTids().some(t=>isLive(S.lives?.[t]))?'●':(promoOn(S.promo)?'%':0)) + navBtn('book',tr('nav.book'),'spark') + (S.rating?.on!==false && (S.rating?.list||[]).length ? navBtn('rating',tr('rt.h'),'trophy') : '') + navBtn('market',tr('nav.shop'),'bag') + (S.myBalance? navBtn('pay',tr('nav.pay'),'coin',owe?'!':0,false) : '');
   }
 }
 
@@ -1506,7 +1529,7 @@ function renderMain0(){
   if(S.mode==='student' && S.myProfile===undefined){ m.innerHTML=`<div class="loading">${tr('load.student')}</div>`; return; }
   const fn = {inbox:vInbox, students:vStudents, student:vStudent, insights:vInsights, prompt:vPrompt, bank:vBank, review:vReview, ledger:vLedger, board:vBoard, bookings:vBookings, market:vMarket, learn:vLearn, book:vBook, rating:()=>S.mode==='teacher'?vRatingT():vRatingS(),
               home:vHome, write:vWrite, entry:vEntry, mistakes:vMistakes, words:vWords, setup:vSetup, pay:vPay,
-              news:vNews, newsEdit:vNewsEdit, study:vStudy, set:vSet, setEdit:vSetEdit, team:vTeam, me:vMe, centre:vCentre}[v];
+              news:vNews, newsEdit:vNewsEdit, study:vStudy, set:vSet, setEdit:vSetEdit, team:vTeam, me:vMe, centre:vCentre, teachers:vStuTeachers}[v];
   m.innerHTML = fn ? fn() : '';
   after[v] && after[v]();
 }
@@ -4238,8 +4261,9 @@ function teacherStats(tid){
     if(Object.values(p.index||{}).some(e=>(e.submittedAt||0)>monthAgo)) active++;
   }
   const bonus=+(S.team[tid]?.bonus)||0;
-  const score = sids.length*TPTS.student + reviews*TPTS.entry + Math.round(gainSum*TPTS.gain) + bonus;
-  return {students:sids.length, active, reviews, gain: gains? round1(gainSum/gains) : 0, band: bands.length? round1(bands.reduce((a,b)=>a+b,0)/bands.length) : null, score: Math.max(0,score)};
+  const extra=Object.keys(S.rosters?.[tid]?.students||{}).filter(uid=>!sids.includes(uid)).length;
+  const score = expPts(S.team[tid]?.years) + (sids.length+extra)*TPTS.student + reviews*TPTS.entry + Math.round(gainSum*TPTS.gain) + bonus;
+  return {students:sids.length+extra, active, reviews, gain: gains? round1(gainSum/gains) : 0, band: bands.length? round1(bands.reduce((a,b)=>a+b,0)/bands.length) : null, score: Math.max(0,score)};
 }
 let centreT=null;
 function centreScheduleSync(){ if(S.mode!=='teacher' || S.role==='staff') return; clearTimeout(centreT); centreT=setTimeout(centreSync, 1200); }
@@ -4258,29 +4282,36 @@ function startCentre(role){
   S.myLessons=null; S.myTPriv=null; S._tprivKey=null; S._tprivUn=null;
   const quiet=()=>{};
   const teamFrom = q => { const o={}; q.docs.forEach(d=>{ if(d.exists) o[d.id]=d.data(); }); S.team=o; S.teamLoaded=true; };
+  S.promo=null; S._w={}; S.unsubs.push(stopWatches);
   if(role==='guest'){
+    S.unsubs.push(S.db.doc('site/promo').onSnapshot(x=>{ S.promo=x.exists?x.data():null; if(S.view.name==='landing') renderMain(); }, quiet));
     S.unsubs.push(S.db.collection('teachers').where('visible',true).onSnapshot(q=>{ teamFrom(q); if(S.view.name==='landing') renderMain(); }, ()=>{ S.teamLoaded=true; if(S.view.name==='landing') renderMain(); }));
     return;
   }
   S.unsubs.push(S.db.collection('teachers').onSnapshot(q=>{ teamFrom(q); refreshAny(); if(role==='owner') centreScheduleSync(); }, ()=>{ S.teamLoaded=true; }));
   const col = (path, key, after) => S.unsubs.push(S.db.collection(path).onSnapshot(q=>{ const o={}; q.docs.forEach(d=>{ if(d.exists) o[d.id]=d.data(); }); S[key]=o; after&&after(); refreshAny(); }, quiet));
-  const one = (path, key, def) => S.unsubs.push(S.db.doc(path).onSnapshot(s=>{ S[key]=s.exists?s.data():def; refreshAny(); }, ()=>{ S[key]=def; }));
+  const one = (path, key, def, after) => S.unsubs.push(S.db.doc(path).onSnapshot(s=>{ S[key]=s.exists?s.data():def; after&&after(); refreshAny(); }, ()=>{ S[key]=def; }));
+  const where1 = (path, f, v, key) => S.unsubs.push(S.db.collection(path).where(f,v).onSnapshot(q=>{ const o={}; q.docs.forEach(d=>{ if(d.exists) o[d.id]=d.data(); }); S[key]=o; refreshAny(); }, quiet));
   if(role==='owner'){
-    col('leads','leads'); col('staffReq','sreq'); col('teacherPriv','tpriv');
+    col('leads','leads'); col('staffReq','sreq'); col('teacherPriv','tpriv'); col('applications','apps');
+    col('enroll','enrolls'); col('enrollStatus','enrollSt'); col('roster','rosters'); col('live','lives'); col('torders','torders'); one('site/promo','promo',{});
     col('staff','staffEmails', ()=>{ S.staffMap={}; for(const [em,x] of Object.entries(S.staffEmails||{})) if(x?.tid) S.staffMap[x.tid]=em; });
     one('centre/offers','offers',{items:[]}); one('private/meet','meetDoc',{});
   }
   if(role==='staff'){
     const t=S.staffTid;
     one('centre/offers','offers',{items:[]}); one('staffReq/'+t,'mySreq',null); one('teacherPriv/'+t,'myTPriv',null);
+    one('roster/'+t,'myRoster',null); one('live/'+t,'myLive',null); where1('torders','tid',t,'torders');
     S.unsubs.push(S.db.collection('leads').where('tid',t).onSnapshot(q=>{ const o={}; q.docs.forEach(d=>{ if(d.exists) o[d.id]=d.data(); }); S.leads=o; refreshAny(); }, quiet));
   }
   if(role==='student'){
-    one('lessons/'+S.uid,'myLessons',null);
+    one('lessons/'+S.uid,'myLessons',null); one('site/promo','promo',null);
+    one('enroll/'+S.uid,'myEnroll',null); one('enrollStatus/'+S.uid,'myEnrollSt',null, studentWatches); where1('torders','uid',S.uid,'myTorders');
     // the chosen teacher's Meet link follows the journal (it can only be read once the journal exists)
     S.unsubs.push(S.db.doc('journals/'+S.uid).onSnapshot(s=>{
       const key=tidOf(s.exists?s.data():null)+':'+s.exists; if(key===S._tprivKey) return; S._tprivKey=key;
       if(S._tprivUn){ try{ S._tprivUn(); }catch(e){} }
+      studentWatches();
       S._tprivUn = s.exists ? S.db.doc('teacherPriv/'+tidOf(s.data())).onSnapshot(x=>{ S.myTPriv=x.exists?x.data():null; refreshAny(); }, ()=>{ S.myTPriv=null; }) : null;
     }, quiet));
     S.unsubs.push(()=>{ if(S._tprivUn){ try{ S._tprivUn(); }catch(e){} S._tprivUn=null; } });
@@ -4331,16 +4362,17 @@ function vLanding(){
       ${levelBadge(st)}
       <span class="tchips">${(t.langs||[]).map(l=>`<span class="lchip">${esc(l)}</span>`).join('')}${t.levels?`<span class="lchip ghost">${esc(t.levels)}</span>`:''}</span>
       ${t.bio?`<span class="small tcard-bio">${esc(t.bio.slice(0,150))}${t.bio.length>150?'…':''}</span>`:''}
-      <span class="tkv"><span><b class="num">${+st.students||0}</b>${tr('c.kStudents')}</span><span><b class="num">${st.gain>0?'+'+st.gain:'–'}</b>${tr('c.kGain')}</span><span><b class="num">${+t.years||'–'}</b>${tr('c.kYears')}</span></span>
+      <span class="tkv"><span><b class="num">${+st.students||0}</b>${tr('c.kStudents')}</span><span><b class="num">${st.gain>0?'+'+st.gain:'–'}</b>${tr('c.kGain')}</span><span><b class="num">${+t.years||'–'}</b>${tr('c.kYears')}</span>${t.lessonLen?`<span><b class="num">${t.lessonLen}</b>${tr('c.kMin')}</span>`:''}</span>
       <span class="tcard-go">${tr('c.viewProfile')} →</span></button>`; };
   const loading = !S.teamLoaded;
   return `<section class="lp-hero"><div class="lp-hero-in">
       <span class="lp-kicker">${tr('c.kicker')}</span>
       <h1>${tr('c.h')}</h1>
       <p>${tr('c.p')}</p>
-      <div class="row lp-cta"><button class="btn pen" data-act="c-trial">${I.spark} ${tr('c.trial')}</button><a class="btn lp-ghost" href="#teachers">${tr('c.meet')}</a></div>
+      <div class="row lp-cta"><button class="btn pen" data-act="c-trial">${I.spark} ${tr('c.trial')}</button><a class="btn lp-ghost" href="#teachers">${tr('c.meet')}</a><button class="btn lp-ghost" data-act="c-apply">${tr('c.joinBtn')}</button></div>
       <div class="lp-stats"><div><b class="num">${all.length||'–'}</b><span>${tr('c.sTeachers')}</span></div><div><b class="num">${students||'–'}</b><span>${tr('c.sStudents')}</span></div><div><b class="num">${langs.length||'–'}</b><span>${tr('c.sLangs')}</span></div></div>
     </div><div class="lp-art" aria-hidden="true">${I.nib}</div></section>
+    ${promoBanner('guest')}
     <section class="section" id="teachers"><div class="page-head" style="margin-bottom:14px"><div><h1>${tr('c.teachersH')}</h1><p>${tr('c.teachersP')}</p></div></div>
       ${langs.length>1?`<div class="lp-filter" role="group" aria-label="${tr('c.filter')}"><button data-act="c-lang" data-l="" aria-pressed="${!f}">${tr('c.all')}</button>${langs.map(l=>`<button data-act="c-lang" data-l="${esc(l)}" aria-pressed="${f===l}">${esc(l)}</button>`).join('')}</div>`:''}
       ${loading?`<div class="loading">${tr('c.loading')}</div>`: list.length?`<div class="tgrid">${list.map(card).join('')}</div>`:`<div class="empty"><h3>${tr('c.noneH')}</h3><p>${tr('c.noneP')}</p></div>`}
@@ -4349,6 +4381,8 @@ function vLanding(){
       ${[1,2,3,4].map(i=>`<div class="card lp-step"><span class="lp-n">${i}</span><h3>${tr('c.how'+i+'H')}</h3><p class="muted small">${tr('c.how'+i+'P')}</p></div>`).join('')}</div></section>
     <section class="section lp-levels card"><div><h2>${tr('c.lvH')}</h2><p class="muted">${tr('c.lvP')}</p></div>
       <div class="lp-lv">${[1,2,3,4,5].map(n=>`<span class="tlevel lv${n}">${stars(n)}<b>${tr('lv.'+n)}</b></span>`).join('')}</div></section>
+    <section class="section card lp-join"><div><span class="label">${tr('c.joinK')}</span><h2>${tr('c.joinH')}</h2><p class="muted">${tr('c.joinP')}</p></div>
+      <button class="btn primary" data-act="c-apply">${I.team} ${tr('c.joinBtn')}</button></section>
     <section class="section lp-end"><h2>${tr('c.endH')}</h2><p class="muted">${tr('c.endP')}</p>
       <div class="row" style="justify-content:center;gap:10px;flex-wrap:wrap;margin-top:14px"><button class="btn pen" data-act="c-trial">${tr('c.trial')}</button><button class="btn" data-act="c-signin">${tr('c.signin')}</button>${S.demo?'':`<button class="btn ghost" data-act="explore">${tr('lo.example')}</button>`}</div></section>`;
 }
@@ -4359,9 +4393,10 @@ function openTeacherProfile(tid){
       <div class="row" style="gap:16px;align-items:flex-start">${tPhoto(t,tid,'tph lg')}<div style="min-width:0">
         ${t.headline?`<p style="font-weight:600">${esc(t.headline)}</p>`:''}${levelBadge(st)}
         <div class="tchips" style="margin-top:8px">${(t.langs||[]).map(l=>`<span class="lchip">${esc(l)}</span>`).join('')}${t.levels?`<span class="lchip ghost">${esc(t.levels)}</span>`:''}</div></div></div>
-      <div class="tkv big"><span><b class="num">${+st.students||0}</b>${tr('c.kStudents')}</span><span><b class="num">${st.gain>0?'+'+st.gain:'–'}</b>${tr('c.kGain')}</span><span><b class="num">${st.band!=null?fmtBand(st.band):'–'}</b>${tr('c.kBand')}</span><span><b class="num">${+t.years||'–'}</b>${tr('c.kYears')}</span></div>
+      <div class="tkv big"><span><b class="num">${+st.students||0}</b>${tr('c.kStudents')}</span><span><b class="num">${st.gain>0?'+'+st.gain:'–'}</b>${tr('c.kGain')}</span><span><b class="num">${st.band!=null?fmtBand(st.band):'–'}</b>${tr('c.kBand')}</span><span><b class="num">${+t.years||'–'}</b>${tr('c.kYears')}</span>${t.lessonLen?`<span><b class="num">${lenText(t.lessonLen)}</b>${tr('c.kLen')}</span>`:''}</div>
       ${t.bio?`<div><span class="label">${tr('c.bio')}</span><p style="margin-top:6px;white-space:pre-line">${esc(t.bio)}</p></div>`:''}
       ${(t.achievements||[]).length?`<div><span class="label">${tr('c.ach')}</span><ul class="tach">${t.achievements.map(a=>`<li>${esc(a)}</li>`).join('')}</ul></div>`:''}
+      ${tsvcList(t, tid)}
       <p class="small faint">${tr('c.lvNote',{level:L.name})}</p>
     </div>
     <div class="dlg-foot"><button type="button" class="btn ghost" data-act="dlg-close">${tr('close')}</button>${S.mode==='guest'?`<button type="button" class="btn pen" data-act="c-trial" data-tid="${esc(tid)}">${tr('c.trialWith',{name:esc((t.name||'').split(' ')[0])})}</button>`:''}</div></div>`, {type:'tprof', id:tid});
@@ -4404,6 +4439,7 @@ function teacherFields(t, opt){
       <input class="inp" id="tf-lang-x" placeholder="${tr('c.fLangOther')}" style="margin-top:6px"></div>
     <div class="grid2" style="gap:12px"><label class="field"><span>${tr('c.fLevels')}</span><input class="inp" id="tf-levels" maxlength="40" placeholder="A1 – C1, IELTS" value="${esc(t.levels||'')}"></label>
       <label class="field"><span>${tr('c.fYears')}</span><input class="inp" id="tf-years" type="number" min="0" max="60" value="${esc(t.years??'')}"></label></div>
+    <label class="field"><span>${tr('c.fLen')}</span><select class="inp" id="tf-len"><option value="">–</option>${[...new Set([...LESSON_LENS, ...(t.lessonLen?[+t.lessonLen]:[])])].sort((a,b)=>a-b).map(m=>`<option value="${m}" ${+t.lessonLen===m?'selected':''}>${lenText(m)}</option>`).join('')}</select></label>
     <label class="field"><span>${tr('c.fBio')}</span><textarea class="inp" id="tf-bio" rows="4" maxlength="1500" placeholder="${tr('c.fBioPh')}">${esc(t.bio||'')}</textarea></label>
     <label class="field"><span>${tr('c.fAch')}</span><textarea class="inp" id="tf-ach" rows="4" maxlength="1500" placeholder="${tr('c.fAchPh')}">${esc((t.achievements||[]).join('\n'))}</textarea></label>
     <label class="field"><span>${tr('c.fMeet')} <span class="faint">${tr('c.fMeetHint')}</span></span><span class="row" style="gap:6px"><input class="inp" id="tf-meet" placeholder="https://meet.google.com/abc-defg-hij" value="${esc(opt.meet||'')}"><a class="btn sm" href="https://meet.google.com/new" target="_blank" rel="noopener">${tr('c.newMeet')}</a></span></label>
@@ -4433,7 +4469,7 @@ function readTeacherFields(){
   const meet=$('#tf-meet').value.trim();
   if(meet && !/^https:\/\/(meet\.google\.com|[\w.-]+\.(zoom\.us|jit\.si|8x8\.vc))\//.test(meet)) return {err:tr('c.badMeet')};
   const d={name, photo:$('#tf-photo').value.trim(), headline:$('#tf-headline').value.trim(), langs, levels:$('#tf-levels').value.trim(),
-    years: $('#tf-years').value==='' ? null : Math.max(0,Math.min(60,Math.round(+$('#tf-years').value||0))), bio:$('#tf-bio').value.trim(),
+    years: $('#tf-years').value==='' ? null : Math.max(0,Math.min(60,Math.round(+$('#tf-years').value||0))), lessonLen: $('#tf-len').value ? +$('#tf-len').value : null, bio:$('#tf-bio').value.trim(),
     achievements:$('#tf-ach').value.split('\n').map(x=>x.replace(/^[-•*]\s*/,'').trim()).filter(Boolean).slice(0,20)};
   return {d, meet};
 }
@@ -4451,7 +4487,7 @@ function openTeacherEdit(tid){
     const taken=email && Object.entries(S.staffMap||{}).find(([t2,em])=>em===email && t2!==id); if(taken){ $('#tf-err').textContent=tr('c.emailTaken'); return; }
     const btn=$('#tf-go'); btn.disabled=true;
     try{
-      const base=isNew?{visible:true, order:Date.now(), stats:{students:0,active:0,reviews:0,gain:0,band:null,score:0}}:clone(S.team[id]);
+      const base=isNew?{visible:true, order:Date.now(), stats:{students:0,active:0,reviews:0,gain:0,band:null,score:expPts(r.d.years)}}:clone(S.team[id]);
       await S.db.doc('teachers/'+id).set({...base, ...r.d, visible: $('#tf-visible')? $('#tf-visible').checked : true});
       await S.db.doc('teacherPriv/'+id).set({meet:r.meet});
       if(id!==MAIN_TID){ const old=S.staffMap?.[id];
@@ -4504,6 +4540,7 @@ function vTeam(){
   return `<div class="page-head"><div><h1>${tr('c.teamH')}</h1><p>${tr('c.teamP')}</p></div><button class="btn primary" data-act="c-tedit">+ ${tr('c.addTeacher')}</button></div>${centreRulesNote()}
     ${hasMain?'':`<div class="notice info" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"><span>${tr('c.mainFirst')}</span><button class="btn sm primary" data-act="c-tedit" data-tid="${MAIN_TID}">${tr('c.mainBtn')}</button></div>`}
     ${list.length?`<div class="tlist">${list.map(row).join('')}</div>`:`<div class="empty"><h3>${tr('c.teamEmptyH')}</h3><p>${tr('c.teamEmptyP')}</p></div>`}
+    ${appsSection()}${enrollSection()}${tordersSection(false)}
     <div class="section"><h2>${tr('c.leadsH')}</h2>${leads.length?`<div class="list">${leads.map(l=>`<div class="req ${l.st?'ok':'wait'}">${avatar(l.name,l.id)}<div style="min-width:0"><b>${esc(l.name)}</b> <span class="faint">·</span> <span class="num">${esc(l.contact)}</span>
         <div class="small muted">${[l.lang, l.level==='beginner'?tr('c.beginner'):l.level, l.tid?tr('c.forT',{name:esc(tName(l.tid))}):tr('c.anyTeacher')].filter(Boolean).map(x=>x).join(' · ')} · ${ago(l.at)}</div>${l.msg?`<div class="small req-note">“${esc(l.msg)}”</div>`:''}</div>
         <div class="req-act">${l.st?`<span class="pill bk-ok">${tr('c.contacted')}</span><button class="btn ghost sm" data-act="c-lead-del" data-id="${esc(l.id)}" style="color:var(--pen)">${tr('delete')}</button>`:`<button class="btn sm primary" data-act="c-lead-done" data-id="${esc(l.id)}">${tr('c.markContacted')}</button>`}</div></div>`).join('')}</div>`:`<p class="faint">${tr('c.noLeads')}</p>`}</div>
@@ -4516,7 +4553,7 @@ function vTeam(){
       ${reqs.length?`<h3 style="margin-top:20px">${tr('c.reqsH')}</h3><div class="list">${reqs.map(r=>{ const o=offers.find(x=>x.id===r.offerId);
         return `<div class="req ${r.st}">${avatar(tName(r.tid),r.tid)}<div style="min-width:0"><b>${esc(tName(r.tid))}</b> <span class="faint">·</span> ${esc(o?.title||r.title||'–')}<div class="small muted">${ago(r.at)}${o?' · '+priceText(o.price):''}</div>${r.note?`<div class="small req-note">“${esc(r.note)}”</div>`:''}</div>
           <div class="req-act"><span class="pill bk-${r.st}">${tr('bk.st.'+r.st)}</span>${r.st==='wait'?`<span class="row" style="gap:6px"><button class="btn sm ghost" data-act="c-sreq" data-tid="${esc(r.tid)}" data-id="${esc(r.id)}" data-st="no">${tr('bk.decline')}</button><button class="btn sm primary" data-act="c-sreq" data-tid="${esc(r.tid)}" data-id="${esc(r.id)}" data-st="ok">${tr('c.accept')}</button></span>`:''}</div></div>`; }).join('')}</div>`:''}</div>
-    <div class="card section rank-how"><h3>${tr('c.lvHowH')}</h3><ul class="small muted"><li>${tr('c.lvHow1',{n:TPTS.student})}</li><li>${tr('c.lvHow2',{n:TPTS.entry})}</li><li>${tr('c.lvHow3',{n:TPTS.gain})}</li><li>${tr('c.lvHow4')}</li>
+    <div class="card section rank-how"><h3>${tr('c.lvHowH')}</h3><ul class="small muted"><li>${tr('c.lvHow1',{n:TPTS.student})}</li><li>${tr('c.lvHow2',{n:TPTS.entry})}</li><li>${tr('c.lvHow3',{n:TPTS.gain})}</li><li>${tr('c.lvHow4')}</li><li>${tr('c.lvHowExp')}</li>
       <li>${[1,2,3,4,5].map(n=>`${tr('lv.'+n)} ${TLEVEL_STEPS[n-1]}+`).join(' · ')}</li></ul></div>`;
 }
 const centreRulesNote = () => S.demo ? `<div class="notice info">${tr('c.demoNote')}</div>` : '';
@@ -4542,6 +4579,7 @@ function vMe(){
     <div class="card section tme-lv" style="margin-top:0"><div>${levelBadge(st)}<div class="tprog lg"><i style="width:${L.pct}%"></i></div>
       <p class="small muted">${L.next!=null?tr('c.meNext',{n:L.toNext, level:tLevel(L.next).name}):tr('c.meTop')}</p></div>
       <div class="tkv"><span><b class="num">${+st.students||0}</b>${tr('c.kStudents')}</span><span><b class="num">${+st.reviews||0}</b>${tr('c.kMarked')}</span><span><b class="num">${st.gain>0?'+'+st.gain:'–'}</b>${tr('c.kGain')}</span><span><b class="num">${+st.score||0}</b>${tr('c.kPts')}</span></div></div>
+    ${svcEditor(tid)}
     <form id="me-form" class="card section" style="padding:20px" novalidate>${teacherFields(t,{tid, meet:S.myTPriv?.meet||''})}<button class="btn primary" style="margin-top:14px">${tr('save')}</button></form>`;
 }
 after.me = () => { wireTeacherFields(); const f=$('#me-form'); if(!f) return; f.addEventListener('submit', async e=>{
@@ -4554,6 +4592,8 @@ function vCentre(){
     ${offers.length?`<div class="svc-grid">${offers.map(o=>`<article class="svc"><h3>${esc(o.title)}</h3>${o.desc?`<p class="muted">${esc(o.desc)}</p>`:''}<div class="svc-foot"><b class="num">${priceText(o.price)}</b><button class="btn pen sm" data-act="c-ask" data-id="${esc(o.id)}">${tr('c.ask')}</button></div></article>`).join('')}</div>`:`<div class="empty"><h3>${tr('c.noOffers')}</h3></div>`}
     ${mine.length?`<div class="section"><h2>${tr('c.myReqs')}</h2><div class="list">${mine.map(r=>{ const o=offers.find(x=>x.id===r.offerId), s=st[r.id]||'wait';
       return `<div class="req ${s}"><div style="min-width:0"><b>${esc(o?.title||r.title||'–')}</b><div class="small muted">${ago(r.at)}</div>${r.note?`<div class="small req-note">“${esc(r.note)}”</div>`:''}</div><div class="req-act"><span class="pill bk-${s}">${tr('bk.st.'+s)}</span></div></div>`; }).join('')}</div></div>`:''}
+    ${tordersSection(true)}
+    ${Object.keys(S.myRoster?.students||{}).length?`<div class="section"><h2>${tr('c.myExtra')}</h2><div class="tchips">${Object.entries(S.myRoster.students).map(([uid,x])=>`<span class="lchip ghost">${esc(x.name||'')}${x.lang?' · '+esc(x.lang):''}</span>`).join('')}</div></div>`:''}
     <div class="section"><h2>${tr('c.myLeads')}</h2>${leads.length?`<div class="list">${leads.map(l=>`<div class="req ${l.st?'ok':'wait'}">${avatar(l.name,l.id)}<div style="min-width:0"><b>${esc(l.name)}</b> · <span class="num">${esc(l.contact)}</span><div class="small muted">${[l.lang,l.level==='beginner'?tr('c.beginner'):l.level].filter(Boolean).join(' · ')} · ${ago(l.at)}</div>${l.msg?`<div class="small req-note">“${esc(l.msg)}”</div>`:''}</div></div>`).join('')}</div>`:`<p class="faint">${tr('c.noLeads')}</p>`}</div>`;
 }
 function openOfferAsk(offerId){
@@ -4642,18 +4682,271 @@ async function meetOnConfirm(uid, r){
   d.links[slot.id]={url:m.url, date:slot.date, from:slot.from, to:slot.to}; await S.db.doc('lessons/'+uid).set(d);
 }
 
+/* ---------- "Become a teacher": visitors apply, the owner accepts; experience sets the starting level ---------- */
+// years of teaching -> starting points: 0–2 Starter, 3–4 Rising, 5–7 Skilled, 8+ Expert. Master is earned with students.
+const expPts = y => { y=+y||0; return y>=8?300 : y>=5?150 : y>=3?60 : 0; };
+const LESSON_LENS = [30,45,60,80,90,120];
+const lenText = m => m ? tr('c.min',{n:m}) : '';
+const pendingApps = () => S.role==='owner' ? Object.values(S.apps||{}).filter(a=>!a.st).length : 0;
+function openApply(){
+  showDlg(`<form id="ap-form" novalidate>${dlgHead(tr('c.apK'), tr('c.apH'))}
+    <div class="dlg-body"><p class="muted">${tr('c.apP')}</p>
+      <div class="row" style="gap:14px;align-items:center"><span class="tph lg ini" id="ap-ph">${avatar('?','new')}</span>
+        <label class="btn sm" style="cursor:pointer">${I.up} ${tr('c.fPhoto')}<input type="file" accept="image/*" id="ap-file" hidden></label><input type="hidden" id="ap-photo"></div>
+      <label class="field"><span>${tr('c.fName')}</span><input class="inp" id="ap-name" maxlength="80" autocomplete="name"></label>
+      <div class="grid2" style="gap:12px"><label class="field"><span>${tr('c.fContact')}</span><input class="inp" id="ap-contact" maxlength="120" placeholder="+998 90 123 45 67 / @telegram"></label>
+        <label class="field"><span>Email <span class="faint">${tr('optional')}</span></span><input class="inp" id="ap-email" type="email" maxlength="120" placeholder="name@gmail.com"></label></div>
+      <div class="field"><span>${tr('c.fLangs')}</span><div class="lpick">${CLANGS.map(l=>`<label class="lchip pick"><input type="checkbox" class="ap-lang" value="${esc(l)}"> ${esc(l)}</label>`).join('')}</div>
+        <input class="inp" id="ap-lang-x" placeholder="${tr('c.fLangOther')}" style="margin-top:6px"></div>
+      <div class="grid2" style="gap:12px"><label class="field"><span>${tr('c.fLevels')}</span><input class="inp" id="ap-levels" maxlength="40" placeholder="A1 – C1, IELTS"></label>
+        <label class="field"><span>${tr('c.fLen')}</span><select class="inp" id="ap-len">${LESSON_LENS.map(m=>`<option value="${m}" ${m===80?'selected':''}>${lenText(m)}</option>`).join('')}</select></label></div>
+      <label class="field"><span>${tr('c.fYears')}</span><input class="inp" id="ap-years" type="number" min="0" max="60" value="0"></label>
+      <div class="notice info ap-lv" style="margin:0" id="ap-lv"></div>
+      <label class="field"><span>${tr('c.apBio')}</span><textarea class="inp" id="ap-bio" rows="4" maxlength="1500" placeholder="${tr('c.fBioPh')}"></textarea></label>
+      <label class="field"><span>${tr('c.apAch')}</span><textarea class="inp" id="ap-ach" rows="3" maxlength="1500" placeholder="${tr('c.fAchPh')}"></textarea></label>
+      <label class="field"><span>${tr('c.apMsg')} <span class="faint">${tr('optional')}</span></span><textarea class="inp" id="ap-msg" rows="2" maxlength="500" placeholder="${tr('c.apMsgPh')}"></textarea></label>
+      <p class="lg-err" id="ap-err" role="alert"></p></div>
+    <div class="dlg-foot"><button type="button" class="btn ghost" data-act="dlg-close">${tr('cancel')}</button><button class="btn pen" id="ap-go">${tr('c.apSend')}</button></div></form>`, {type:'apply'});
+  const lv = () => { const y=Math.max(0,Math.round(+$('#ap-years').value||0)), L=tLevel(expPts(y)); $('#ap-lv').innerHTML=`${tr('c.apLv')} <span class="tlevel lv${L.n}">${stars(L.n)}<b>${L.name}</b></span> <span class="small faint">${tr('c.apLvNote')}</span>`; };
+  $('#ap-years').addEventListener('input', lv); lv();
+  $('#ap-file').addEventListener('change', async e=>{ const f=e.target.files[0]; if(!f) return;
+    try{ const u=await shrinkPhoto(f); $('#ap-photo').value=u; const img=document.createElement('img'); img.className='tph lg'; img.id='ap-ph'; img.src=u; img.alt=''; $('#ap-ph').replaceWith(img); }catch(err){ toast(tr('c.photoFail')); } });
+  $('#ap-form').addEventListener('submit', async e=>{
+    e.preventDefault(); const err=$('#ap-err'), name=$('#ap-name').value.trim(), contact=$('#ap-contact').value.trim(), email=$('#ap-email').value.trim().toLowerCase();
+    const langs=[...document.querySelectorAll('.ap-lang:checked')].map(x=>x.value);
+    $('#ap-lang-x').value.split(',').map(x=>x.trim()).filter(Boolean).forEach(x=>{ const l=x[0].toUpperCase()+x.slice(1); if(!langs.includes(l)) langs.push(l); });
+    if(!name){ err.textContent=tr('c.needName'); return; } if(contact.length<3){ err.textContent=tr('c.needContact'); return; }
+    if(email && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)){ err.textContent=tr('auth.email'); return; }
+    if(!langs.length){ err.textContent=tr('c.needLang'); return; }
+    const bio=$('#ap-bio').value.trim(); if(bio.length<20){ err.textContent=tr('c.needBio'); return; }
+    const d={name, contact, email, photo:$('#ap-photo').value, langs:langs.slice(0,12), levels:$('#ap-levels').value.trim(), years:Math.max(0,Math.min(60,Math.round(+$('#ap-years').value||0))),
+      lessonLen:+$('#ap-len').value, bio, achievements:$('#ap-ach').value.split('\n').map(x=>x.replace(/^[-•*]\s*/,'').trim()).filter(Boolean).slice(0,20), msg:$('#ap-msg').value.trim(), at:Date.now()};
+    const b=$('#ap-go'); b.disabled=true;
+    try{ await S.db.collection('applications').doc().set(d);
+      $('#ap-form').innerHTML=`${dlgHead(tr('c.apK'), tr('c.thanksH'))}<div class="dlg-body"><p>${tr('c.apThanks',{name:esc(name.split(' ')[0])})}</p></div><div class="dlg-foot"><button type="button" class="btn primary" data-act="dlg-close">${tr('app.ok')}</button></div>`;
+    }catch(x){ b.disabled=false; err.textContent=tr('c.sendFail'); } });
+}
+function appsSection(){
+  const list=Object.entries(S.apps||{}).map(([id,a])=>({id,...a})).sort((a,b)=>(!!a.st-!!b.st)||(b.at-a.at));
+  if(!list.length) return `<div class="section"><h2>${tr('c.appsH')}</h2><p class="faint">${tr('c.noApps')}</p></div>`;
+  return `<div class="section"><h2>${tr('c.appsH')}</h2><div class="tapps">${list.map(a=>{ const L=tLevel(expPts(a.years));
+    return `<article class="card tapp ${a.st||'wait'}"><div class="row" style="gap:14px;align-items:flex-start">${tPhoto(a,a.id)}<div style="min-width:0;flex:1">
+      <div class="row" style="gap:8px;flex-wrap:wrap;align-items:center"><b style="font-size:17px">${esc(a.name)}</b><span class="tlevel lv${L.n}">${stars(L.n)}<b>${L.name}</b></span>${a.st?`<span class="pill bk-${a.st==='ok'?'ok':'no'}">${tr(a.st==='ok'?'c.apAccepted':'c.apDeclined')}</span>`:''}</div>
+      <div class="small muted num">${esc(a.contact)}${a.email?' · '+esc(a.email):''} · ${ago(a.at)}</div>
+      <div class="tchips" style="margin-top:8px">${(a.langs||[]).map(l=>`<span class="lchip">${esc(l)}</span>`).join('')}${a.levels?`<span class="lchip ghost">${esc(a.levels)}</span>`:''}</div>
+      <div class="tkv" style="margin-top:10px"><span><b class="num">${+a.years||0}</b>${tr('c.kYears')}</span><span><b class="num">${lenText(a.lessonLen)||'–'}</b>${tr('c.kLen')}</span></div>
+      ${a.bio?`<p class="small" style="margin-top:10px;white-space:pre-line">${esc(a.bio)}</p>`:''}
+      ${(a.achievements||[]).length?`<ul class="tach small">${a.achievements.map(x=>`<li>${esc(x)}</li>`).join('')}</ul>`:''}
+      ${a.msg?`<p class="small req-note">“${esc(a.msg)}”</p>`:''}</div></div>
+      <div class="row" style="gap:6px;justify-content:flex-end;margin-top:12px;flex-wrap:wrap">${a.st?`<button class="btn ghost sm" data-act="c-app-del" data-id="${esc(a.id)}" style="color:var(--pen)">${tr('delete')}</button>`:
+        `<button class="btn ghost sm" data-act="c-app-no" data-id="${esc(a.id)}">${tr('bk.decline')}</button><button class="btn primary sm" data-act="c-app-ok" data-id="${esc(a.id)}">${tr('c.apAccept')}</button>`}</div></article>`; }).join('')}</div></div>`;
+}
+async function acceptApp(id){
+  const a=S.apps?.[id]; if(!a) return; const tid='t-'+newId();
+  const t={name:a.name, photo:a.photo||'', headline:'', langs:a.langs||[], levels:a.levels||'', years:+a.years||0, lessonLen:+a.lessonLen||60, bio:a.bio||'', achievements:a.achievements||[],
+    visible:true, order:Date.now(), stats:{students:0,active:0,reviews:0,gain:0,band:null,score:expPts(a.years)}};
+  await S.db.doc('teachers/'+tid).set(t);
+  await S.db.doc('teacherPriv/'+tid).set({meet:''});
+  const em=(a.email||'').toLowerCase(); let login=false;
+  if(em && em!==S.teacherEmail && !Object.values(S.staffMap||{}).includes(em)){ await S.db.doc('staff/'+em).set({tid, name:a.name}); login=true; }
+  await S.db.doc('applications/'+id).update({st:'ok', tid});
+  toast(login?tr('c.apOkLogin',{email:esc(em)}):tr('c.apOk'), 6000);
+}
+
+/* ---------- students take lessons with more than one teacher ---------- */
+// enroll/{uid}: the student's requests; enrollStatus/{uid}: {tid:'ok'|'no'} (owner); roster/{tid}: extra students of a teacher (owner)
+const okTids = st => Object.entries(st||{}).filter(([,v])=>v==='ok').map(([k])=>k);
+const myTids = () => [...new Set([tidOf(S.myProfile), ...okTids(S.myEnrollSt)])];
+const coursesOf = uid => 1 + okTids(S.enrollSt?.[uid]).filter(t=>t!==tidOf(S.profiles[uid])).length;
+const promoOn = p => !!(p && p.on && +p.pct>0 && (!p.until || p.until>=todayStr()));
+const pendingEnrolls = () => S.role!=='owner' ? 0 : Object.entries(S.enrolls||{}).reduce((a,[uid,e])=>a+(e.items||[]).filter(i=>!S.enrollSt?.[uid]?.[i.tid]).length,0);
+function promoText(p){ return tr('c.promoTxt',{pct:+p.pct, n:+p.min||2})+(p.until?' '+tr('c.promoUntil',{d:fmtDate(p.until)}):'')+(p.note?' · '+esc(p.note):''); }
+function promoBanner(where){
+  const p=S.promo; if(!promoOn(p)) return '';
+  let mine='';
+  if(where==='student'){ const n=myTids().length; mine = n>=(+p.min||2) ? `<b>${tr('c.promoYou',{pct:+p.pct, n})}</b>` : `<span>${tr('c.promoMore',{n:(+p.min||2)-n})}</span>`; }
+  return `<div class="promo">${I.spark}<div><b>${tr('c.promoK')}</b> ${promoText(p)}${mine?`<div class="small" style="margin-top:4px">${mine}</div>`:''}</div></div>`;
+}
+// watch a changing set of documents (one listener per id)
+function watchSet(kind, ids, path, onData){
+  S._w=S._w||{}; const w=S._w[kind]=S._w[kind]||{};
+  for(const id of ids) if(!w[id]) w[id]=S.db.doc(path(id)).onSnapshot(s=>{ onData(id, s.exists?s.data():null); refreshAny(); }, ()=>onData(id,null));
+  for(const id of Object.keys(w)) if(!ids.includes(id)){ try{ w[id](); }catch(e){} delete w[id]; onData(id,null); }
+}
+function stopWatches(){ for(const w of Object.values(S._w||{})) for(const u of Object.values(w)){ try{ u(); }catch(e){} } S._w={}; }
+function studentWatches(){ // teachers' Meet links and live status for every teacher of this student
+  const ids=myTids(); S.extraPriv=S.extraPriv||{}; S.lives=S.lives||{};
+  watchSet('priv', ids.filter(t=>t!==tidOf(S.myProfile)), t=>'teacherPriv/'+t, (t,d)=>{ if(d) S.extraPriv[t]=d; else delete S.extraPriv[t]; });
+  watchSet('live', ids, t=>'live/'+t, (t,d)=>{ if(d) S.lives[t]=d; else delete S.lives[t]; });
+}
+const meetOf = tid => tid===tidOf(S.myProfile) ? S.myTPriv?.meet : S.extraPriv?.[tid]?.meet;
+const isLive = l => !!(l && l.on && (l.until||0)>Date.now());
+
+function vStuTeachers(){
+  const mine=myTids(), all=teamList(false), st=S.myEnrollSt||{}, req=(S.myEnroll?.items||[]);
+  const mineCards = mine.map(tid=>{ const t=S.team[tid]; if(!t) return ''; const meet=meetOf(tid), live=isLive(S.lives?.[tid]);
+    return `<div class="card tmine2">${tPhoto(t,tid)}<div style="min-width:0;flex:1"><b>${esc(t.name||'')}</b> ${live?`<span class="livedot">${tr('c.liveNow')}</span>`:''}
+      <div class="small muted">${(t.langs||[]).map(esc).join(' · ')}${t.lessonLen?' · '+lenText(t.lessonLen):''}</div>${levelBadge(t.stats)}</div>
+      <div class="tmine-act">${meet?`<a class="btn ${live?'pen':''} sm" href="${esc(meet)}" target="_blank" rel="noopener">${I.video} ${tr('c.join')}</a>`:`<span class="small faint">${tr('c.noMeetYet')}</span>`}
+      <button class="btn ghost sm" data-act="c-tprof" data-tid="${esc(tid)}">${tr('c.viewProfile')}</button></div></div>`; }).join('');
+  const others = all.filter(t=>!mine.includes(t.tid));
+  const card = t => { const r=req.find(x=>x.tid===t.tid), s=st[t.tid];
+    const btn = s==='no' ? `<span class="pill bk-no">${tr('bk.st.no')}</span>` : r ? `<span class="pill bk-wait">${tr('bk.st.wait')}</span><button class="btn ghost sm" data-act="c-enroll-x" data-tid="${esc(t.tid)}">${tr('cancel')}</button>` : `<button class="btn pen sm" data-act="c-enroll" data-tid="${esc(t.tid)}">${tr('c.enroll')}</button>`;
+    return `<article class="tcard as-div"><span class="tcard-top">${tPhoto(t,t.tid)}<span style="min-width:0"><b class="tname">${esc(t.name||'')}</b>${t.headline?`<span class="small muted tcard-hl">${esc(t.headline)}</span>`:''}</span></span>
+      ${levelBadge(t.stats)}<span class="tchips">${(t.langs||[]).map(l=>`<span class="lchip">${esc(l)}</span>`).join('')}${t.levels?`<span class="lchip ghost">${esc(t.levels)}</span>`:''}${t.lessonLen?`<span class="lchip ghost">${lenText(t.lessonLen)}</span>`:''}</span>
+      ${t.bio?`<span class="small tcard-bio">${esc(t.bio.slice(0,140))}${t.bio.length>140?'…':''}</span>`:''}
+      <span class="row" style="gap:6px;margin-top:auto;flex-wrap:wrap;align-items:center"><button class="btn ghost sm" data-act="c-tprof" data-tid="${esc(t.tid)}">${tr('c.viewProfile')}</button>${btn}</span></article>`; };
+  return `<div class="page-head"><div><h1>${tr('c.stuTH')}</h1><p>${tr('c.stuTP')}</p></div></div>${promoBanner('student')}
+    <div class="section" style="margin-top:0"><h2>${tr('c.myTeachers')}</h2><div class="stack" style="gap:10px">${mineCards||`<p class="faint">–</p>`}</div></div>
+    ${myOrdersSection()}
+    <div class="section"><h2>${tr('c.otherTeachers')}</h2>${others.length?`<div class="tgrid">${others.map(card).join('')}</div>`:`<p class="faint">${tr('c.noOthers')}</p>`}</div>`;
+}
+function openEnroll(tid){
+  const t=S.team[tid]; if(!t) return;
+  showDlg(`<form id="en-form" novalidate>${dlgHead(tr('c.enrollK'), esc(t.name||''))}<div class="dlg-body"><p class="muted">${tr('c.enrollP')}</p>
+    ${(t.langs||[]).length?`<label class="field"><span>${tr('c.fLang')}</span><select class="inp" id="en-lang">${t.langs.map(l=>`<option>${esc(l)}</option>`).join('')}</select></label>`:''}
+    <label class="field"><span>${tr('c.fMsg')} <span class="faint">${tr('optional')}</span></span><input class="inp" id="en-note" maxlength="200" placeholder="${tr('c.enrollPh')}"></label>
+    ${promoOn(S.promo)?promoBanner('student'):''}<p class="lg-err" id="en-err"></p></div>
+    <div class="dlg-foot"><button type="button" class="btn ghost" data-act="dlg-close">${tr('cancel')}</button><button class="btn pen">${tr('c.enrollSend')}</button></div></form>`, {type:'enroll'});
+  $('#en-form').addEventListener('submit', async e=>{ e.preventDefault();
+    const items=(S.myEnroll?.items||[]).filter(x=>x.tid!==tid).concat([{id:newId(), tid, lang:$('#en-lang')?.value||'', note:$('#en-note').value.trim(), at:Date.now()}]).slice(-20);
+    try{ await S.db.doc('enroll/'+S.uid).set({name:S.myProfile?.name||'', items}); closeDlg(); toast(tr('c.enrollSent')); }catch(err){ $('#en-err').textContent=lgErrText(err); } });
+}
+// owner: requests to join other teachers' lessons + the discount
+function enrollSection(){
+  const rows=[]; for(const [uid,e] of Object.entries(S.enrolls||{})) for(const i of (e.items||[])) rows.push({uid, name:S.profiles[uid]?.name||e.name||'–', ...i, st:S.enrollSt?.[uid]?.[i.tid]||'wait'});
+  rows.sort((a,b)=>(a.st==='wait'?0:1)-(b.st==='wait'?0:1) || b.at-a.at);
+  const p=S.promo||{}, qual=Object.keys(S.profiles).filter(uid=>coursesOf(uid)>=(+p.min||2));
+  return `<div class="section"><h2>${tr('c.enrollsH')}</h2><p class="muted small" style="margin:-6px 0 12px">${tr('c.enrollsP')}</p>
+    ${rows.length?`<div class="list">${rows.map(r=>`<div class="req ${r.st}">${avatar(r.name,r.uid)}<div style="min-width:0"><b>${esc(r.name)}</b> → <b>${esc(tName(r.tid))}</b>${r.lang?` · ${esc(r.lang)}`:''}
+      <div class="small muted">${ago(r.at)} · ${tr('c.courses',{n:coursesOf(r.uid)})}</div>${r.note?`<div class="small req-note">“${esc(r.note)}”</div>`:''}</div>
+      <div class="req-act"><span class="pill bk-${r.st}">${tr('bk.st.'+r.st)}</span>${r.st==='wait'?`<span class="row" style="gap:6px"><button class="btn sm ghost" data-act="c-en-set" data-uid="${esc(r.uid)}" data-tid="${esc(r.tid)}" data-st="no">${tr('bk.decline')}</button><button class="btn sm primary" data-act="c-en-set" data-uid="${esc(r.uid)}" data-tid="${esc(r.tid)}" data-st="ok">${tr('bk.confirm')}</button></span>`
+        : r.st==='ok'?`<button class="btn sm ghost" data-act="c-en-set" data-uid="${esc(r.uid)}" data-tid="${esc(r.tid)}" data-st="off" style="color:var(--pen)">${tr('c.enrollEnd')}</button>`:''}</div></div>`).join('')}</div>`:`<p class="faint">${tr('c.noEnrolls')}</p>`}</div>
+    <div class="section card promo-ed"><h2>${tr('c.promoH')}</h2><p class="muted small">${tr('c.promoP')}</p>
+      <form id="pr-form" class="pr-grid" novalidate><label class="small row" style="gap:8px;cursor:pointer;grid-column:1/-1"><input type="checkbox" id="pr-on" ${p.on?'checked':''}> <b>${tr('c.promoOn')}</b></label>
+        <label class="field"><span>${tr('c.promoPct')}</span><input class="inp" id="pr-pct" type="number" min="1" max="90" value="${esc(p.pct??15)}"></label>
+        <label class="field"><span>${tr('c.promoMin')}</span><input class="inp" id="pr-min" type="number" min="2" max="10" value="${esc(p.min??2)}"></label>
+        <label class="field"><span>${tr('c.promoTill')} <span class="faint">${tr('optional')}</span></span><input class="inp" id="pr-until" type="date" value="${esc(p.until||'')}"></label>
+        <label class="field" style="grid-column:1/-1"><span>${tr('c.promoNote')} <span class="faint">${tr('optional')}</span></span><input class="inp" id="pr-note" maxlength="140" value="${esc(p.note||'')}" placeholder="${tr('c.promoNotePh')}"></label>
+        <button class="btn primary" style="justify-self:start">${tr('save')}</button></form>
+      <p class="small" style="margin-top:12px">${promoOn(p)?`<b>${tr('c.promoLive')}</b> ${promoText(p)}`:tr('c.promoOff')}</p>
+      <h3 style="margin-top:14px">${tr('c.promoWho',{n:+p.min||2})}</h3>${qual.length?`<div class="tchips" style="margin-top:8px">${qual.map(uid=>`<span class="lchip ghost">${esc(S.profiles[uid]?.name||'')} · ${coursesOf(uid)}</span>`).join('')}</div>`:`<p class="faint small">${tr('c.promoNobody')}</p>`}
+      <p class="small faint" style="margin-top:8px">${tr('c.promoPay')}</p></div>`;
+}
+after.team = () => { const f=$('#pr-form'); if(!f) return; f.addEventListener('submit', async e=>{ e.preventDefault();
+  const d={on:$('#pr-on').checked, pct:Math.max(1,Math.min(90,Math.round(+$('#pr-pct').value||0))), min:Math.max(2,Math.min(10,Math.round(+$('#pr-min').value||2))), until:$('#pr-until').value||'', note:$('#pr-note').value.trim()};
+  try{ await S.db.doc('site/promo').set(d); toast(tr('c.saved')); }catch(err){ dbErr(err,'svc'); } }); };
+async function setEnroll(uid, tid, st){
+  const cur={...(S.enrollSt?.[uid]||{})}, ro=clone(S.rosters?.[tid]||{students:{}}); ro.students=ro.students||{};
+  if(st==='off'){ delete cur[tid]; delete ro.students[uid];
+    const e=S.enrolls?.[uid]; if(e) await S.db.doc('enroll/'+uid).set({...e, items:(e.items||[]).filter(i=>i.tid!==tid)}); }
+  else { cur[tid]=st; if(st==='ok'){ const i=(S.enrolls?.[uid]?.items||[]).find(x=>x.tid===tid); ro.students[uid]={name:S.profiles[uid]?.name||'', lang:i?.lang||'', since:Date.now()}; } else delete ro.students[uid]; }
+  await S.db.doc('enrollStatus/'+uid).set(cur); await S.db.doc('roster/'+tid).set(ro);
+}
+
+/* ---------- one-tap lessons on Google Meet ---------- */
+const myMeet = () => S.role==='staff' ? S.myTPriv?.meet : S.tpriv?.[MAIN_TID]?.meet;
+const myLive = () => S.role==='staff' ? S.myLive : S.lives?.[MAIN_TID];
+function liveTopBtn(){
+  if(S.mode!=='teacher' || S.view.name==='verify' || (S.role==='owner' && !S.team?.[MAIN_TID])) return '';
+  return isLive(myLive()) ? `<button class="btn sm pen live-b" data-act="c-live-end">${I.video} ${tr('c.liveEnd')}</button>`
+    : `<button class="btn sm primary live-b" data-act="c-live">${I.video} ${tr('c.liveStart')}</button>`;
+}
+async function goLive(url){
+  const tid=myTid(), len=+S.team?.[tid]?.lessonLen||80;
+  await S.db.doc('live/'+tid).set({on:true, at:Date.now(), until:Date.now()+(len+20)*60000});
+  if(S.role==='owner') S.lives={...(S.lives||{}), [tid]:{on:true, at:Date.now(), until:Date.now()+(len+20)*60000}};
+  renderTop(); toast(tr('c.liveOn'));
+}
+function openLiveSetup(){
+  showDlg(`<form id="lv-form" novalidate>${dlgHead('Google Meet', tr('c.liveSetupH'))}<div class="dlg-body">
+    <ol class="lv-steps"><li>${tr('c.liveS1')} <a class="btn sm" href="https://meet.google.com/new" target="_blank" rel="noopener">${I.video} meet.google.com/new</a></li><li>${tr('c.liveS2')}</li><li>${tr('c.liveS3')}</li></ol>
+    <label class="field"><span>${tr('c.fMeet')}</span><input class="inp" id="lv-url" placeholder="https://meet.google.com/abc-defg-hij"></label><p class="lg-err" id="lv-err"></p></div>
+    <div class="dlg-foot"><button type="button" class="btn ghost" data-act="dlg-close">${tr('cancel')}</button><button class="btn pen">${tr('c.liveSaveStart')}</button></div></form>`, {type:'live'});
+  $('#lv-form').addEventListener('submit', async e=>{ e.preventDefault(); const url=$('#lv-url').value.trim();
+    if(!/^https:\/\/meet\.google\.com\//.test(url)){ $('#lv-err').textContent=tr('c.badMeet'); return; }
+    const w=window.open(url,'_blank','noopener');
+    try{ await S.db.doc('teacherPriv/'+myTid()).set({meet:url}); if(S.role==='staff') S.myTPriv={meet:url}; else S.tpriv={...(S.tpriv||{}), [MAIN_TID]:{meet:url}};
+      closeDlg(); await goLive(url); }catch(err){ $('#lv-err').textContent=lgErrText(err); } });
+}
+// students: a big "join now" when one of their teachers has started
+function liveBanner(){
+  if(S.mode!=='student') return '';
+  return myTids().filter(t=>isLive(S.lives?.[t]) && meetOf(t)).map(t=>`<div class="livebar"><span class="livedot">${tr('c.liveNow')}</span>
+    <span style="min-width:0"><b>${tr('c.liveStarted',{name:esc(tName(t))})}</b><br><span class="small">${tr('c.liveAgo',{ago:ago(S.lives[t].at)})}</span></span>
+    <a class="btn pen" href="${esc(meetOf(t))}" target="_blank" rel="noopener">${I.video} ${tr('c.join')}</a></div>`).join('');
+}
+
+/* ---------- teachers' own services (IELTS mock, essay checking, speaking club…) ---------- */
+// teachers/{tid}.services: [{id,title,desc,price}] (public); torders/{id}: one order {uid,name,tid,svcId,title,price,note,at, st}
+function svcEditor(tid){
+  const list=S.team?.[tid]?.services||[];
+  return `<div class="card section" id="svc-ed" style="padding:20px"><div class="row" style="justify-content:space-between;gap:10px;flex-wrap:wrap"><div><h2 style="margin:0">${tr('c.tsvcH')}</h2><p class="muted small" style="margin-top:4px">${tr('c.tsvcP')}</p></div>
+    <button class="btn primary sm" data-act="c-tsvc" data-tid="${esc(tid)}">+ ${tr('c.tsvcAdd')}</button></div>
+    ${list.length?`<div class="svc-grid" style="margin-top:14px">${list.map(x=>`<article class="svc"><h3>${esc(x.title)}</h3>${x.desc?`<p class="muted">${esc(x.desc)}</p>`:''}<div class="svc-foot"><b class="num">${priceText(x.price)}</b>
+      <span class="row" style="gap:2px"><button class="btn ghost sm" data-act="c-tsvc" data-tid="${esc(tid)}" data-id="${esc(x.id)}">${tr('edit')}</button><button class="btn ghost sm" data-act="c-tsvc-del" data-tid="${esc(tid)}" data-id="${esc(x.id)}" style="color:var(--pen)">${tr('delete')}</button></span></div></article>`).join('')}</div>`:`<p class="faint small" style="margin-top:10px">${tr('c.tsvcNone')}</p>`}</div>`;
+}
+function openTsvc(tid, id){
+  const list=S.team?.[tid]?.services||[], x=list.find(s=>s.id===id)||{};
+  showDlg(`<form id="ts-form" novalidate>${dlgHead(tr('c.tsvcH'), id?esc(x.title):tr('c.tsvcAdd'))}<div class="dlg-body">
+    <label class="field"><span>${tr('c.oTitle')}</span><input class="inp" id="ts-t" maxlength="100" value="${esc(x.title||'')}" placeholder="${tr('c.tsvcPh')}"></label>
+    <label class="field"><span>${tr('mk.desc')}</span><textarea class="inp" id="ts-d" rows="3" maxlength="400">${esc(x.desc||'')}</textarea></label>
+    <label class="field"><span>${tr('c.oPrice')}</span><input class="inp" id="ts-p" type="number" min="0" step="1000" value="${esc(x.price??0)}"></label><p class="lg-err" id="ts-err"></p></div>
+    <div class="dlg-foot"><button type="button" class="btn ghost" data-act="dlg-close">${tr('cancel')}</button><button class="btn primary">${tr('save')}</button></div></form>`, {type:'tsvc'});
+  $('#ts-form').addEventListener('submit', async e=>{ e.preventDefault(); const title=$('#ts-t').value.trim(); if(!title){ $('#ts-err').textContent=tr('c.needTitle'); return; }
+    const items=clone(list), y={id:id||newId(), title, desc:$('#ts-d').value.trim(), price:Math.max(0,+$('#ts-p').value||0)};
+    const i=items.findIndex(s=>s.id===y.id); i<0?items.push(y):items.splice(i,1,y);
+    try{ await S.db.doc('teachers/'+tid).update({services:items.slice(0,20)}); setSvcs(tid, items.slice(0,20)); closeDlg(); toast(tr('c.saved')); }catch(err){ $('#ts-err').textContent=lgErrText(err); } });
+}
+// the profile page is not redrawn while being edited, so refresh just the services box
+function setSvcs(tid, items){ if(S.team?.[tid]) S.team[tid]={...S.team[tid], services:items}; const el=$('#svc-ed'); if(el) el.outerHTML=svcEditor(tid); }
+const tsvcList = (t, tid) => (t.services||[]).length ? `<div><span class="label">${tr('c.tsvcH')}</span><div class="tsvc-list">${t.services.map(x=>`<div class="tsvc"><div style="min-width:0"><b>${esc(x.title)}</b>${x.desc?`<div class="small muted">${esc(x.desc)}</div>`:''}</div>
+  <div class="row" style="gap:8px;align-items:center"><b class="num">${priceText(x.price)}</b>${S.mode==='student'?`<button class="btn pen sm" data-act="c-order" data-tid="${esc(tid)}" data-id="${esc(x.id)}">${tr('c.order')}</button>`:''}</div></div>`).join('')}</div></div>` : '';
+function openOrder(tid, id){
+  const t=S.team?.[tid], x=(t?.services||[]).find(s=>s.id===id); if(!x) return;
+  showDlg(`<form id="or-form" novalidate>${dlgHead(esc(t.name||''), esc(x.title))}<div class="dlg-body">${x.desc?`<p class="muted">${esc(x.desc)}</p>`:''}<b class="num">${priceText(x.price)}</b>
+    <label class="field"><span>${tr('bk.note')} <span class="faint">${tr('optional')}</span></span><input class="inp" id="or-note" maxlength="300" placeholder="${tr('c.orderPh')}"></label><p class="lg-err" id="or-err"></p></div>
+    <div class="dlg-foot"><button type="button" class="btn ghost" data-act="dlg-close">${tr('cancel')}</button><button class="btn pen">${tr('c.order')}</button></div></form>`, {type:'order'});
+  $('#or-form').addEventListener('submit', async e=>{ e.preventDefault();
+    const d={uid:S.uid, name:S.myProfile?.name||'', tid, svcId:x.id, title:x.title, price:+x.price||0, note:$('#or-note').value.trim(), at:Date.now()};
+    try{ await S.db.collection('torders').doc().set(d); closeDlg(); toast(tr('c.orderSent')); }catch(err){ $('#or-err').textContent=lgErrText(err); } });
+}
+const pendingTorders = () => Object.values(S.torders||{}).filter(o=>!o.st && (S.role==='owner' || o.tid===S.staffTid)).length;
+function tordersSection(forTeacher){
+  const list=Object.entries(S.torders||{}).map(([id,o])=>({id,...o})).filter(o=>!forTeacher||o.tid===myTid()).sort((a,b)=>(!!a.st-!!b.st)||(b.at-a.at));
+  return `<div class="section"><h2>${tr('c.tordersH')}</h2>${list.length?`<div class="list">${list.map(o=>{ const s=o.st||'wait';
+    return `<div class="req ${s==='done'?'ok':s}">${avatar(o.name||'?',o.uid)}<div style="min-width:0"><b>${esc(o.name||'–')}</b> · ${esc(o.title)}${forTeacher?'':` <span class="faint">→ ${esc(tName(o.tid))}</span>`}
+      <div class="small muted">${ago(o.at)} · ${priceText(o.price)}</div>${o.note?`<div class="small req-note">“${esc(o.note)}”</div>`:''}</div>
+      <div class="req-act"><span class="pill bk-${s==='done'?'ok':s}">${tr(s==='done'?'c.orderDone':'bk.st.'+s)}</span>${s==='wait'?`<span class="row" style="gap:6px"><button class="btn sm ghost" data-act="c-ord-set" data-id="${esc(o.id)}" data-st="no">${tr('bk.decline')}</button><button class="btn sm primary" data-act="c-ord-set" data-id="${esc(o.id)}" data-st="ok">${tr('c.accept')}</button></span>`
+        : s==='ok'?`<button class="btn sm" data-act="c-ord-set" data-id="${esc(o.id)}" data-st="done">${tr('c.markDone')}</button>`:''}</div></div>`; }).join('')}</div>`:`<p class="faint">${tr('c.noTorders')}</p>`}</div>`;
+}
+function myOrdersSection(){
+  const list=Object.entries(S.myTorders||{}).map(([id,o])=>({id,...o})).sort((a,b)=>b.at-a.at); if(!list.length) return '';
+  return `<div class="section"><h2>${tr('c.myOrders')}</h2><div class="list">${list.map(o=>{ const s=o.st||'wait';
+    return `<div class="req ${s==='done'?'ok':s}"><div style="min-width:0"><b>${esc(o.title)}</b> · ${esc(tName(o.tid))}<div class="small muted">${ago(o.at)} · ${priceText(o.price)}</div></div>
+      <div class="req-act"><span class="pill bk-${s==='done'?'ok':s}">${tr(s==='done'?'c.orderDone':'bk.st.'+s)}</span>${s==='wait'?`<button class="btn ghost sm" data-act="c-ord-x" data-id="${esc(o.id)}">${tr('cancel')}</button>`:''}</div></div>`; }).join('')}</div></div>`;
+}
+
 /* ---------- example data for the demo ---------- */
 function seedCentre(db){
   const day = n => { const d=new Date(); d.setDate(d.getDate()+n); return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate()); };
   db.m.set('teachers/main', {name:'Samandar Y. (example)', headline:'English for journals, exams and economics', langs:['English','Uzbek','Russian'], levels:'A2 – C1, IELTS', years:4, visible:true, order:1,
     bio:'I teach English through daily writing: my students keep a journal and I mark every entry, so we always know what to fix next.', achievements:['IELTS 8.0','Founder of a university business club','60+ students taught'], stats:{students:0,active:0,reviews:0,gain:0,band:null,score:0}});
-  db.m.set('teachers/t-dilnoza', {name:'Dilnoza R. (example)', headline:'Russian and English for teenagers', langs:['Russian','English'], levels:'A1 – B2', years:6, visible:true, order:2,
+  db.m.set('teachers/t-dilnoza', {lessonLen:60, services:[{id:'s1', title:'Speaking club', desc:'Saturdays, 6 people, 90 minutes of Russian conversation.', price:30000},{id:'s3', title:'Essay checking', desc:'One essay with full corrections in 2 days.', price:20000}], name:'Dilnoza R. (example)', headline:'Russian and English for teenagers', langs:['Russian','English'], levels:'A1 – B2', years:6, visible:true, order:2,
     bio:'Patient lessons with a lot of speaking. I prepare school students for exams and olympiads.', achievements:['CELTA','Two city olympiad winners'], stats:{students:1,active:1,reviews:1,gain:0,band:6,score:11}});
-  db.m.set('teachers/t-jin', {name:'Jin-woo P. (example)', headline:'Korean from zero to TOPIK II', langs:['Korean'], levels:'TOPIK I – II', years:3, visible:true, order:3,
+  db.m.set('teachers/t-jin', {services:[{id:'s2', title:'TOPIK mock test', desc:'Full test with a written report.', price:80000}], name:'Jin-woo P. (example)', headline:'Korean from zero to TOPIK II', langs:['Korean'], levels:'TOPIK I – II', years:3, visible:true, order:3,
     bio:'Native speaker. Grammar made simple, lots of K-drama listening practice.', achievements:['TOPIK 6','Korean Education Centre volunteer'], stats:{students:0,active:0,reviews:0,gain:0,band:null,score:0}});
   db.m.set('teacherPriv/main', {meet:'https://meet.google.com/abc-defg-hij'}); db.m.set('teacherPriv/t-dilnoza', {meet:'https://meet.google.com/xyz-abcd-efg'});
   db.m.set('staff/dilnoza@example.com', {tid:'t-dilnoza', name:'Dilnoza R. (example)'});
   db.m.set('leads/l1', {name:'Kamola', contact:'+998 90 111 22 33', lang:'English', level:'A2', tid:'main', msg:'I want IELTS 6.5 by summer.', at:Date.now()-3*3600e3});
+  db.m.set('applications/a1', {name:'Malika T. (example)', contact:'+998 93 555 44 33', email:'malika@example.com', photo:'', langs:['English','German'], levels:'A1 – B2', years:5, lessonLen:60,
+    bio:'I graduated from UzSWLU and have taught English and German at a private school for five years. My lessons are built around speaking and short daily homework.', achievements:['IELTS 7.5','Goethe-Zertifikat B2'], msg:'I can teach evenings and weekends.', at:Date.now()-2*3600e3});
+  db.m.set('site/promo', {on:true, pct:15, min:2, until:'', note:''});
+  db.m.set('enroll/ex-aziza', {name:'Aziza (example)', items:[{id:'e1', tid:'t-dilnoza', lang:'Russian', note:'', at:Date.now()-4*864e5},{id:'e2', tid:'t-jin', lang:'Korean', note:'I want to start Korean', at:Date.now()-3600e3}]});
+  db.m.set('enrollStatus/ex-aziza', {'t-dilnoza':'ok'});
+  db.m.set('roster/t-dilnoza', {students:{'ex-aziza':{name:'Aziza (example)', lang:'Russian', since:Date.now()-4*864e5}}});
+  db.m.set('live/t-dilnoza', {on:true, at:Date.now()-5*60000, until:Date.now()+60*60000});
+  db.m.set('torders/o1', {uid:'ex-aziza', name:'Aziza (example)', tid:'t-dilnoza', svcId:'s1', title:'Speaking club', price:30000, note:'Saturday please', at:Date.now()-2*3600e3});
   db.m.set('leads/l2', {name:'Bekzod', contact:'@bekzod_k', lang:'Korean', level:'beginner', tid:'', msg:'', at:Date.now()-26*3600e3});
   db.m.set('centre/offers', {items:[{id:'of1', title:'Classroom for group lessons', desc:'A room at the centre with a whiteboard and projector, per lesson.', price:50000},
     {id:'of2', title:'Ads for your course', desc:'We post your course on the centre’s Instagram and Telegram.', price:100000},
@@ -4704,7 +4997,7 @@ function vHome(){
       <button class="btn" data-act="new-entry">${I.pen} ${wroteToday?tr('home.another'):tr('home.today')}</button></div>
     <div class="prompt-card"><span class="label">${tr('home.prompt')}</span>${S.prompt?.text?`<q>${esc(S.prompt.text)}</q><button class="btn sm" style="align-self:flex-start;margin-top:auto" data-act="new-entry" data-prompt="1">${tr('home.about')}</button>`:`<p class="muted">${tr('home.noPrompt')}</p>`}</div>
   </div>
-  ${myTeacherCard()}${payCard()}${pmHome()}${rankCard()}
+  ${liveBanner()}${myTeacherCard()}${payCard()}${pmHome()}${rankCard()}
   ${homeBoard()}${mailPref()}
   ${fresh.length?`<div class="notice info" style="margin-top:16px;display:flex;gap:8px;align-items:center;flex-wrap:wrap"><span>${tr('home.checked',{n:fresh.length})}</span>${fresh.map(e=>`<button class="btn sm" data-act="open-entry" data-eid="${esc(e.eid)}">${esc(e.title||tr('untitled'))}</button>`).join('')}</div>`:''}
   <div class="stats section" style="margin-top:20px"><div class="stat"><b>${ents.length}</b><span>${tr('k.entries')}</span></div><div class="stat"><b>${words.toLocaleString()}</b><span>${tr('k.words')}</span></div><div class="stat"><b>${streak()}</b><span>${tr('k.streak')}</span></div><div class="stat"><b>${fmtBand(pts.length?pts[pts.length-1].v:null)}</b><span>${tr('k.latest')}</span></div></div>
@@ -5083,6 +5376,22 @@ document.addEventListener('click', async ev => {
     case 'c-ask': openOfferAsk(b.dataset.id); break;
     case 'c-move': { const v=$('#stu-tid')?.value; if(!v) break; try{ await S.db.doc('journals/'+b.dataset.sid).update({teacher:v}); toast(tr('c.moved',{name:esc(tName(v))})); }catch(e){ dbErr(e,'journal'); } break; }
     case 'c-meet': openMeet(b.dataset.id); break;
+    case 'c-apply': openApply(); break;
+    case 'c-enroll': openEnroll(b.dataset.tid); break;
+    case 'c-enroll-x': try{ await S.db.doc('enroll/'+S.uid).set({name:S.myProfile?.name||'', items:(S.myEnroll?.items||[]).filter(i=>i.tid!==b.dataset.tid)}); }catch(e){ dbErr(e,'svc'); } break;
+    case 'c-en-set': b.disabled=true; try{ await setEnroll(b.dataset.uid, b.dataset.tid, b.dataset.st); }catch(e){ b.disabled=false; dbErr(e,'svc'); } break;
+    case 'c-live': { const url=myMeet(); if(url){ window.open(url,'_blank','noopener'); try{ await goLive(url); }catch(e){ dbErr(e,'svc'); } } else openLiveSetup(); break; }
+    case 'c-live-end': try{ await S.db.doc('live/'+myTid()).set({on:false, at:Date.now(), until:0}); if(S.role==='owner') S.lives={...(S.lives||{}), [MAIN_TID]:{on:false}}; else S.myLive={on:false}; renderTop(); toast(tr('c.liveOff')); }catch(e){ dbErr(e,'svc'); } break;
+    case 'c-tsvc': openTsvc(b.dataset.tid, b.dataset.id||null); break;
+    case 'c-tsvc-del': { if(!b.dataset.armed){ b.dataset.armed='1'; b.textContent=tr('del.sure'); break; } const tid=b.dataset.tid;
+      const left=(S.team?.[tid]?.services||[]).filter(x=>x.id!==b.dataset.id);
+      try{ await S.db.doc('teachers/'+tid).update({services:left}); setSvcs(tid, left); }catch(e){ dbErr(e,'svc'); } break; }
+    case 'c-order': closeDlg(); openOrder(b.dataset.tid, b.dataset.id); break;
+    case 'c-ord-set': try{ await S.db.doc('torders/'+b.dataset.id).update({st:b.dataset.st}); }catch(e){ dbErr(e,'svc'); } break;
+    case 'c-ord-x': try{ await S.db.doc('torders/'+b.dataset.id).delete(); }catch(e){ dbErr(e,'svc'); } break;
+    case 'c-app-ok': b.disabled=true; try{ await acceptApp(b.dataset.id); }catch(e){ b.disabled=false; dbErr(e,'svc'); } break;
+    case 'c-app-no': try{ await S.db.doc('applications/'+b.dataset.id).update({st:'no'}); }catch(e){ dbErr(e,'svc'); } break;
+    case 'c-app-del': if(!b.dataset.armed){ b.dataset.armed='1'; b.textContent=tr('del.sure'); break; } try{ await S.db.doc('applications/'+b.dataset.id).delete(); }catch(e){ dbErr(e,'svc'); } break;
     case 'c-verify-again': try{ await S.au.sendEmailVerification(S.user); toast(tr('c.verifySent')); }catch(e){ toast(authMsg(e)); } break;
     case 'c-verified': { b.disabled=true; try{ await S.user.reload(); await S.user.getIdToken(true); }catch(e){}
       if(S.auth.currentUser?.emailVerified){ teardown(); startStaff(S.staffTid); } else { toast(tr('c.notYet')); b.disabled=false; } break; }
