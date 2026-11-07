@@ -1031,7 +1031,7 @@ a.btn{text-decoration:none}
 <div id="toast" class="toast" hidden role="status" aria-live="polite"></div>
 
 <script type="module">
-import { LANGS, DICT } from './i18n.js?v=2026.11.08c';
+import { LANGS, DICT } from './i18n.js?v=2026.11.08d';
 /* ---------------- constants ---------------- */
 const TYPES = [['gr','Gr'],['t','T'],['art','Art'],['prep','Prep'],['ww','WW'],['sp','Sp'],['p','P'],['wo','WO'],['agr','Agr'],['st','St'],['good','★']]
   .map(([k,code])=>({k, code, get name(){ return tr('type.'+k); }}));
@@ -3711,11 +3711,15 @@ async function notify(ev, who, build){
   toast(fail ? tr('em.fail') : S.mailOld ? tr('em.oldScript') : tr('em.sent',{n:sent}));
   if(S.mailOld && S.mail.v!==1){ try{ await S.db.doc('private/mail').set({url:S.mail.url, secret:S.mail.secret, on:S.mail.on||{}, v:1}); }catch(e){} }
 }
+// never wait for the Google script forever: give up after 40 s and say why
 async function mailPost(body){
+  const ac=new AbortController(), t=setTimeout(()=>ac.abort(), 40000);
   try{
-    const res=await fetch(S.mail.url,{method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body:JSON.stringify({...body, secret:S.mail.secret})});
-    return await res.json();
-  }catch(e){ return {ok:false, error:String(e&&e.message||e)}; }
+    const res=await fetch(S.mail.url,{method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body:JSON.stringify({...body, secret:S.mail.secret}), signal:ac.signal});
+    const txt=await res.text();
+    try{ return JSON.parse(txt); }catch(e){ return {ok:false, error: /authoriz|ruxsat|Sign in|accounts\.google/i.test(txt) ? 'auth' : 'notjson'}; }
+  }catch(e){ return {ok:false, error: e&&e.name==='AbortError' ? 'timeout' : String(e&&e.message||e)}; }
+  finally{ clearTimeout(t); }
 }
 function mailHtml(lang, m){
   const p = t => `<p style="margin:0 0 14px;font-size:16px;line-height:1.55;color:#121A33">${esc(t).replace(/\n/g,'<br>')}</p>`;
@@ -3760,10 +3764,10 @@ function openMailSetup(){
   $('#em-form').addEventListener('submit', async e=>{
     e.preventDefault(); const url=$('#em-url').value.trim(), err=$('#em-err');
     if(!/^https:\/\/script\.google\.com\/macros\/s\/[\w-]+\/exec$/.test(url)){ err.textContent=tr('em.badUrl'); return; }
-    const btn=$('#em-save'); btn.disabled=true; err.textContent='';
+    const btn=$('#em-save'); btn.disabled=true; err.textContent=tr('em.checking');
     const prev={...S.mail}; S.mail={...S.mail, url, secret};
     const r = S.demo ? {ok:true} : await mailPost({test:true});
-    if(!r.ok){ S.mail=prev; btn.disabled=false; err.textContent = r.error==='wrong secret' ? tr('em.badSecret') : tr('em.noReach'); return; }
+    if(!r.ok){ S.mail=prev; btn.disabled=false; err.textContent = r.error==='wrong secret' ? tr('em.badSecret') : r.error==='timeout' ? tr('em.timeout') : r.error==='auth' ? tr('em.needAuth') : tr('em.noReach')+(r.error&&r.error!=='notjson'?' ('+esc(r.error)+')':''); return; }
     try{ await S.db.doc('private/mail').set({url, secret, on:S.mail.on||{}, v:S.demo?3:(r.v>=2?r.v:1)}); publishUpload(url, secret).catch(()=>{}); closeDlg(); toast(tr('em.saved')); refresh(); }catch(e2){ btn.disabled=false; dbErr(e2,'mail'); }
   });
 }
