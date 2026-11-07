@@ -30,6 +30,14 @@ service cloud.firestore {
     function staffTid() {
       return get(staffPath()).data.tid;
     }
+    // A staff teacher who teaches this student: as their journal teacher or for confirmed extra lessons.
+    function teachesUid(uid) {
+      return isStaff()
+        && ((exists(/databases/$(database)/documents/journals/$(uid))
+              && get(/databases/$(database)/documents/journals/$(uid)).data.get('teacher', 'main') == staffTid())
+            || (exists(/databases/$(database)/documents/enrollStatus/$(uid))
+              && get(/databases/$(database)/documents/enrollStatus/$(uid)).data.get(staffTid(), '') == 'ok'));
+    }
     // The staff teacher this student chose (journals without a teacher belong to the owner).
     function teachesJournal(uid) {
       return isStaff() && get(/databases/$(database)/documents/journals/$(uid)).data.get('teacher', 'main') == staffTid();
@@ -277,11 +285,47 @@ service cloud.firestore {
       allow read: if true;
       allow write: if isTeacher();
     }
-    // "Lesson started" flags. Signed-in users read them; a teacher switches only their own.
+    // The teacher's own "lesson started" state (who it was sent to). Students read liveFor instead.
     match /live/{tid} {
-      allow read: if signedIn();
+      allow read: if isTeacher() || (isStaff() && staffTid() == tid);
       allow write: if isTeacher()
-        || (isStaff() && staffTid() == tid && request.resource.data.keys().hasOnly(['on', 'at', 'until']));
+        || (isStaff() && staffTid() == tid && request.resource.data.keys().hasOnly(['on', 'at', 'until', 'url', 'to', 'label']));
+    }
+    // The lesson link for one student, per teacher. Only that student reads it; a teacher writes only their own key,
+    // and only for their own students (journal teacher or confirmed extra lessons).
+    match /liveFor/{uid} {
+      allow read: if isMe(uid) || isTeacher();
+      allow write: if isTeacher()
+        || (teachesUid(uid)
+            && (resource == null
+                  ? request.resource.data.keys().hasOnly([staffTid()])
+                  : request.resource.data.diff(resource.data).affectedKeys().hasOnly([staffTid()])));
+    }
+    // A teacher's groups (for starting a lesson for a group).
+    match /groups/{tid} {
+      allow read, write: if isTeacher() || (isStaff() && staffTid() == tid);
+    }
+    // Daily speaking club: everyone signed in reads and writes messages; teachers moderate.
+    match /club/{day} {
+      allow read: if signedIn();
+      allow write: if isTeacher() || isStaff();
+      match /msgs/{id} {
+        allow read: if signedIn();
+        allow create: if signedIn() && request.resource.data.uid == request.auth.uid
+          && request.resource.data.keys().hasOnly(['uid', 'name', 'text', 'at', 'mod'])
+          && request.resource.data.text is string && request.resource.data.text.size() > 0 && request.resource.data.text.size() <= 500
+          && request.resource.data.name is string && request.resource.data.name.size() <= 80
+          && request.resource.data.at is int
+          && (request.resource.data.get('mod', false) == false || isTeacher() || isStaff());
+        allow delete: if isTeacher() || isStaff() || (signedIn() && resource.data.uid == request.auth.uid);
+      }
+    }
+    // Library: links to books, audio and videos. Everyone signed in reads; teachers add, and edit only their own.
+    match /library/{id} {
+      allow read: if signedIn();
+      allow create: if isTeacher() || (isStaff() && request.resource.data.by == staffTid());
+      allow update: if isTeacher() || (isStaff() && resource.data.by == staffTid() && request.resource.data.by == staffTid());
+      allow delete: if isTeacher() || (isStaff() && resource.data.by == staffTid());
     }
     // Orders for a teacher's own services. The student creates one; that teacher or the owner answers.
     match /torders/{id} {
