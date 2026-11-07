@@ -976,6 +976,39 @@ td.nwc.off{color:var(--ink-3);font-size:18px}
 .live-b{white-space:nowrap}
 .live-grp{display:inline-flex;gap:6px;align-items:center;margin-right:8px}
 .tsvc-list{display:flex;flex-direction:column;gap:8px;margin-top:8px}
+.to-list{display:flex;flex-direction:column;gap:6px;margin-top:4px}
+.to-opt{display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:9px 12px;border:1px solid var(--line);border-radius:12px;background:var(--sheet);cursor:pointer}
+.to-opt:has(input:checked){border-color:var(--blue);background:var(--blue-soft)}
+.to-opt .small{margin-left:auto}
+.club{display:grid;grid-template-columns:minmax(260px,.9fr) minmax(0,1.6fr);gap:16px;align-items:start}
+@media (max-width:900px){.club{grid-template-columns:1fr}}
+.club-side{display:flex;flex-direction:column;gap:12px}
+.club-topic{padding:18px}.club-topic h2{font-family:var(--f-display);font-weight:500;font-size:26px;margin:6px 0 10px;letter-spacing:-.02em}
+.club-topic ol{margin:0 0 10px 18px;display:flex;flex-direction:column;gap:6px}
+.club-video{padding:16px 18px;display:flex;flex-direction:column;gap:8px;align-items:flex-start}
+.club-video.on{background:var(--hero,#16245F);color:var(--on-hero,#fff)}
+.club-chat{display:flex;flex-direction:column;min-height:520px;max-height:72vh;padding:0;overflow:hidden}
+.club-msgs{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:12px}
+.club-empty{margin:auto;text-align:center}
+.cmsg{display:flex;gap:10px;align-items:flex-start;max-width:86%}
+.cmsg.me{align-self:flex-end;flex-direction:row-reverse}
+.cb{background:var(--sheet-2);border:1px solid var(--line);border-radius:14px;padding:8px 12px;min-width:0}
+.cmsg.me .cb{background:var(--blue-soft);border-color:transparent}
+.cmsg.mod .cb{border-color:var(--pen);background:color-mix(in srgb,var(--pen) 7%,var(--sheet))}
+.cmeta{font-size:12.5px;display:flex;gap:6px;align-items:center}
+.ctext{margin-top:3px;white-space:pre-wrap;word-break:break-word;line-height:1.45}
+.cdel{border:0;background:none;color:var(--ink-3);font-size:16px;line-height:1;cursor:pointer;padding:0 2px;margin-left:auto}
+.club-in{display:flex;gap:8px;padding:12px 14px;border-top:1px solid var(--line);background:var(--sheet)}
+.club-in textarea{flex:1;resize:none}
+.lib-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:14px}
+.lib{display:flex;gap:14px;padding:16px;align-items:flex-start}
+.lib-ic{font-size:30px;line-height:1;width:48px;height:48px;display:grid;place-items:center;border-radius:14px;background:var(--sheet-2);flex:none}
+.lib-frame{width:min(860px,82vw);height:70vh;border:0;border-radius:12px;background:var(--sheet-2)}
+.lib-frame.audio{height:140px}
+.lib-thumb{position:relative;flex:none;width:132px;aspect-ratio:16/9;border:0;padding:0;border-radius:12px;overflow:hidden;cursor:pointer;background:#000}
+.lib-thumb img{width:100%;height:100%;object-fit:cover;display:block}
+.lib-thumb span{position:absolute;inset:0;display:grid;place-items:center;color:#fff;font-size:26px;text-shadow:0 2px 8px rgba(0,0,0,.6)}
+@media (max-width:520px){.lib{flex-direction:column}.lib-thumb{width:100%}}
 .tsvc{display:flex;justify-content:space-between;gap:12px;align-items:center;padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:var(--sheet-2)}
 a.btn{text-decoration:none}
 .tform .row > .inp{flex:1;min-width:0}
@@ -1136,7 +1169,7 @@ function deepMerge(a,b){ const o=clone(a)||{}; for(const [k,v] of Object.entries
 class MemDoc{
   constructor(db,p){ this.db=db; this.path=p; this.id=p.split('/').pop(); }
   async get(){ return this.db.snap(this.path); }
-  async set(d){ this.db.m.set(this.path,clone(d)); this.db.notify(this.path); }
+  async set(d,o){ this.db.m.set(this.path, o?.merge && this.db.m.has(this.path) ? deepMerge(this.db.m.get(this.path),clone(d)) : clone(d)); this.db.notify(this.path); }
   async update(d){ if(!this.db.m.has(this.path)) throw {code:'invalid_argument'}; this.db.m.set(this.path,deepMerge(this.db.m.get(this.path),d)); this.db.notify(this.path); }
   async delete(){ this.db.m.delete(this.path); this.db.notify(this.path); }
   onSnapshot(next){ return this.db.listen({doc:true,p:this.path,next}); }
@@ -1272,7 +1305,7 @@ const S = {
   myProfile:undefined, myEntries:{}, myFeedback:null, myReviews:{}, myBalance:undefined, edit:null,
   lg:{settings:{fee:600000,lessons:12,minutes:80}, draft:null, students:[], payments:[], bal:{}, month:curYM(), filter:'all', q:'', loaded:{}, err:null},
 };
-const EDIT_VIEWS = new Set(['review','write','prompt','bank','setup','login','newsEdit','setEdit','me','verify']);
+const EDIT_VIEWS = new Set(['review','write','prompt','bank','setup','login','newsEdit','setEdit','me','verify','club']);
 function teardown(){ S.unsubs.forEach(u=>{try{u()}catch(e){}}); S.unsubs=[]; closePop(); closeDlg(); }
 function refresh(){ renderTop(); renderNav(); if(!EDIT_VIEWS.has(S.view.name) && !busyNow()) renderMain(); if(S.mode==='teacher' && S.role!=='staff'){ ratingScheduleSync(); centreScheduleSync(); } }
 function go(name, extra={}){ closePop(); S.view={name,...extra}; renderNav(); renderMain(); window.scrollTo({top:0}); }
@@ -1285,7 +1318,7 @@ class FireDB{ constructor(fs,api){ this.fs=fs; this.api=api; } doc(p){ return ne
 class FireDoc{
   constructor(db,p){ this.db=db; this.path=p; this.id=p.split('/').pop(); this.ref=db.api.doc(db.fs,p); }
   async get(){ return wrapSnap(await this.db.api.getDoc(this.ref)); }
-  set(d){ return this.db.api.setDoc(this.ref,d); }
+  set(d,o){ return o ? this.db.api.setDoc(this.ref,d,o) : this.db.api.setDoc(this.ref,d); }
   update(d){ return this.db.api.updateDoc(this.ref,d); }
   delete(){ return this.db.api.deleteDoc(this.ref); }
   onSnapshot(next,err){ return this.db.api.onSnapshot(this.ref, x=>next(wrapSnap(x)), err); }
@@ -1448,19 +1481,19 @@ function renderNav(){
   if(S.role==='staff'){
     const waiting = allEntries().filter(e=>e.status==='submitted').length;
     document.title = (waiting?`(${waiting}) `:'')+'Lexora · '+tr('title.teacher');
-    n.innerHTML = navBtn('inbox',tr('nav.inbox'),'inbox',waiting) + navBtn('students',tr('nav.students'),'people',Object.keys(S.profiles).length,true) + navBtn('me',tr('c.meH'),'team') + navBtn('centre',tr('c.centreH'),'spark',Object.values(S.leads||{}).filter(l=>!l.st).length+pendingTorders()) + navBtn('bank',tr('nav.bank'),'bank') + `<div class="nav-foot">${tr('c.navFootStaff')}</div>`;
+    n.innerHTML = navBtn('inbox',tr('nav.inbox'),'inbox',waiting) + navBtn('students',tr('nav.students'),'people',Object.keys(S.profiles).length,true) + navBtn('me',tr('c.meH'),'team') + navBtn('groups',tr('c.grpH'),'people') + navBtn('club',tr('c.clubNav'),'bulb',clubVideoOn()?'●':0) + navBtn('library',tr('c.libNav'),'book') + navBtn('centre',tr('c.centreH'),'spark',Object.values(S.leads||{}).filter(l=>!l.st).length+pendingTorders()) + navBtn('bank',tr('nav.bank'),'bank') + `<div class="nav-foot">${tr('c.navFootStaff')}</div>`;
     return;
   }
   if(S.mode==='teacher'){
     const waiting = allEntries().filter(e=>e.status==='submitted').length;
     document.title = (waiting?`(${waiting}) `:'')+'Lexora · '+tr('title.teacher');
-    n.innerHTML = navBtn('inbox',tr('nav.inbox'),'inbox',waiting) + navBtn('students',tr('nav.students'),'people',myStudentIds().length,true) + navBtn('team',tr('c.teamH'),'team',newLeads()+pendingStaffReq()+pendingApps()+pendingEnrolls()+pendingTorders()) + (S.team?.[MAIN_TID]?navBtn('me',tr('c.meH'),'pen'):'') + navBtn('ledger',tr('nav.ledger'),'coin',pendingClaims()||lgOwing(),!pendingClaims()) + navBtn('bookings',tr('nav.book'),'spark',pendingRequests()) + navBtn('market',tr('nav.shop'),'bag',pendingOrders()+pendingPasses()) + navBtn('rating',tr('rt.h'),'trophy') + navBtn('board',tr('nav.board'),'flag') + navBtn('insights',tr('nav.insights'),'chart') + navBtn('prompt',tr('nav.prompt'),'bulb') + navBtn('bank',tr('nav.bank'),'bank') +
+    n.innerHTML = navBtn('inbox',tr('nav.inbox'),'inbox',waiting) + navBtn('students',tr('nav.students'),'people',myStudentIds().length,true) + navBtn('team',tr('c.teamH'),'team',newLeads()+pendingStaffReq()+pendingApps()+pendingEnrolls()+pendingTorders()) + (S.team?.[MAIN_TID]?navBtn('me',tr('c.meH'),'pen'):'') + navBtn('groups',tr('c.grpH'),'people') + navBtn('club',tr('c.clubNav'),'bulb',clubVideoOn()?'●':0) + navBtn('library',tr('c.libNav'),'book') + navBtn('ledger',tr('nav.ledger'),'coin',pendingClaims()||lgOwing(),!pendingClaims()) + navBtn('bookings',tr('nav.book'),'spark',pendingRequests()) + navBtn('market',tr('nav.shop'),'bag',pendingOrders()+pendingPasses()) + navBtn('rating',tr('rt.h'),'trophy') + navBtn('board',tr('nav.board'),'flag') + navBtn('insights',tr('nav.insights'),'chart') + navBtn('prompt',tr('nav.prompt'),'bulb') + navBtn('bank',tr('nav.bank'),'bank') +
       `<div class="nav-foot">${tr('nav.foot')}</div>`;
   } else {
     const unseen = studentEntries().filter(e=>e.isNew).length;
     document.title = (unseen?`(${unseen}) `:'')+'Lexora · '+tr('title.student');
     const owe = S.myBalance && S.myBalance.left>0;
-    n.innerHTML = navBtn('home',tr('nav.home'),'home',unseen) + navBtn('write',tr('nav.write'),'pen') + navBtn('mistakes',tr('nav.mistakes'),'flag') + navBtn('words',tr('nav.words'),'book',(S.myFeedback?.vocab||[]).length,true) + navBtn('learn',tr('nav.learn'),'bulb',(S.board?.posts||[]).length,true) + navBtn('teachers',tr('c.navTeachers'),'team',myTids().some(t=>isLive(S.lives?.[t]))?'●':(promoOn(S.promo)?'%':0)) + navBtn('book',tr('nav.book'),'spark') + (S.rating?.on!==false && (S.rating?.list||[]).length ? navBtn('rating',tr('rt.h'),'trophy') : '') + navBtn('market',tr('nav.shop'),'bag') + (S.myBalance? navBtn('pay',tr('nav.pay'),'coin',owe?'!':0,false) : '');
+    n.innerHTML = navBtn('home',tr('nav.home'),'home',unseen) + navBtn('write',tr('nav.write'),'pen') + navBtn('mistakes',tr('nav.mistakes'),'flag') + navBtn('words',tr('nav.words'),'book',(S.myFeedback?.vocab||[]).length,true) + navBtn('learn',tr('nav.learn'),'bulb',(S.board?.posts||[]).length,true) + navBtn('teachers',tr('c.navTeachers'),'team',Object.values(S.myLiveFor||{}).some(isLive)?'●':(promoOn(S.promo)?'%':0)) + navBtn('club',tr('c.clubNav'),'bulb',clubVideoOn()?'●':0) + navBtn('library',tr('c.libNav'),'book') + navBtn('book',tr('nav.book'),'spark') + (S.rating?.on!==false && (S.rating?.list||[]).length ? navBtn('rating',tr('rt.h'),'trophy') : '') + navBtn('market',tr('nav.shop'),'bag') + (S.myBalance? navBtn('pay',tr('nav.pay'),'coin',owe?'!':0,false) : '');
   }
 }
 
@@ -1530,7 +1563,7 @@ function renderMain0(){
   if(S.mode==='student' && S.myProfile===undefined){ m.innerHTML=`<div class="loading">${tr('load.student')}</div>`; return; }
   const fn = {inbox:vInbox, students:vStudents, student:vStudent, insights:vInsights, prompt:vPrompt, bank:vBank, review:vReview, ledger:vLedger, board:vBoard, bookings:vBookings, market:vMarket, learn:vLearn, book:vBook, rating:()=>S.mode==='teacher'?vRatingT():vRatingS(),
               home:vHome, write:vWrite, entry:vEntry, mistakes:vMistakes, words:vWords, setup:vSetup, pay:vPay,
-              news:vNews, newsEdit:vNewsEdit, study:vStudy, set:vSet, setEdit:vSetEdit, team:vTeam, me:vMe, centre:vCentre, teachers:vStuTeachers}[v];
+              news:vNews, newsEdit:vNewsEdit, study:vStudy, set:vSet, setEdit:vSetEdit, team:vTeam, me:vMe, centre:vCentre, teachers:vStuTeachers, groups:vGroups, club:vClub, library:vLibrary}[v];
   m.innerHTML = fn ? fn() : '';
   after[v] && after[v]();
 }
@@ -1563,7 +1596,7 @@ function vInbox(){
   const done = all.filter(e=>e.status==='reviewed'||e.status==='revise').sort((a,b)=>(b.rv?.reviewedAt||0)-(a.rv?.reviewedAt||0)).slice(0,8);
   if(!all.length) return `<div class="page-head"><div><h1>${tr('inbox.h')}</h1><p>${tr('inbox.p')}</p></div></div>
     <div class="empty"><h3>${tr('inbox.emptyH')}</h3><p>${tr('inbox.emptyP')}</p>
-    ${S.demo?'':`<p style="margin-top:16px"><button class="btn primary" data-act="demo">${tr('inbox.explore')}</button></p>`}</div>`;
+</div>`;
   return `<div class="page-head"><div><h1>${tr('inbox.h')}</h1><p>${waiting.length? tr('inbox.waiting',{n:waiting.length}) : tr('inbox.caught')}</p></div>${allTToggle()}
     ${waiting.length?`<button class="btn pen" data-act="open-review" data-sid="${esc(waiting[0].sid)}" data-eid="${esc(waiting[0].eid)}">${I.pen} ${tr('inbox.start')}</button>`:''}</div>
     ${waiting.length?`<div class="list">${waiting.map(e=>entryCard(e)).join('')}</div>`:''}
@@ -4222,7 +4255,7 @@ function vLogin(){
     <div class="stack" style="margin-top:24px">${form}</div>
     <div class="row" style="margin-top:22px;justify-content:space-between;border-top:1px dashed var(--line);padding-top:14px">
       ${st==='teacher'?'<span></span>':`<button class="btn ghost sm" data-act="login-step" data-s="teacher">${tr('lo.teacher')}</button>`}
-      <button class="btn ghost sm" data-act="explore">${tr('lo.example')}</button></div>
+</div>
   </article>`;
 }
 
@@ -4296,17 +4329,19 @@ function startCentre(role){
   if(role==='owner'){
     col('leads','leads'); col('staffReq','sreq'); col('teacherPriv','tpriv'); col('applications','apps');
     col('enroll','enrolls'); col('enrollStatus','enrollSt'); col('roster','rosters'); col('live','lives'); col('torders','torders'); one('site/promo','promo',{});
+    one('groups/'+MAIN_TID,'myGroups',null); startClub(); col('library','lib');
     col('staff','staffEmails', ()=>{ S.staffMap={}; for(const [em,x] of Object.entries(S.staffEmails||{})) if(x?.tid) S.staffMap[x.tid]=em; });
     one('centre/offers','offers',{items:[]}); one('private/meet','meetDoc',{});
   }
   if(role==='staff'){
     const t=S.staffTid;
     one('centre/offers','offers',{items:[]}); one('staffReq/'+t,'mySreq',null); one('teacherPriv/'+t,'myTPriv',null);
-    one('roster/'+t,'myRoster',null); one('live/'+t,'myLive',null); where1('torders','tid',t,'torders');
+    one('roster/'+t,'myRoster',null); one('live/'+t,'myLive',null); where1('torders','tid',t,'torders'); one('groups/'+t,'myGroups',null); startClub(); col('library','lib');
     S.unsubs.push(S.db.collection('leads').where('tid',t).onSnapshot(q=>{ const o={}; q.docs.forEach(d=>{ if(d.exists) o[d.id]=d.data(); }); S.leads=o; refreshAny(); }, quiet));
   }
   if(role==='student'){
     one('lessons/'+S.uid,'myLessons',null); one('site/promo','promo',null);
+    one('liveFor/'+S.uid,'myLiveFor',null); startClub(); S.unsubs.push(S.db.collection('library').onSnapshot(q=>{ const o={}; q.docs.forEach(d=>{ if(d.exists) o[d.id]=d.data(); }); S.lib=o; refreshAny(); }, quiet));
     one('enroll/'+S.uid,'myEnroll',null); one('enrollStatus/'+S.uid,'myEnrollSt',null, studentWatches); where1('torders','uid',S.uid,'myTorders');
     // the chosen teacher's Meet link follows the journal (it can only be read once the journal exists)
     S.unsubs.push(S.db.doc('journals/'+S.uid).onSnapshot(s=>{
@@ -4385,7 +4420,7 @@ function vLanding(){
     <section class="section card lp-join"><div><span class="label">${tr('c.joinK')}</span><h2>${tr('c.joinH')}</h2><p class="muted">${tr('c.joinP')}</p></div>
       <button class="btn primary" data-act="c-apply">${I.team} ${tr('c.joinBtn')}</button></section>
     <section class="section lp-end"><h2>${tr('c.endH')}</h2><p class="muted">${tr('c.endP')}</p>
-      <div class="row" style="justify-content:center;gap:10px;flex-wrap:wrap;margin-top:14px"><button class="btn pen" data-act="c-trial">${tr('c.trial')}</button><button class="btn" data-act="c-signin">${tr('c.signin')}</button>${S.demo?'':`<button class="btn ghost" data-act="explore">${tr('lo.example')}</button>`}</div></section>`;
+      <div class="row" style="justify-content:center;gap:10px;flex-wrap:wrap;margin-top:14px"><button class="btn pen" data-act="c-trial">${tr('c.trial')}</button><button class="btn" data-act="c-signin">${tr('c.signin')}</button></div></section>`;
 }
 function openTeacherProfile(tid){
   const t=S.team[tid]; if(!t) return; const st=t.stats||{}, L=tLevel(st.score);
@@ -4778,14 +4813,14 @@ function stopWatches(){ for(const w of Object.values(S._w||{})) for(const u of O
 function studentWatches(){ // teachers' Meet links and live status for every teacher of this student
   const ids=myTids(); S.extraPriv=S.extraPriv||{}; S.lives=S.lives||{};
   watchSet('priv', ids.filter(t=>t!==tidOf(S.myProfile)), t=>'teacherPriv/'+t, (t,d)=>{ if(d) S.extraPriv[t]=d; else delete S.extraPriv[t]; });
-  watchSet('live', ids, t=>'live/'+t, (t,d)=>{ if(d) S.lives[t]=d; else delete S.lives[t]; });
+
 }
 const meetOf = tid => tid===tidOf(S.myProfile) ? S.myTPriv?.meet : S.extraPriv?.[tid]?.meet;
 const isLive = l => !!(l && l.on && (l.until||0)>Date.now());
 
 function vStuTeachers(){
   const mine=myTids(), all=teamList(false), st=S.myEnrollSt||{}, req=(S.myEnroll?.items||[]);
-  const mineCards = mine.map(tid=>{ const t=S.team[tid]; if(!t) return ''; const live=isLive(S.lives?.[tid]), meet=(live&&S.lives[tid].url)||meetOf(tid);
+  const mineCards = mine.map(tid=>{ const t=S.team[tid]; if(!t) return ''; const lf=S.myLiveFor?.[tid], live=isLive(lf), meet=(live&&lf.url)||meetOf(tid);
     return `<div class="card tmine2">${tPhoto(t,tid)}<div style="min-width:0;flex:1"><b>${esc(t.name||'')}</b> ${live?`<span class="livedot">${tr('c.liveNow')}</span>`:''}
       <div class="small muted">${(t.langs||[]).map(esc).join(' · ')}${t.lessonLen?' · '+lenText(t.lessonLen):''}</div>${levelBadge(t.stats)}</div>
       <div class="tmine-act">${meet?`<a class="btn ${live?'pen':''} sm" href="${esc(meet)}" target="_blank" rel="noopener">${I.video} ${tr('c.join')}</a>`:`<span class="small faint">${tr('c.noMeetYet')}</span>`}
@@ -4851,20 +4886,21 @@ const myLive = () => S.role==='staff' ? S.myLive : S.lives?.[MAIN_TID];
 function liveTopBtn(){
   if(S.mode!=='teacher' || S.view.name==='verify' || (S.role==='owner' && !S.team?.[MAIN_TID])) return '';
   const L=myLive();
-  return isLive(L) ? `<span class="live-grp"><a class="btn sm live-b" href="${esc(L.url||myMeet()||'#')}" target="_blank" rel="noopener"><span class="livedot">${tr('c.liveNow')}</span></a><button class="btn sm pen live-b" data-act="c-live-end">${tr('c.liveEnd')}</button></span>`
-    : `<span class="live-grp"><button class="btn sm primary live-b" data-act="c-live">${I.video} ${tr('c.liveStart')}</button>${myMeet()?`<button class="btn sm ghost live-b" data-act="c-live-other" title="${tr('c.liveOtherH')}">${tr('c.liveOther')}</button>`:''}</span>`;
+  return isLive(L) ? `<span class="live-grp"><a class="btn sm live-b" href="${esc(L.url||myMeet()||'#')}" target="_blank" rel="noopener"><span class="livedot">${tr('c.liveNow')}</span>${L.label?` <span class="small">${esc(L.label)}</span>`:''}</a><button class="btn sm pen live-b" data-act="c-live-end">${tr('c.liveEnd')}</button></span>`
+    : `<span class="live-grp"><button class="btn sm primary live-b" data-act="c-live">${I.video} ${tr('c.liveStart')}</button></span>`;
 }
 // students of this teacher: their own (journal) students plus extra students on the roster
 function liveStudents(){ const tid=myTid(); const a=Object.keys(S.profiles).filter(uid=>tidOf(S.profiles[uid])===tid);
   const ro=S.role==='staff'?S.myRoster:S.rosters?.[tid]; return [...new Set([...a, ...Object.keys(ro?.students||{})])]; }
-// the lesson stays open until the teacher ends it (6 hours at most, in case they forget)
-async function goLive(url){
-  const tid=myTid(), d={on:true, at:Date.now(), until:Date.now()+6*3600e3, url};
+// the lesson stays open until the teacher ends it (6 hours at most); only the chosen students get the link
+async function goLive(url, uids, label){
+  const tid=myTid(), nm=S.team?.[tid]?.name||S.me?.name||tr('teacher'), now=Date.now(), until=now+6*3600e3;
+  const d={on:true, at:now, until, url, to:uids, label:label||''};
   await S.db.doc('live/'+tid).set(d);
+  await setLiveFor(uids, tid, {on:true, at:now, until, url, label:label||'', name:nm});
   if(S.role==='staff') S.myLive=d; else S.lives={...(S.lives||{}), [tid]:d};
-  renderTop(); toast(tr('c.liveOn'));
-  const who=liveStudents(), nm=S.team?.[tid]?.name||S.me?.name||tr('teacher');
-  if(who.length) notify('live', who, ()=>({subject:tr('em.liveS',{name:nm}), kicker:tr('em.liveK'), lines:[tr('em.liveL')], href:url, btn:tr('c.join')})).catch(()=>{});
+  renderTop(); toast(tr('c.liveOnN',{n:uids.length}));
+  notify('live', uids, ()=>({subject:tr('em.liveS',{name:nm}), kicker:tr('em.liveK'), lines:[tr('em.liveL'), label||''], href:url, btn:tr('c.join')})).catch(()=>{});
 }
 function openLiveSetup(){
   const saved=myMeet();
@@ -4882,9 +4918,9 @@ function openLiveSetup(){
 // students: a big "join now" when one of their teachers has started
 function liveBanner(){
   if(S.mode!=='student') return '';
-  const urlOf = t => S.lives?.[t]?.url || meetOf(t);
-  return myTids().filter(t=>isLive(S.lives?.[t]) && urlOf(t)).map(t=>`<div class="livebar"><span class="livedot">${tr('c.liveNow')}</span>
-    <span style="min-width:0"><b>${tr('c.liveStarted',{name:esc(tName(t))})}</b><br><span class="small">${tr('c.liveAgo',{ago:ago(S.lives[t].at)})}</span></span>
+  const L=S.myLiveFor||{}, urlOf = t => L[t]?.url;
+  return Object.keys(L).filter(t=>isLive(L[t]) && urlOf(t)).map(t=>`<div class="livebar"><span class="livedot">${tr('c.liveNow')}</span>
+    <span style="min-width:0"><b>${tr('c.liveStarted',{name:esc(L[t].name||tName(t))})}</b><br><span class="small">${L[t].label?esc(L[t].label)+' · ':''}${tr('c.liveAgo',{ago:ago(L[t].at)})}</span></span>
     <a class="btn pen" href="${esc(urlOf(t))}" target="_blank" rel="noopener">${I.video} ${tr('c.join')}</a></div>`).join('');
 }
 
@@ -4938,6 +4974,228 @@ function myOrdersSection(){
       <div class="req-act"><span class="pill bk-${s==='done'?'ok':s}">${tr(s==='done'?'c.orderDone':'bk.st.'+s)}</span>${s==='wait'?`<button class="btn ghost sm" data-act="c-ord-x" data-id="${esc(o.id)}">${tr('cancel')}</button>`:''}</div></div>`; }).join('')}</div></div>`;
 }
 
+/* ---------- groups: who sees a lesson when the teacher starts it ---------- */
+// groups/{tid}: {list:[{id,name,members:[uid]}]}; live/{tid}: the teacher's own lesson state {on,at,until,url,to,label};
+// liveFor/{uid}: {[tid]:{on,at,until,url,label,name}} — only the chosen students get the link
+function myStudentList(){
+  const tid=myTid(), ro=S.role==='staff'?S.myRoster:S.rosters?.[tid];
+  return liveStudents().map(uid=>({uid, name:S.profiles[uid]?.name || ro?.students?.[uid]?.name || '–'})).sort((a,b)=>a.name.localeCompare(b.name));
+}
+const myGroups = () => (S.myGroups?.list||[]);
+function vGroups(){
+  const list=myGroups(), names=Object.fromEntries(myStudentList().map(x=>[x.uid,x.name]));
+  return `<div class="page-head"><div><h1>${tr('c.grpH')}</h1><p>${tr('c.grpP')}</p></div><button class="btn primary" data-act="c-grp">+ ${tr('c.grpAdd')}</button></div>
+    ${list.length?`<div class="tapps">${list.map(g=>`<article class="card tapp"><div class="row" style="justify-content:space-between;gap:8px;align-items:center"><h3 style="margin:0">${esc(g.name)}</h3><span class="pill">${tr('c.grpN',{n:(g.members||[]).length})}</span></div>
+      <div class="tchips" style="margin-top:10px">${(g.members||[]).map(u=>`<span class="lchip ghost">${esc(names[u]||'–')}</span>`).join('')||`<span class="faint small">${tr('c.grpEmpty')}</span>`}</div>
+      <div class="row" style="gap:6px;justify-content:flex-end;margin-top:12px"><button class="btn ghost sm" data-act="c-grp-del" data-id="${esc(g.id)}" style="color:var(--pen)">${tr('delete')}</button><button class="btn sm" data-act="c-grp" data-id="${esc(g.id)}">${tr('edit')}</button></div></article>`).join('')}</div>`
+      :`<div class="empty"><h3>${tr('c.grpNoneH')}</h3><p>${tr('c.grpNoneP')}</p></div>`}`;
+}
+function openGroup(id){
+  const g=myGroups().find(x=>x.id===id)||{members:[]}, st=myStudentList();
+  showDlg(`<form id="gr-form" novalidate>${dlgHead(tr('c.grpH'), id?esc(g.name):tr('c.grpAdd'))}<div class="dlg-body">
+    <label class="field"><span>${tr('c.grpName')}</span><input class="inp" id="gr-name" maxlength="60" value="${esc(g.name||'')}" placeholder="${tr('c.grpNamePh')}"></label>
+    <div class="field"><span>${tr('c.grpMembers')}</span>${st.length?`<div class="lpick">${st.map(x=>`<label class="lchip pick"><input type="checkbox" class="gr-m" value="${esc(x.uid)}" ${(g.members||[]).includes(x.uid)?'checked':''}> ${esc(x.name)}</label>`).join('')}</div>`:`<p class="faint small">${tr('c.noStudentsYet')}</p>`}</div>
+    <p class="lg-err" id="gr-err"></p></div>
+    <div class="dlg-foot"><button type="button" class="btn ghost" data-act="dlg-close">${tr('cancel')}</button><button class="btn primary">${tr('save')}</button></div></form>`, {type:'group'});
+  $('#gr-form').addEventListener('submit', async e=>{ e.preventDefault(); const name=$('#gr-name').value.trim(); if(!name){ $('#gr-err').textContent=tr('c.needTitle'); return; }
+    const x={id:id||newId(), name, members:[...document.querySelectorAll('.gr-m:checked')].map(i=>i.value)}, list=clone(myGroups()), i=list.findIndex(y=>y.id===x.id);
+    i<0?list.push(x):list.splice(i,1,x);
+    try{ await S.db.doc('groups/'+myTid()).set({list}); S.myGroups={list}; closeDlg(); renderMain(); toast(tr('c.saved')); }catch(err){ $('#gr-err').textContent=lgErrText(err); } });
+}
+// Start lesson: choose who, check the link, go
+function openStart(){
+  const gs=myGroups(), st=myStudentList(), saved=myMeet(), last=LS.get('live-to:'+myTid(),'all');
+  const opt=(v,label,extra='')=>`<label class="to-opt"><input type="radio" name="lv-to" value="${esc(v)}" ${last===v?'checked':''}> <span>${label}</span>${extra}</label>`;
+  showDlg(`<form id="st-form" novalidate>${dlgHead('Google Meet', tr('c.startH'))}<div class="dlg-body">
+    <div class="field"><span>${tr('c.startWho')}</span><div class="to-list">
+      ${gs.map(g=>opt('g:'+g.id, `${I.team} <b>${esc(g.name)}</b>`, `<span class="small faint">${tr('c.grpN',{n:(g.members||[]).length})}</span>`)).join('')}
+      ${opt('one', `<b>${tr('c.startOne')}</b>`, `<select class="inp" id="st-one" style="max-width:240px">${st.map(x=>`<option value="${esc(x.uid)}" ${LS.get('live-one:'+myTid(),'')===x.uid?'selected':''}>${esc(x.name)}</option>`).join('')}</select>`)}
+      ${opt('all', `<b>${tr('c.startAll')}</b>`, `<span class="small faint">${tr('c.grpN',{n:st.length})}</span>`)}
+    </div>${gs.length?'':`<p class="small faint" style="margin-top:6px">${tr('c.startNoGroups')} <button type="button" class="btn ghost sm" data-act="go" data-v="groups">${tr('c.grpH')}</button></p>`}</div>
+    <label class="field"><span>${tr('c.fMeet')} ${saved?'':`<a class="btn sm" href="https://meet.google.com/new" target="_blank" rel="noopener" style="margin-left:6px">${I.video} meet.google.com/new</a>`}</span><input class="inp" id="st-url" value="${esc(saved||'')}" placeholder="https://meet.google.com/abc-defg-hij"></label>
+    <label class="small row" style="gap:8px;cursor:pointer"><input type="checkbox" id="st-keep" ${saved?'':'checked'}> ${tr('c.liveKeep')}</label>
+    <p class="lg-err" id="st-err" role="alert"></p></div>
+    <div class="dlg-foot"><button type="button" class="btn ghost" data-act="dlg-close">${tr('cancel')}</button><button class="btn pen">${I.video} ${tr('c.liveSend')}</button></div></form>`, {type:'start'});
+  if(!document.querySelector('input[name="lv-to"]:checked')) document.querySelector('input[name="lv-to"][value="all"]').checked=true;
+  $('#st-form').addEventListener('submit', async e=>{ e.preventDefault(); const err=$('#st-err'), url=$('#st-url').value.trim();
+    if(!/^https:\/\/meet\.google\.com\//.test(url)){ err.textContent=tr('c.badMeet'); return; }
+    const to=document.querySelector('input[name="lv-to"]:checked').value; let uids=[], label='';
+    if(to==='all'){ uids=st.map(x=>x.uid); label=tr('c.startAll'); }
+    else if(to==='one'){ const u=$('#st-one')?.value; if(!u){ err.textContent=tr('c.noStudentsYet'); return; } uids=[u]; label=st.find(x=>x.uid===u)?.name||''; LS.set('live-one:'+myTid(),u); }
+    else { const g=gs.find(x=>'g:'+x.id===to); uids=g?.members||[]; label=g?.name||''; }
+    if(!uids.length){ err.textContent=tr('c.startNobody'); return; }
+    LS.set('live-to:'+myTid(),to);
+    window.open(url,'_blank','noopener');
+    try{ if($('#st-keep').checked && url!==saved){ await S.db.doc('teacherPriv/'+myTid()).set({meet:url}); if(S.role==='staff') S.myTPriv={meet:url}; else S.tpriv={...(S.tpriv||{}), [MAIN_TID]:{meet:url}}; }
+      closeDlg(); await goLive(url, uids, label); }catch(x){ err.textContent=lgErrText(x); } });
+}
+async function setLiveFor(uids, tid, v){ for(const uid of uids) await S.db.doc('liveFor/'+uid).set({[tid]:v},{merge:true}); }
+async function endLive(){
+  const tid=myTid(), L=myLive()||{};
+  await S.db.doc('live/'+tid).set({on:false, at:Date.now(), until:0, url:'', to:[], label:''});
+  await setLiveFor(L.to||[], tid, {on:false, at:Date.now(), until:0});
+  if(S.role==='staff') S.myLive={on:false}; else S.lives={...(S.lives||{}), [tid]:{on:false}};
+  renderTop(); toast(tr('c.liveOff'));
+}
+
+/* ---------- daily speaking club ---------- */
+// club/{day}: {topic, qs, lang, by, byName, video:{on,url,at,until,by,byName}}; club/{day}/msgs/{id}: {uid,name,text,at,mod}
+const CLUB_TOPICS = [
+ ['Your perfect weekend',['What would you do from morning to night?','Who would you spend it with?','Is a busy or a lazy weekend better?']],
+ ['Social media',['How much time do you spend online every day?','What is good and bad about Instagram or TikTok?','Should children have phones?']],
+ ['Food and traditions',['What is your favourite national dish and why?','What do people eat at weddings in your country?','Would you try food from any country?']],
+ ['Learning languages',['Why are you learning this language?','What is the hardest part for you?','Which language would you learn next?']],
+ ['Travel',['Where would you go if you could go anywhere?','Do you prefer the sea or the mountains?','What do you always take on a trip?']],
+ ['Work and dreams',['What job did you dream about as a child?','What makes a job a good job?','Would you like to work from home?']],
+ ['Friendship',['What makes someone a good friend?','How did you meet your best friend?','Can men and women be close friends?']],
+ ['Books and films',['What book or film changed how you think?','Do you prefer reading or watching?','Which story should everybody know?']],
+ ['Money',['Is it better to save or to spend?','What would you do with one million dollars?','Should schools teach about money?']],
+ ['Health and sport',['What do you do to stay healthy?','Which sport would you like to try?','Is sleep more important than exercise?']],
+ ['Technology and AI',['How do you use AI in your life?','Which job will robots do in 10 years?','What technology could you not live without?']],
+ ['Family',['Who are you most like in your family?','Big family or small family: which is better?','What is a family tradition you love?']],
+ ['Cities and villages',['Would you rather live in a city or a village?','What would you change in your city?','Describe your favourite place in your town.']],
+ ['Education',['What was your favourite subject at school?','Is university necessary for success?','What should schools teach that they don’t?']],
+ ['Music',['What music do you listen to when you are sad or happy?','Can you play an instrument?','Which concert would you love to go to?']],
+ ['The environment',['What do you do to help the planet?','Is plastic a big problem in your city?','Who should solve climate change: people or governments?']],
+ ['Holidays and celebrations',['What is your favourite holiday and why?','How do you celebrate Navruz or New Year?','What is the best gift you have received?']],
+ ['Habits',['What good habit do you have?','What bad habit would you like to stop?','How long does it take to build a habit?']],
+ ['Shopping',['Do you like shopping online or in shops?','What was your last big purchase?','Are expensive things always better?']],
+ ['The future',['Where do you see yourself in five years?','What will cities look like in 2050?','Are you optimistic about the future?']],
+ ['Animals',['Do you have a pet or want one?','Should zoos exist?','Which animal are you most like?']],
+ ['Free time',['What do you do when you have one free hour?','Is it good to be bored sometimes?','Which hobby would you like to start?']],
+ ['Success',['What does success mean to you?','Who is a successful person you admire?','Is luck or hard work more important?']],
+ ['Fashion',['Does what we wear say who we are?','What is in fashion now in your city?','Would you wear a uniform every day?']],
+ ['Childhood',['What is your favourite childhood memory?','Which game did you play as a child?','Was life easier when you were a child?']],
+ ['Rules and freedom',['Which rule at home or school do you disagree with?','Should there be a minimum age for social media?','What would you do as president for a day?']],
+ ['Time',['Are you an early bird or a night owl?','How do you plan your day?','If you could stop time, what would you do?']],
+ ['Kindness',['What kind thing has a stranger done for you?','Is it easy to say sorry?','How can we make our neighbourhood kinder?']],
+ ['Sports events',['Do you watch football or other sports?','Should famous athletes earn so much money?','What sport is popular in your country?']],
+ ['Inventions',['What is the most important invention ever?','What would you invent to make life easier?','Is the internet good or bad for people?']],
+];
+const dayIdx = d => Math.floor(Date.parse(d+'T12:00:00Z')/864e5);
+function clubDef(day){ const [t,qs]=CLUB_TOPICS[dayIdx(day)%CLUB_TOPICS.length]; return {topic:t, qs, lang:'English'}; }
+const clubNow = () => ({...clubDef(S.clubDay||todayStr()), ...(S.club||{})});
+const clubVideoOn = () => isLive(S.club?.video);
+const isMod = () => S.mode==='teacher';
+function startClub(){
+  S.clubDay=todayStr(); S.club=null; S.clubMsgs={};
+  S.unsubs.push(S.db.doc('club/'+S.clubDay).onSnapshot(s=>{ S.club=s.exists?s.data():null; if(S.view.name==='club') drawClubTop(); else refreshAny(); }, ()=>{}));
+  S.unsubs.push(S.db.collection('club/'+S.clubDay+'/msgs').onSnapshot(q=>{ const o={}; q.docs.forEach(d=>{ if(d.exists) o[d.id]=d.data(); }); const n=Object.keys(o).length>Object.keys(S.clubMsgs||{}).length; S.clubMsgs=o;
+    if(S.view.name==='club') drawClubMsgs(n); else refreshAny(); }, ()=>{}));
+}
+function clubTopHtml(){
+  const c=clubNow(), v=S.club?.video, on=clubVideoOn();
+  return `<div class="club-topic card"><span class="label">${tr('c.clubToday',{d:fmtDate(S.clubDay,{weekday:'long',day:'numeric',month:'long'})})} · ${esc(c.lang||'')}</span>
+      <h2>${esc(c.topic)}</h2><ol>${(c.qs||[]).map(q=>`<li>${esc(q)}</li>`).join('')}</ol>
+      ${S.club?.byName?`<p class="small faint">${tr('c.clubBy',{name:esc(S.club.byName)})}</p>`:''}
+      ${isMod()?`<button class="btn sm" data-act="c-club-topic">${tr('c.clubEdit')}</button>`:''}</div>
+    <div class="club-video card ${on?'on':''}">${on?`<span class="livedot">${tr('c.liveNow')}</span><b>${tr('c.clubVideoOn')}</b><span class="small">${tr('c.clubMod',{name:esc(v.byName||'')})}</span>
+        <a class="btn pen" href="${esc(v.url)}" target="_blank" rel="noopener">${I.video} ${tr('c.clubJoin')}</a>${isMod()?`<button class="btn ghost sm" data-act="c-club-vend">${tr('c.liveEnd')}</button>`:''}`
+      : `<b>${tr('c.clubVideoOff')}</b><span class="small muted">${isMod()?tr('c.clubVideoModHint'):tr('c.clubVideoHint')}</span>${isMod()?`<button class="btn primary sm" data-act="c-club-video">${I.video} ${tr('c.clubVideoStart')}</button>`:''}`}</div>`;
+}
+function clubMsgsHtml(){
+  const list=Object.entries(S.clubMsgs||{}).map(([id,m])=>({id,...m})).sort((a,b)=>a.at-b.at);
+  if(!list.length) return `<p class="faint club-empty">${tr('c.clubNoMsgs')}</p>`;
+  return list.map(m=>{ const mine=m.uid===S.uid;
+    return `<div class="cmsg ${mine?'me':''} ${m.mod?'mod':''}">${mine?'':avatar(m.name||'?',m.uid)}<div class="cb"><div class="cmeta"><b>${esc(m.name||'')}</b>${m.mod?` <span class="pill">${tr('c.clubModK')}</span>`:''} <span class="faint">${new Date(m.at).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}</span>
+      ${(isMod()||mine)?`<button class="cdel" data-act="c-club-del" data-id="${esc(m.id)}" title="${tr('delete')}">×</button>`:''}</div><div class="ctext">${esc(m.text)}</div></div></div>`; }).join('');
+}
+function vClub(){
+  return `<div class="page-head"><div><h1>${tr('c.clubH')}</h1><p>${tr('c.clubP')}</p></div></div>
+    <div class="club"><div class="club-side" id="club-top">${clubTopHtml()}</div>
+      <div class="club-chat card"><div class="club-msgs" id="club-msgs">${clubMsgsHtml()}</div>
+        <form id="club-form" class="club-in" novalidate><textarea class="inp" id="club-text" rows="2" maxlength="500" placeholder="${tr('c.clubPh')}"></textarea><button class="btn pen" aria-label="${tr('c.clubSend')}">${tr('c.clubSend')}</button></form>
+        <p class="small faint" style="padding:0 14px 10px">${tr('c.clubRules')}</p></div></div>`;
+}
+function drawClubTop(){ const el=$('#club-top'); if(el) el.innerHTML=clubTopHtml(); }
+function drawClubMsgs(grew){ const el=$('#club-msgs'); if(!el) return; const atEnd=el.scrollHeight-el.scrollTop-el.clientHeight<80; el.innerHTML=clubMsgsHtml(); if(atEnd||grew&&Object.values(S.clubMsgs).some(m=>m.uid===S.uid&&Date.now()-m.at<5000)) el.scrollTop=el.scrollHeight; }
+after.club = () => { const el=$('#club-msgs'); if(el) el.scrollTop=el.scrollHeight; const f=$('#club-form'); if(!f) return;
+  const ta=$('#club-text'); ta.addEventListener('keydown', e=>{ if(e.key==='Enter' && !e.shiftKey){ e.preventDefault(); f.requestSubmit(); } });
+  f.addEventListener('submit', async e=>{ e.preventDefault(); const text=ta.value.trim(); if(!text) return;
+    const name = S.mode==='student' ? (S.myProfile?.name||tr('student')) : (S.team?.[myTid()]?.name || S.me?.name || tr('teacher'));
+    const d={uid:S.uid, name:name.slice(0,80), text:text.slice(0,500), at:Date.now()}; if(isMod()) d.mod=true;
+    ta.value=''; try{ await S.db.collection('club/'+S.clubDay+'/msgs').doc().set(d); }catch(err){ ta.value=text; toast(lgErrText(err)); } }); };
+function openClubTopic(){
+  const c=clubNow();
+  showDlg(`<form id="ct-form" novalidate>${dlgHead(tr('c.clubH'), tr('c.clubEdit'))}<div class="dlg-body">
+    <label class="field"><span>${tr('c.clubTopic')}</span><input class="inp" id="ct-t" maxlength="120" value="${esc(c.topic)}"></label>
+    <label class="field"><span>${tr('c.clubQs')}</span><textarea class="inp" id="ct-q" rows="4" maxlength="800">${esc((c.qs||[]).join('\n'))}</textarea></label>
+    <label class="field"><span>${tr('c.fLang')}</span><input class="inp" id="ct-l" maxlength="40" value="${esc(c.lang||'English')}"></label><p class="lg-err" id="ct-err"></p></div>
+    <div class="dlg-foot"><button type="button" class="btn ghost" data-act="dlg-close">${tr('cancel')}</button><button class="btn primary">${tr('save')}</button></div></form>`, {type:'clubtopic'});
+  $('#ct-form').addEventListener('submit', async e=>{ e.preventDefault(); const topic=$('#ct-t').value.trim(); if(!topic){ $('#ct-err').textContent=tr('c.needTitle'); return; }
+    const d={topic, qs:$('#ct-q').value.split('\n').map(x=>x.trim()).filter(Boolean).slice(0,8), lang:$('#ct-l').value.trim(), by:myTid(), byName:S.team?.[myTid()]?.name||S.me?.name||''};
+    try{ await S.db.doc('club/'+S.clubDay).set(d,{merge:true}); S.club={...(S.club||{}), ...d}; closeDlg(); drawClubTop(); }catch(err){ $('#ct-err').textContent=lgErrText(err); } });
+}
+async function clubVideo(url){
+  const v={on:true, url, at:Date.now(), until:Date.now()+4*3600e3, by:myTid(), byName:S.team?.[myTid()]?.name||S.me?.name||''};
+  await S.db.doc('club/'+S.clubDay).set({video:v},{merge:true}); S.club={...(S.club||{}), video:v}; drawClubTop();
+}
+function openClubVideo(){
+  const saved=myMeet();
+  if(saved){ window.open(saved,'_blank','noopener'); clubVideo(saved).catch(e=>dbErr(e,'svc')); return; }
+  showDlg(`<form id="cv-form" novalidate>${dlgHead(tr('c.clubH'), tr('c.clubVideoStart'))}<div class="dlg-body">
+    <ol class="lv-steps"><li>${tr('c.liveS1')} <a class="btn sm" href="https://meet.google.com/new" target="_blank" rel="noopener">${I.video} meet.google.com/new</a></li><li>${tr('c.liveS2')}</li></ol>
+    <label class="field"><span>${tr('c.fMeet')}</span><input class="inp" id="cv-url" placeholder="https://meet.google.com/abc-defg-hij"></label><p class="lg-err" id="cv-err"></p></div>
+    <div class="dlg-foot"><button type="button" class="btn ghost" data-act="dlg-close">${tr('cancel')}</button><button class="btn pen">${tr('c.clubVideoStart')}</button></div></form>`, {type:'clubvideo'});
+  $('#cv-form').addEventListener('submit', async e=>{ e.preventDefault(); const url=$('#cv-url').value.trim();
+    if(!/^https:\/\/meet\.google\.com\//.test(url)){ $('#cv-err').textContent=tr('c.badMeet'); return; }
+    try{ closeDlg(); await clubVideo(url); }catch(err){ dbErr(err,'svc'); } });
+}
+
+/* ---------- library: e-books, audio and video by language and level (files live on Google Drive) ---------- */
+// library/{id}: {lang, level, kind:'book'|'audio'|'video'|'link', title, desc, url, by, byName, at}
+const LIB_KINDS = ['book','audio','video','link'];
+const LIB_LEVELS = ['A1','A2','B1','B2','C1','C2','all'];
+function driveId(u){ const m=String(u||'').match(/drive\.google\.com\/(?:file\/d\/|open\?id=|uc\?(?:export=\w+&)?id=)([\w-]{20,})/); return m?m[1]:null; }
+const drivePreview = u => { const id=driveId(u); return id?`https://drive.google.com/file/d/${id}/preview`:null; };
+const driveDownload = u => { const id=driveId(u); return id?`https://drive.google.com/uc?export=download&id=${id}`:u; };
+const ytId = u => (String(u||'').match(/(?:youtube\.com\/(?:watch\?(?:.*&)?v=|shorts\/|embed\/|live\/)|youtu\.be\/)([\w-]{11})/)||[])[1];
+const libIcon = k => k==='audio'?'🎧':k==='video'?'🎬':k==='link'?'🔗':'📘';
+function vLibrary(){
+  const items=Object.entries(S.lib||{}).map(([id,x])=>({id,...x}));
+  const langs=[...new Set(items.map(x=>x.lang).filter(Boolean))].sort();
+  const myLevel=S.mode==='student'?(S.myProfile?.level||''):'';
+  const f=S.view; if(f.lang===undefined) f.lang=''; if(f.level===undefined) f.level=LIB_LEVELS.includes(myLevel)?myLevel:''; if(f.kind===undefined) f.kind='';
+  const list=items.filter(x=>(!f.lang||x.lang===f.lang)&&(!f.level||x.level===f.level||x.level==='all')&&(!f.kind||x.kind===f.kind)).sort((a,b)=>(a.lang||'').localeCompare(b.lang||'')||LIB_LEVELS.indexOf(a.level)-LIB_LEVELS.indexOf(b.level)||b.at-a.at);
+  const chips=(key,vals,label)=>`<div class="lp-filter" role="group" aria-label="${label}"><button data-act="c-lib-f" data-k="${key}" data-v="" aria-pressed="${!f[key]}">${tr('c.all')}</button>${vals.map(v=>`<button data-act="c-lib-f" data-k="${key}" data-v="${esc(v)}" aria-pressed="${f[key]===v}">${key==='kind'?libIcon(v)+' '+tr('c.lib.'+v):v==='all'?tr('c.libAllLv'):esc(v)}</button>`).join('')}</div>`;
+  const canEdit = x => S.mode==='teacher' && (S.role==='owner' || x.by===S.staffTid);
+  return `<div class="page-head"><div><h1>${tr('c.libH')}</h1><p>${tr('c.libP')}</p></div>${S.mode==='teacher'?`<button class="btn primary" data-act="c-lib">+ ${tr('c.libAdd')}</button>`:''}</div>
+    ${langs.length>1?chips('lang',langs,tr('c.fLang')):''}${chips('level',LIB_LEVELS.slice(0,6),tr('c.fLevel'))}${chips('kind',LIB_KINDS,tr('c.libKind'))}
+    ${list.length?`<div class="lib-grid">${list.map(x=>{ const pv=drivePreview(x.url)||(ytId(x.url)?`https://www.youtube.com/embed/${ytId(x.url)}`:null);
+      const yt=ytId(x.url);
+      return `<article class="card lib">${yt?`<button class="lib-thumb" data-act="c-lib-open" data-id="${esc(x.id)}" aria-label="${tr('c.libOpen')}"><img src="https://img.youtube.com/vi/${yt}/mqdefault.jpg" alt="" loading="lazy"><span>▶</span></button>`:`<div class="lib-ic">${libIcon(x.kind)}</div>`}<div style="min-width:0;flex:1"><b>${esc(x.title)}</b>
+        <div class="tchips" style="margin:6px 0">${x.lang?`<span class="lchip">${esc(x.lang)}</span>`:''}<span class="lchip ghost">${x.level==='all'?tr('c.libAllLv'):esc(x.level||'')}</span><span class="lchip ghost">${tr('c.lib.'+x.kind)}</span></div>
+        ${x.desc?`<p class="small muted">${esc(x.desc)}</p>`:''}<p class="small faint">${esc(x.byName||'')}${x.byName?' · ':''}${ago(x.at)}</p>
+        <div class="row" style="gap:6px;flex-wrap:wrap;margin-top:8px">${pv?`<button class="btn pen sm" data-act="c-lib-open" data-id="${esc(x.id)}">${x.kind==='audio'?'▶ '+tr('c.libListen'):tr('c.libOpen')}</button>`:`<a class="btn pen sm" href="${esc(x.url)}" target="_blank" rel="noopener">${tr('c.libOpen')}</a>`}
+          ${driveId(x.url)?`<a class="btn sm" href="${esc(driveDownload(x.url))}" target="_blank" rel="noopener">${I.up} ${tr('c.libDl')}</a>`:''}
+          ${canEdit(x)?`<button class="btn ghost sm" data-act="c-lib" data-id="${esc(x.id)}">${tr('edit')}</button><button class="btn ghost sm" data-act="c-lib-del" data-id="${esc(x.id)}" style="color:var(--pen)">${tr('delete')}</button>`:''}</div></div></article>`; }).join('')}</div>`
+      :`<div class="empty"><h3>${tr('c.libNoneH')}</h3><p>${S.mode==='teacher'?tr('c.libNoneT'):tr('c.libNoneS')}</p></div>`}
+    ${S.mode==='teacher'?`<div class="card section" style="padding:16px 20px"><h3>${tr('c.libHowH')}</h3><ol class="small muted lv-steps" style="margin-top:8px"><li>${tr('c.libHow1')}</li><li>${tr('c.libHow2')}</li><li>${tr('c.libHow3')}</li></ol></div>`:''}`;
+}
+function openLibItem(id){
+  const x=S.lib?.[id]; if(!x) return; const pv=drivePreview(x.url)||(ytId(x.url)?`https://www.youtube-nocookie.com/embed/${ytId(x.url)}?rel=0&autoplay=1`:null);
+  showDlg(`<div>${dlgHead(tr('c.lib.'+x.kind), esc(x.title))}<div class="dlg-body"><iframe class="lib-frame ${x.kind==='audio'?'audio':''}" src="${esc(pv)}" allow="autoplay; fullscreen" allowfullscreen loading="lazy"></iframe></div>
+    <div class="dlg-foot">${driveId(x.url)?`<a class="btn" href="${esc(driveDownload(x.url))}" target="_blank" rel="noopener">${I.up} ${tr('c.libDl')}</a>`:''}<a class="btn ghost" href="${esc(x.url)}" target="_blank" rel="noopener">${tr('c.libNewTab')}</a><button type="button" class="btn primary" data-act="dlg-close">${tr('close')}</button></div></div>`, {type:'libview', wide:true});
+}
+function openLibEdit(id){
+  const x=id?S.lib?.[id]||{}:{kind:'book', level:'A1', lang:(S.team?.[myTid()]?.langs||[])[0]||'English'};
+  const langs=[...new Set([...CLANGS, ...Object.values(S.lib||{}).map(y=>y.lang).filter(Boolean)])];
+  showDlg(`<form id="lb-form" novalidate>${dlgHead(tr('c.libH'), id?esc(x.title):tr('c.libAdd'))}<div class="dlg-body">
+    <div class="grid2" style="gap:12px"><label class="field"><span>${tr('c.fLang')}</span><select class="inp" id="lb-lang">${langs.map(l=>`<option ${l===x.lang?'selected':''}>${esc(l)}</option>`).join('')}</select></label>
+      <label class="field"><span>${tr('c.fLevel')}</span><select class="inp" id="lb-level">${LIB_LEVELS.map(l=>`<option value="${l}" ${l===x.level?'selected':''}>${l==='all'?tr('c.libAllLv'):l}</option>`).join('')}</select></label></div>
+    <label class="field"><span>${tr('c.libKind')}</span><select class="inp" id="lb-kind">${LIB_KINDS.map(k=>`<option value="${k}" ${k===x.kind?'selected':''}>${libIcon(k)} ${tr('c.lib.'+k)}</option>`).join('')}</select></label>
+    <label class="field"><span>${tr('c.oTitle')}</span><input class="inp" id="lb-title" maxlength="120" value="${esc(x.title||'')}" placeholder="${tr('c.libTitlePh')}"></label>
+    <label class="field"><span>${tr('c.libUrl')}</span><input class="inp" id="lb-url" value="${esc(x.url||'')}" placeholder="https://drive.google.com/file/d/…/view"></label>
+    <label class="field"><span>${tr('mk.desc')} <span class="faint">${tr('optional')}</span></span><textarea class="inp" id="lb-desc" rows="2" maxlength="400">${esc(x.desc||'')}</textarea></label>
+    <p class="small faint">${tr('c.libShare')}</p><p class="lg-err" id="lb-err"></p></div>
+    <div class="dlg-foot"><button type="button" class="btn ghost" data-act="dlg-close">${tr('cancel')}</button><button class="btn primary">${tr('save')}</button></div></form>`, {type:'libedit'});
+  $('#lb-form').addEventListener('submit', async e=>{ e.preventDefault(); const err=$('#lb-err'), title=$('#lb-title').value.trim(), url=$('#lb-url').value.trim();
+    if(!title){ err.textContent=tr('c.needTitle'); return; } if(!/^https:\/\//.test(url)){ err.textContent=tr('c.libBadUrl'); return; }
+    const d={lang:$('#lb-lang').value, level:$('#lb-level').value, kind:$('#lb-kind').value, title, url, desc:$('#lb-desc').value.trim(),
+      by:id?(x.by||myTid()):myTid(), byName:id?(x.byName||''):(S.team?.[myTid()]?.name||S.me?.name||''), at:id?(x.at||Date.now()):Date.now()};
+    try{ await S.db.doc('library/'+(id||newId())).set(d); closeDlg(); toast(tr('c.saved')); }catch(x2){ err.textContent=lgErrText(x2); } });
+}
+
 /* ---------- example data for the demo ---------- */
 function seedCentre(db){
   const day = n => { const d=new Date(); d.setDate(d.getDate()+n); return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate()); };
@@ -4956,7 +5214,17 @@ function seedCentre(db){
   db.m.set('enroll/ex-aziza', {name:'Aziza (example)', items:[{id:'e1', tid:'t-dilnoza', lang:'Russian', note:'', at:Date.now()-4*864e5},{id:'e2', tid:'t-jin', lang:'Korean', note:'I want to start Korean', at:Date.now()-3600e3}]});
   db.m.set('enrollStatus/ex-aziza', {'t-dilnoza':'ok'});
   db.m.set('roster/t-dilnoza', {students:{'ex-aziza':{name:'Aziza (example)', lang:'Russian', since:Date.now()-4*864e5}}});
-  db.m.set('live/t-dilnoza', {on:true, at:Date.now()-5*60000, until:Date.now()+6*3600e3, url:'https://meet.google.com/xyz-abcd-efg'});
+  db.m.set('live/t-dilnoza', {on:true, at:Date.now()-5*60000, until:Date.now()+6*3600e3, url:'https://meet.google.com/xyz-abcd-efg', to:['ex-aziza'], label:'Russian A2'});
+  db.m.set('liveFor/ex-aziza', {'t-dilnoza':{on:true, at:Date.now()-5*60000, until:Date.now()+6*3600e3, url:'https://meet.google.com/xyz-abcd-efg', label:'Russian A2', name:'Dilnoza R. (example)'}});
+  db.m.set('groups/main', {list:[{id:'g1', name:'IELTS evening group', members:['ex-aziza','ex-timur']}]});
+  const td=day(0);
+  db.m.set('club/'+td+'/msgs/m1', {uid:'ex-timur', name:'Timur (example)', text:'I think a lazy weekend is better. I sleep a lot and watch films!', at:Date.now()-40*60000});
+  db.m.set('club/'+td+'/msgs/m2', {uid:'ex-madina', name:'Madina (example)', text:'For me a busy weekend is better, I like to go to the mountains with my family.', at:Date.now()-32*60000});
+  db.m.set('club/'+td+'/msgs/m3', {uid:'ex-dilnoza', name:'Dilnoza R. (example)', text:'Great ideas! Madina, which mountains do you go to? Timur, what films do you watch?', at:Date.now()-25*60000, mod:true});
+  db.m.set('library/b1', {lang:'English', level:'A1', kind:'book', title:'English File Elementary — Student’s Book', desc:'Units 1–4, PDF', url:'https://drive.google.com/file/d/1AbCdEfGhIjKlMnOpQrStUvWxYz012345/view', by:'main', byName:'Samandar Y. (example)', at:Date.now()-5*864e5});
+  db.m.set('library/b2', {lang:'English', level:'B1', kind:'audio', title:'Listening practice — Unit 3', desc:'Audio for pages 24–27', url:'https://drive.google.com/file/d/1ZyXwVuTsRqPoNmLkJiHgFeDcBa987654/view', by:'main', byName:'Samandar Y. (example)', at:Date.now()-2*864e5});
+  db.m.set('library/b3', {lang:'Russian', level:'A2', kind:'book', title:'Поехали! 2 — учебник', desc:'', url:'https://drive.google.com/file/d/1QwErTyUiOpAsDfGhJkLzXcVbNm135792/view', by:'t-dilnoza', byName:'Dilnoza R. (example)', at:Date.now()-864e5});
+  db.m.set('library/b4', {lang:'Korean', level:'all', kind:'video', title:'Hangul in 20 minutes', desc:'', url:'https://www.youtube.com/watch?v=abcdefghijk', by:'t-jin', byName:'Jin-woo P. (example)', at:Date.now()-3*864e5});
   db.m.set('torders/o1', {uid:'ex-aziza', name:'Aziza (example)', tid:'t-dilnoza', svcId:'s1', title:'Speaking club', price:30000, note:'Saturday please', at:Date.now()-2*3600e3});
   db.m.set('leads/l2', {name:'Bekzod', contact:'@bekzod_k', lang:'Korean', level:'beginner', tid:'', msg:'', at:Date.now()-26*3600e3});
   db.m.set('centre/offers', {items:[{id:'of1', title:'Classroom for group lessons', desc:'A room at the centre with a whiteboard and projector, per lesson.', price:50000},
@@ -5139,8 +5407,6 @@ document.addEventListener('click', async ev => {
   switch(act){
     case 'go': if(b.dataset.v==='write'){ startEdit(); } else go(b.dataset.v); break;
     case 'lang': setLang(b.dataset.l); break;
-    case 'demo': startDemo('teacher'); break;
-    case 'explore': startDemo('teacher'); break;
     case 'sign-out': if(S.au) S.au.signOut(S.auth); break;
     case 'login-step': S.view={name:'login',step:b.dataset.s,email:($('#login-email')?.value||S.view.email||'').trim()}; renderMain(); break;
     case 'pw-signin': case 'pw-signup': { const email=($('#login-email')?.value||'').trim(), pass=$('#login-pass')?.value||'';
@@ -5391,9 +5657,19 @@ document.addEventListener('click', async ev => {
     case 'c-enroll': openEnroll(b.dataset.tid); break;
     case 'c-enroll-x': try{ await S.db.doc('enroll/'+S.uid).set({name:S.myProfile?.name||'', items:(S.myEnroll?.items||[]).filter(i=>i.tid!==b.dataset.tid)}); }catch(e){ dbErr(e,'svc'); } break;
     case 'c-en-set': b.disabled=true; try{ await setEnroll(b.dataset.uid, b.dataset.tid, b.dataset.st); }catch(e){ b.disabled=false; dbErr(e,'svc'); } break;
-    case 'c-live': { const url=myMeet(); if(url){ window.open(url,'_blank','noopener'); try{ await goLive(url); }catch(e){ dbErr(e,'svc'); } } else openLiveSetup(); break; }
-    case 'c-live-other': openLiveSetup(); break;
-    case 'c-live-end': try{ await S.db.doc('live/'+myTid()).set({on:false, at:Date.now(), until:0}); if(S.role==='owner') S.lives={...(S.lives||{}), [MAIN_TID]:{on:false}}; else S.myLive={on:false}; renderTop(); toast(tr('c.liveOff')); }catch(e){ dbErr(e,'svc'); } break;
+    case 'c-live': openStart(); break;
+    case 'c-live-end': b.disabled=true; try{ await endLive(); }catch(e){ b.disabled=false; dbErr(e,'svc'); } break;
+    case 'c-grp': openGroup(b.dataset.id||null); break;
+    case 'c-grp-del': { if(!b.dataset.armed){ b.dataset.armed='1'; b.textContent=tr('del.sure'); break; } const list=myGroups().filter(g=>g.id!==b.dataset.id);
+      try{ await S.db.doc('groups/'+myTid()).set({list}); S.myGroups={list}; renderMain(); }catch(e){ dbErr(e,'svc'); } break; }
+    case 'c-club-topic': openClubTopic(); break;
+    case 'c-club-video': openClubVideo(); break;
+    case 'c-club-vend': try{ await S.db.doc('club/'+S.clubDay).set({video:{on:false, at:Date.now(), until:0}},{merge:true}); S.club={...(S.club||{}), video:{on:false}}; drawClubTop(); }catch(e){ dbErr(e,'svc'); } break;
+    case 'c-club-del': try{ await S.db.doc('club/'+S.clubDay+'/msgs/'+b.dataset.id).delete(); }catch(e){ dbErr(e,'svc'); } break;
+    case 'c-lib': openLibEdit(b.dataset.id||null); break;
+    case 'c-lib-open': openLibItem(b.dataset.id); break;
+    case 'c-lib-f': S.view[b.dataset.k]=b.dataset.v; renderMain(); break;
+    case 'c-lib-del': if(!b.dataset.armed){ b.dataset.armed='1'; b.textContent=tr('del.sure'); break; } try{ await S.db.doc('library/'+b.dataset.id).delete(); }catch(e){ dbErr(e,'svc'); } break;
     case 'c-tsvc': openTsvc(b.dataset.tid, b.dataset.id||null); break;
     case 'c-tsvc-del': { if(!b.dataset.armed){ b.dataset.armed='1'; b.textContent=tr('del.sure'); break; } const tid=b.dataset.tid;
       const left=(S.team?.[tid]?.services||[]).filter(x=>x.id!==b.dataset.id);
