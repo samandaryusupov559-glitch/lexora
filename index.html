@@ -1031,7 +1031,7 @@ a.btn{text-decoration:none}
 <div id="toast" class="toast" hidden role="status" aria-live="polite"></div>
 
 <script type="module">
-import { LANGS, DICT } from './i18n.js?v=2026.11.08d';
+import { LANGS, DICT } from './i18n.js?v=2026.11.08e';
 /* ---------------- constants ---------------- */
 const TYPES = [['gr','Gr'],['t','T'],['art','Art'],['prep','Prep'],['ww','WW'],['sp','Sp'],['p','P'],['wo','WO'],['agr','Agr'],['st','St'],['good','★']]
   .map(([k,code])=>({k, code, get name(){ return tr('type.'+k); }}));
@@ -3768,7 +3768,9 @@ function openMailSetup(){
     const prev={...S.mail}; S.mail={...S.mail, url, secret};
     const r = S.demo ? {ok:true} : await mailPost({test:true});
     if(!r.ok){ S.mail=prev; btn.disabled=false; setTimeout(()=>err.scrollIntoView({block:'nearest'}),0); err.textContent = r.error==='wrong secret' ? tr('em.badSecret') : r.error==='timeout' ? tr('em.timeout') : r.error==='auth' ? tr('em.needAuth') : tr('em.noReach')+(r.error&&r.error!=='notjson'?' ('+esc(r.error)+')':''); return; }
-    try{ await S.db.doc('private/mail').set({url, secret, on:S.mail.on||{}, v:S.demo?3:(r.v>=2?r.v:1)}); publishUpload(url, secret).catch(()=>{}); closeDlg(); toast(tr('em.saved')); refresh(); }catch(e2){ btn.disabled=false; dbErr(e2,'mail'); }
+    try{ await Promise.race([S.db.doc('private/mail').set({url, secret, on:S.mail.on||{}, v:S.demo?3:(r.v>=2?r.v:1)}), new Promise((_,no)=>setTimeout(()=>no({code:'save-timeout'}),20000))]);
+      publishUpload(url, secret).catch(()=>{}); closeDlg(); toast(tr('em.saved')); refresh(); }
+    catch(e2){ btn.disabled=false; if(e2?.code==='save-timeout'||e2?.code==='resource-exhausted'){ err.textContent=tr('em.fbSlow'); err.scrollIntoView({block:'nearest'}); } else dbErr(e2,'mail'); }
   });
 }
 async function mailTest(){
@@ -4026,13 +4028,19 @@ function buildRating({profiles, feedback, plans, bookings, bstat, slots, bonus, 
   }).sort((a,b)=>b.pts.total-a.pts.total || a.name.localeCompare(b.name));
 }
 const publicRating = (rows, on, bonus) => ({on, bonus:bonus||{}, list:rows.map(r=>({uid:r.uid, name:shortName(r.name), pts:r.pts.total}))});
+// Automatic writes are limited: at most once every 10 minutes per page, and never right after another device wrote.
+// (Two open pages with different versions could otherwise rewrite each other's result without end.)
+const SYNC_GAP = 10*60*1000, syncLast = {};
+function syncAllowed(key, docAt){ const now=Date.now(); if(now-(syncLast[key]||0) < SYNC_GAP) return false; if(docAt && now-docAt < SYNC_GAP) return false; return true; }
 let ratingT=null;
 function ratingScheduleSync(){ clearTimeout(ratingT); ratingT=setTimeout(ratingSync, 900); }
 async function ratingSync(){
-  if(S.mode!=='teacher' || !S.loaded.p || !S.loaded.f || S.rating===undefined) return;
+  if(S.mode!=='teacher' || S.role==='staff' || !S.loaded.p || !S.loaded.f || S.rating===undefined) return;
   const cur=S.rating||{}, want=publicRating(teacherRating(), cur.on!==false, cur.bonus);
   const strip = d => JSON.stringify({on:d.on!==false, bonus:d.bonus||{}, list:d.list||[]});
   if(strip(cur)===strip(want)) return;
+  if(!syncAllowed('rating', cur.at)) return;
+  syncLast.rating=Date.now();
   try{ await S.db.doc('board/rating').set({...want, at:Date.now()}); }catch(e){ /* old rules: shown on the Rating page */ }
 }
 const teacherRating = () => buildRating({profiles:S.profiles, feedback:S.feedback, plans:S.plans||{}, bookings:S.bookings||{}, bstat:S.bstat||{}, slots:S.svc?.slots||[], bonus:S.rating?.bonus, scores:S.pScores||{}});
@@ -4350,8 +4358,10 @@ async function centreSync(){
   if(S.mode!=='teacher' || S.role==='staff' || !S.teamLoaded || !S.loaded.p || !S.loaded.f) return;
   for(const [tid,t] of Object.entries(S.team)){
     const st=teacherStats(tid), old=t.stats||{};
-    if(['students','active','reviews','gain','band','score'].every(k=>old[k]===st[k])) continue;
-    try{ await S.db.doc('teachers/'+tid).update({stats:st}); }catch(e){ return; }
+    if(['students','active','reviews','gain','band','score'].every(k=>old[k]===st[k] || (Number.isNaN(old[k])&&Number.isNaN(st[k])))) continue;
+    if(!syncAllowed('stats:'+tid, old.at)) continue;
+    syncLast['stats:'+tid]=Date.now();
+    try{ await S.db.doc('teachers/'+tid).update({stats:{...st, at:Date.now()}}); }catch(e){ return; }
   }
 }
 
