@@ -880,6 +880,83 @@ td.nwc.off{color:var(--ink-3);font-size:18px}
 .page-head > div > .label{display:flex;margin-bottom:8px}
 .wp-frame{width:100%;min-height:520px;border:0;display:block;background:transparent}
 .nw-plan tbody th .row{justify-content:flex-start} .nw-rm{margin-left:auto;padding:6px 8px} .nw-rm span{display:none} .rm-list li::before{content:"•";color:var(--pen)}
+
+/* ---------- teaching centre ---------- */
+.layout.wide{max-width:none}
+.lp-hero{position:relative;overflow:hidden;border-radius:26px;background:var(--grad-ink,var(--hero));color:var(--on-hero);padding:clamp(28px,5vw,56px);display:grid;grid-template-columns:minmax(0,1fr) auto;gap:20px;box-shadow:var(--lift)}
+.lp-hero::after{content:"";position:absolute;inset:auto -80px -120px auto;width:360px;height:360px;border-radius:50%;background:radial-gradient(circle,color-mix(in srgb,var(--pen) 45%,transparent),transparent 70%);opacity:.55;pointer-events:none}
+.lp-hero-in{position:relative;z-index:1;max-width:640px}
+.lp-kicker{display:inline-block;font-size:12.5px;letter-spacing:.14em;text-transform:uppercase;font-weight:700;opacity:.75}
+.lp-hero h1{font-family:var(--f-display);font-weight:500;font-size:clamp(34px,5.4vw,62px);line-height:1.02;letter-spacing:-.03em;margin-top:10px}
+.lp-hero h1 em{font-style:normal;color:color-mix(in srgb,var(--pen) 55%,#fff)}
+.lp-hero p{margin-top:14px;font-size:18px;line-height:1.55;opacity:.88;max-width:52ch}
+.lp-cta{margin-top:22px;gap:10px;flex-wrap:wrap}
+.btn.lp-ghost{background:transparent;color:var(--on-hero);border-color:color-mix(in srgb,var(--on-hero) 40%,transparent)}
+.lp-stats{display:flex;gap:28px;margin-top:28px;flex-wrap:wrap}
+.lp-stats div{display:flex;flex-direction:column}.lp-stats b{font-family:var(--f-display);font-weight:500;font-size:32px;line-height:1}.lp-stats span{font-size:13.5px;opacity:.7;margin-top:4px}
+.lp-art{position:relative;z-index:1;align-self:center;color:color-mix(in srgb,var(--on-hero) 25%,transparent)}.lp-art svg{width:clamp(90px,14vw,170px);height:auto}
+@media (max-width:700px){.lp-hero{grid-template-columns:1fr}.lp-art{display:none}}
+.lp-filter{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}
+.lp-filter button{border:1px solid var(--line);background:var(--sheet);border-radius:999px;padding:6px 14px;font-weight:600;color:var(--ink-2)}
+.lp-filter button[aria-pressed="true"]{background:var(--ink);color:var(--sheet);border-color:var(--ink)}
+.tgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:18px}
+.tcard{display:flex;flex-direction:column;gap:12px;text-align:left;padding:20px;background:var(--sheet);border:1px solid var(--line);border-radius:20px;box-shadow:0 14px 30px -26px var(--shadow);transition:transform .2s var(--ease),box-shadow .2s,border-color .2s;color:var(--ink)}
+.tcard:hover{transform:translateY(-3px);box-shadow:0 22px 40px -26px var(--shadow);border-color:color-mix(in srgb,var(--blue) 40%,var(--line))}
+.tcard-top{display:flex;gap:14px;align-items:center;min-width:0}
+.tname{display:block;font-size:19px;font-weight:700;line-height:1.2}
+.tcard-hl{display:block;margin-top:3px}
+.tcard-bio{color:var(--ink-2);line-height:1.5}
+.tcard-go{margin-top:auto;font-weight:700;color:var(--blue);font-size:14.5px}
+.tph{width:64px;height:64px;border-radius:18px;object-fit:cover;flex:none;background:var(--sheet-2);display:grid;place-items:center}
+.tph.lg{width:96px;height:96px;border-radius:24px}
+.tph.ini .av{width:100%;height:100%;border-radius:inherit;font-size:22px;box-shadow:none}
+.tph.lg.ini .av{font-size:32px}
+.tchips{display:flex;gap:6px;flex-wrap:wrap}
+.lchip{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:999px;background:var(--blue-soft);color:var(--blue);font-weight:700;font-size:13px}
+.lchip.ghost{background:transparent;border:1px dashed var(--line);color:var(--ink-2)}
+.lchip.pick{cursor:pointer;background:var(--sheet-2);color:var(--ink-2);border:1px solid var(--line)}
+.lchip.pick:has(input:checked){background:var(--blue-soft);color:var(--blue);border-color:color-mix(in srgb,var(--blue) 40%,var(--line))}
+.lpick{display:flex;flex-wrap:wrap;gap:6px}
+.tkv{display:grid;grid-template-columns:repeat(auto-fit,minmax(70px,1fr));gap:8px}
+.tkv > span{display:flex;flex-direction:column;font-size:12.5px;color:var(--ink-3);font-weight:600}
+.tkv b{font-size:19px;color:var(--ink);font-weight:700}
+.tkv.big b{font-family:var(--f-display);font-weight:500;font-size:26px}
+.tlevel{display:inline-flex;align-items:center;gap:8px;padding:4px 12px 4px 8px;border-radius:999px;font-size:13.5px;font-weight:700;background:var(--sheet-2);color:var(--ink-2);border:1px solid var(--line);width:max-content}
+.tstars{letter-spacing:1px;font-size:13px}.tstars i{font-style:normal;color:var(--line)}.tstars i.on{color:#E2A300}
+.tlevel.lv3{background:var(--blue-soft);color:var(--blue);border-color:transparent}
+.tlevel.lv4{background:var(--ok-soft);color:var(--ok);border-color:transparent}
+.tlevel.lv5{background:linear-gradient(135deg,#FFE7A3,#FFC9D2);color:#5A3A00;border-color:transparent}
+.tprog{height:7px;border-radius:99px;background:var(--sheet-3);overflow:hidden;margin-top:8px;max-width:220px}.tprog.lg{max-width:none;height:9px}
+.tprog i{display:block;height:100%;border-radius:inherit;background:var(--grad-pen,var(--pen))}
+.tprof .tach{margin:8px 0 0 18px;display:flex;flex-direction:column;gap:4px}
+.lp-steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;margin-top:14px}
+.lp-step{padding:18px}.lp-step h3{margin:8px 0 4px}
+.lp-n{display:grid;place-items:center;width:34px;height:34px;border-radius:50%;background:var(--pen);color:#fff;font-weight:800}
+.lp-how h2,.lp-end h2,.lp-levels h2{font-family:var(--f-display);font-weight:500;font-size:clamp(24px,3vw,32px);letter-spacing:-.02em}
+.lp-levels{padding:22px;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:18px;align-items:center}
+.lp-lv{display:flex;flex-direction:column;gap:6px}
+@media (max-width:700px){.lp-levels{grid-template-columns:1fr}}
+.lp-end{text-align:center;padding:30px 10px 10px}
+.tlist{display:flex;flex-direction:column;gap:12px}
+.trow{display:grid;grid-template-columns:minmax(200px,1.3fr) minmax(170px,1fr) minmax(220px,1.3fr) auto;gap:16px;align-items:center;padding:16px 18px}
+.trow-who{display:flex;gap:12px;align-items:center;min-width:0}.trow-who .tph{width:52px;height:52px;border-radius:14px}
+.trow-act{display:flex;flex-direction:column;gap:6px;align-items:flex-end}
+@media (max-width:980px){.trow{grid-template-columns:1fr 1fr}.trow-act{align-items:flex-start}}
+@media (max-width:620px){.trow{grid-template-columns:1fr}}
+.tact{display:flex;flex-direction:column;border:1px solid var(--line);border-radius:14px;background:var(--sheet);overflow:hidden}
+.tact-row{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:12px;align-items:center;padding:10px 16px;border-top:1px solid var(--line);font-size:15px}
+.tact-row:first-child{border-top:0}
+.tact-dot{width:9px;height:9px;border-radius:50%;background:var(--ok)}.tact-dot.in{background:var(--blue)}
+.tmine{padding:16px 18px;display:flex;justify-content:space-between;gap:14px;align-items:center;flex-wrap:wrap}
+.tmine .tph{width:54px;height:54px;border-radius:16px}
+.tmine-act{display:flex;gap:8px;flex-wrap:wrap}
+.tme-lv{padding:18px 20px;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.2fr);gap:20px;align-items:center}
+@media (max-width:700px){.tme-lv{grid-template-columns:1fr}}
+.tform{display:flex;flex-direction:column;gap:14px}
+.meet-b{padding:4px 9px}
+a.btn{text-decoration:none}
+.tform .row > .inp{flex:1;min-width:0}
+.tform .field > .row{flex-wrap:nowrap}
 </style>
 </head>
 <body>
@@ -953,6 +1030,8 @@ const I = {
   paper:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h13v13.5A1.5 1.5 0 0 0 18.5 20H6a2 2 0 0 1-2-2z"/><path d="M17 9h3v9.5a1.5 1.5 0 0 1-3 0M7.5 8.5h6M7.5 12h6M7.5 15.5h4"/></svg>',
   cards:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><rect x="7" y="3.5" width="13" height="16" rx="2.2" transform="rotate(8 13.5 11.5)"/><rect x="4" y="5" width="13" height="16" rx="2.2"/><path d="M8 11.5h5M8 14.5h3" stroke-linecap="round"/></svg>',
   lock:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="10.5" width="14" height="10" rx="2.2"/><path d="M8.5 10.5V8a3.5 3.5 0 0 1 7 0v2.5"/></svg>',
+  video:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2.5" y="6" width="13" height="12" rx="2.5"/><path d="M15.5 10.5 21 7.5v9l-5.5-3"/></svg>',
+  team:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="7.5" r="3.2"/><path d="M5.5 20c.6-3.6 3.2-5.6 6.5-5.6s5.9 2 6.5 5.6"/><path d="m12 1.6.5 1 1.1.2-.8.8.2 1.1-1-.5-1 .5.2-1.1-.8-.8 1.1-.2z" fill="currentColor" stroke="none"/></svg>',
   nib:'<svg class="nib" viewBox="0 0 100 100" fill="none" stroke="currentColor" stroke-width="3"><path d="M50 8l22 36-22 48-22-48z"/><circle cx="50" cy="52" r="5"/><path d="M50 57v35"/></svg>',
 };
 
@@ -1164,15 +1243,15 @@ function seedDemo(db){
 
 /* ---------------- state ---------------- */
 const S = {
-  mode:'teacher', demo:false, realOwner:false, db:null, realDb:null, uid:null, me:null, sample:null, canWrite:null,
+  mode:'teacher', role:'owner', demo:false, realOwner:false, db:null, realDb:null, uid:null, me:null, sample:null, canWrite:null,
   unsubs:[], profiles:{}, feedback:{}, prompt:null, prefs:null, loaded:{},
   view:{name:'inbox'}, review:null, pop:null,
   myProfile:undefined, myEntries:{}, myFeedback:null, myReviews:{}, myBalance:undefined, edit:null,
   lg:{settings:{fee:600000,lessons:12,minutes:80}, draft:null, students:[], payments:[], bal:{}, month:curYM(), filter:'all', q:'', loaded:{}, err:null},
 };
-const EDIT_VIEWS = new Set(['review','write','prompt','bank','setup','login','newsEdit','setEdit']);
+const EDIT_VIEWS = new Set(['review','write','prompt','bank','setup','login','newsEdit','setEdit','me','verify']);
 function teardown(){ S.unsubs.forEach(u=>{try{u()}catch(e){}}); S.unsubs=[]; closePop(); closeDlg(); }
-function refresh(){ renderTop(); renderNav(); if(!EDIT_VIEWS.has(S.view.name) && !busyNow()) renderMain(); if(S.mode==='teacher') ratingScheduleSync(); }
+function refresh(){ renderTop(); renderNav(); if(!EDIT_VIEWS.has(S.view.name) && !busyNow()) renderMain(); if(S.mode==='teacher' && S.role!=='staff'){ ratingScheduleSync(); centreScheduleSync(); } }
 function go(name, extra={}){ closePop(); S.view={name,...extra}; renderNav(); renderMain(); window.scrollTo({top:0}); }
 
 /* ---------------- boot ---------------- */
@@ -1241,8 +1320,9 @@ async function completeSignIn(email){
   }catch(e){ toast(authMsg(e)); S.pendingLink=false; history.replaceState(null,'',location.pathname); showLogin(); }
 }
 function showLogin(){
-  teardown(); S.demo=false; S.user=null; S.realOwner=false; S.mode='student';
-  S.view={name:'login', step: S.pendingLink ? 'confirm' : 'signin', email: LS.get('signin-email','')||LS.get('last-email','')||''};
+  teardown(); S.demo=false; S.user=null; S.realOwner=false; S.mode='guest'; S.role='guest'; S.db=S.realDb;
+  S.view = S.pendingLink ? {name:'login', step:'confirm', email: LS.get('signin-email','')||LS.get('last-email','')||''} : {name:'landing'};
+  startCentre('guest');
   renderTop(); renderNav(); renderMain();
 }
 function startSignedIn(user){
@@ -1252,16 +1332,25 @@ function startSignedIn(user){
   const teacherEmail = !!user.email && user.email.toLowerCase()===S.teacherEmail;
   S.realOwner = teacherEmail && user.emailVerified;
   if(teacherEmail && !user.emailVerified) setTimeout(()=>toast(tr('auth.teacherHint')),400);
-  S.realOwner ? startTeacher() : startStudent();
+  if(S.realOwner){ startTeacher(); return; }
+  S.mode='student'; S.role='student'; S.view={name:'login'}; $('#main').innerHTML=`<div class="loading">${tr('load.student')}</div>`;
+  staffTidFor(user).then(tid=>{ if(S.user!==user) return;
+    if(!tid){ startStudent(); return; }
+    if(!user.emailVerified){ S.mode='teacher'; S.role='staff'; S.staffTid=tid; S.view={name:'verify'}; renderTop(); renderNav(); renderMain();
+      if(!LS.get('verify-sent:'+user.uid,false)){ LS.set('verify-sent:'+user.uid,true); S.au.sendEmailVerification(user).catch(()=>{}); } return; }
+    startStaff(tid); });
 }
 function startDemo(role){
-  teardown(); S.demo=true; S.db=new MemDB(); seedDemo(S.db);
+  teardown(); if(!('_meBak' in S)) S._meBak=S.me; if(role!=='staff') S.me=S._meBak;
+  S.demo=true; S.db=new MemDB(); seedDemo(S.db); seedCentre(S.db);
   S.profiles={}; S.feedback={}; S.myProfile=undefined; S.myEntries={}; S.myReviews={}; S.myFeedback=null; S.myBalance=undefined; S.loaded={}; S.seenWaiting=null;
-  if(role==='teacher'){ S.uid='ex-teacher'; startTeacher(); }
+  if(role==='guest'){ S.uid=null; S.mode='guest'; S.role='guest'; S.view={name:'landing'}; startCentre('guest'); renderTop(); renderNav(); renderMain(); }
+  else if(role==='staff'){ S.uid='ex-dilnoza'; S.me={name:'Dilnoza R. (example)', email:'dilnoza@example.com'}; startStaff('t-dilnoza'); }
+  else if(role==='teacher'){ S.uid='ex-teacher'; startTeacher(); }
   else { S.uid='ex-aziza'; S.canWrite=true; startStudent(); }
 }
 function leaveDemo(){
-  teardown(); S.demo=false;
+  teardown(); S.demo=false; if('_meBak' in S){ S.me=S._meBak; delete S._meBak; }
   if(S.user) startSignedIn(S.user); else if(S.realDb) showLogin(); else startDemo('teacher');
 }
 function checkNewEntries(){
@@ -1275,17 +1364,17 @@ function checkNewEntries(){
   S.seenWaiting = now;
 }
 function startTeacher(){
-  S.mode='teacher'; S.view={name:'inbox'}; S.loaded={};
+  S.mode='teacher'; S.role='owner'; S.view={name:'inbox'}; S.loaded={};
   const onErr = e => { if(e && e.code!=='revoked') toast(tr('live.paused')); };
   S.unsubs.push(S.db.collection('journals').onSnapshot(s=>{ const p={}; s.docs.forEach(d=>{ if(d.exists) p[d.id]=d.data(); }); S.profiles=p; S.loaded.p=true; checkNewEntries(); refresh(); }, onErr));
   S.unsubs.push(S.db.collection('feedback').onSnapshot(s=>{ const f={}; s.docs.forEach(d=>{ if(d.exists) f[d.id]=d.data(); }); S.feedback=f; S.loaded.f=true; checkNewEntries(); refresh(); }, onErr));
   S.unsubs.push(S.db.doc('settings/prompt').onSnapshot(s=>{ S.prompt = s.exists? s.data(): null; refresh(); }, onErr));
   S.db.doc('teacher/prefs').get().then(s=>{ S.prefs = s.exists? s.data(): {bank:DEFAULT_BANK.slice()}; }).catch(()=>{ S.prefs={bank:DEFAULT_BANK.slice()}; });
-  startLedger(); startBoard('teacher'); startMarket('teacher'); startMail('teacher'); startPremium('teacher');
+  startLedger(); startBoard('teacher'); startMarket('teacher'); startMail('teacher'); startPremium('teacher'); startCentre('owner');
   refresh(); renderMain();
 }
 function startStudent(){
-  S.mode='student'; S.view={name:'home'}; S.loaded={};
+  S.mode='student'; S.role='student'; S.view={name:'home'}; S.loaded={};
   const u=S.uid, onErr = e => { if(e && e.code!=='revoked') toast(tr('live.paused')); };
   S.unsubs.push(S.db.doc(`balances/${u}`).onSnapshot(s=>{ S.myBalance = s.exists? s.data(): null; refreshStudent(); }, ()=>{ S.myBalance=null; refreshStudent(); }));
   S.unsubs.push(S.db.doc(`journals/${u}`).onSnapshot(s=>{ S.myProfile = s.exists? s.data(): null; if(S.myProfile===null && S.view.name!=='setup') S.view={name:'setup'}; else if(S.myProfile && S.view.name==='setup') S.view={name:'home'}; refreshStudent(); }, onErr));
@@ -1293,7 +1382,7 @@ function startStudent(){
   S.unsubs.push(S.db.doc(`feedback/${u}`).onSnapshot(s=>{ S.myFeedback = s.exists? s.data(): null; refreshStudent(); }, onErr));
   S.unsubs.push(S.db.collection(`feedback/${u}/reviews`).onSnapshot(s=>{ const r={}; s.docs.forEach(d=>{ if(d.exists) r[d.id]=d.data(); }); S.myReviews=r; refreshStudent(); }, onErr));
   S.unsubs.push(S.db.doc('settings/prompt').onSnapshot(s=>{ S.prompt = s.exists? s.data(): null; refreshStudent(); }, onErr));
-  startBoard('student'); startMarket('student'); startMail('student'); startPremium('student');
+  startBoard('student'); startMarket('student'); startMail('student'); startPremium('student'); startCentre('student');
   refresh(); renderMain();
 }
 function refreshStudent(){
@@ -1311,27 +1400,37 @@ function renderTop(){
     else if(S.realDb) back=`<button class="btn sm" data-act="leave-demo">${tr('top.signIn')}</button>`;
     right = `<div class="demo-bar">${S.setupMissing?tr('top.noFirebase'):tr('top.example')}
       <div class="seg" role="group" aria-label="${tr('top.viewAs')}">
-        <button data-act="demo-role" data-role="teacher" aria-pressed="${S.mode==='teacher'}">${tr('teacher')}</button>
+        <button data-act="demo-role" data-role="guest" aria-pressed="${S.mode==='guest'}">${tr('c.guest')}</button>
+        <button data-act="demo-role" data-role="teacher" aria-pressed="${S.mode==='teacher'&&S.role!=='staff'}">${tr('c.owner')}</button>
+        <button data-act="demo-role" data-role="staff" aria-pressed="${S.role==='staff'}">${tr('teacher')}</button>
         <button data-act="demo-role" data-role="student" aria-pressed="${S.mode==='student'}">${tr('student')}</button>
       </div>${back}</div>`;
   } else if(S.user){
-    const nm = S.mode==='student' ? (S.myProfile?.name || S.me?.email || tr('student')) : (S.me?.name || tr('teacher'));
-    right = `<div class="who">${avatar(nm,S.uid)}<span><b style="color:var(--ink)">${esc(nm)}</b><br><span class="faint small">${S.mode==='teacher'?tr('top.teacherSees'):tr('top.private')}</span></span></div><button class="btn sm ghost" data-act="sign-out">${tr('top.signOut')}</button>`;
+    const nm = S.mode==='student' ? (S.myProfile?.name || S.me?.email || tr('student')) : S.role==='staff' ? (S.team?.[S.staffTid]?.name || S.me?.email || tr('teacher')) : (S.me?.name || tr('teacher'));
+    right = `<div class="who">${avatar(nm,S.uid)}<span><b style="color:var(--ink)">${esc(nm)}</b><br><span class="faint small">${S.role==='staff'?tr('c.staffSees'):S.mode==='teacher'?tr('top.teacherSees'):tr('top.private')}</span></span></div><button class="btn sm ghost" data-act="sign-out">${tr('top.signOut')}</button>`;
+  } else if(S.realDb){
+    right = S.view.name==='landing' ? `<button class="btn sm primary" data-act="c-signin">${tr('c.signin')}</button>` : `<button class="btn sm ghost" data-act="c-landing">${I.back} ${tr('c.toCentre')}</button>`;
   }
   const langs = `<div class="seg lang" role="group" aria-label="${tr('lang.label')}"><span class="lang-ic" aria-hidden="true">${I.globe}</span>${LANGS.map(l=>`<button data-act="lang" data-l="${l.k}" aria-pressed="${l.k===LANG}" title="${l.full}" lang="${l.k}">${l.n}</button>`).join('')}</div>`;
-  $('#top').innerHTML = `<div class="brand"><span class="mark" aria-hidden="true">${I.pen}</span><span class="logo">Lex<i>ora</i></span><span class="sub">${S.view.name==='login'?tr('sub.login'):S.mode==='teacher'?tr('sub.teacher'):tr('sub.student')}</span></div>${installBtn()}${langs}${right}`;
+  $('#top').innerHTML = `<div class="brand"><span class="mark" aria-hidden="true">${I.pen}</span><span class="logo">Lex<i>ora</i></span><span class="sub">${S.mode==='guest'?tr('c.sub'):S.view.name==='login'?tr('sub.login'):S.role==='staff'?tr('c.subStaff'):S.mode==='teacher'?tr('sub.teacher'):tr('sub.student')}</span></div>${installBtn()}${langs}${right}`;
 }
 const PM_VIEWS = new Set(['news','newsEdit','study','set','setEdit']);
 function navBtn(name,label,icon,count,dim){ const cur = S.view.name===name || (name==='students' && S.view.name==='student') || (name==='inbox' && S.view.name==='review') || (name==='home' && S.view.name==='entry') || (name==='market' && PM_VIEWS.has(S.view.name));
   return `<button data-act="go" data-v="${name}" ${cur?'aria-current="page"':''}>${I[icon]}<span>${label}</span>${count?`<span class="cnt ${dim?'dim':''}">${count}</span>`:''}</button>`; }
 function renderNav(){
   const n=$('#nav');
-  const solo = S.view.name==='login'; n.hidden=solo; $('.layout').classList.toggle('solo',solo);
-  if(solo){ n.innerHTML=''; document.title='Lexora'; return; }
+  const solo = S.view.name==='login' || S.view.name==='verify' || S.mode==='guest'; n.hidden=solo; $('.layout').classList.toggle('solo',solo); $('.layout').classList.toggle('wide', S.mode==='guest');
+  if(solo){ n.innerHTML=''; document.title= S.mode==='guest' ? 'Lexora · '+tr('c.title') : 'Lexora'; return; }
+  if(S.role==='staff'){
+    const waiting = allEntries().filter(e=>e.status==='submitted').length;
+    document.title = (waiting?`(${waiting}) `:'')+'Lexora · '+tr('title.teacher');
+    n.innerHTML = navBtn('inbox',tr('nav.inbox'),'inbox',waiting) + navBtn('students',tr('nav.students'),'people',Object.keys(S.profiles).length,true) + navBtn('me',tr('c.meH'),'team') + navBtn('centre',tr('c.centreH'),'spark',Object.values(S.leads||{}).filter(l=>!l.st).length) + navBtn('bank',tr('nav.bank'),'bank') + `<div class="nav-foot">${tr('c.navFootStaff')}</div>`;
+    return;
+  }
   if(S.mode==='teacher'){
     const waiting = allEntries().filter(e=>e.status==='submitted').length;
     document.title = (waiting?`(${waiting}) `:'')+'Lexora · '+tr('title.teacher');
-    n.innerHTML = navBtn('inbox',tr('nav.inbox'),'inbox',waiting) + navBtn('students',tr('nav.students'),'people',Object.keys(S.profiles).length,true) + navBtn('ledger',tr('nav.ledger'),'coin',pendingClaims()||lgOwing(),!pendingClaims()) + navBtn('bookings',tr('nav.book'),'spark',pendingRequests()) + navBtn('market',tr('nav.shop'),'bag',pendingOrders()+pendingPasses()) + navBtn('rating',tr('rt.h'),'trophy') + navBtn('board',tr('nav.board'),'flag') + navBtn('insights',tr('nav.insights'),'chart') + navBtn('prompt',tr('nav.prompt'),'bulb') + navBtn('bank',tr('nav.bank'),'bank') +
+    n.innerHTML = navBtn('inbox',tr('nav.inbox'),'inbox',waiting) + navBtn('students',tr('nav.students'),'people',myStudentIds().length,true) + navBtn('team',tr('c.teamH'),'team',newLeads()+pendingStaffReq()) + navBtn('ledger',tr('nav.ledger'),'coin',pendingClaims()||lgOwing(),!pendingClaims()) + navBtn('bookings',tr('nav.book'),'spark',pendingRequests()) + navBtn('market',tr('nav.shop'),'bag',pendingOrders()+pendingPasses()) + navBtn('rating',tr('rt.h'),'trophy') + navBtn('board',tr('nav.board'),'flag') + navBtn('insights',tr('nav.insights'),'chart') + navBtn('prompt',tr('nav.prompt'),'bulb') + navBtn('bank',tr('nav.bank'),'bank') +
       `<div class="nav-foot">${tr('nav.foot')}</div>`;
   } else {
     const unseen = studentEntries().filter(e=>e.isNew).length;
@@ -1342,9 +1441,14 @@ function renderNav(){
 }
 
 /* ---------------- teacher data ---------------- */
+// the owner's inbox and students list show their own students unless "All teachers" is on
+const seesStudent = p => S.role!=='owner' || S.allT || tidOf(p)===MAIN_TID;
+const myStudentIds = () => Object.keys(S.profiles).filter(sid=>seesStudent(S.profiles[sid]));
+const hasOtherTeachers = () => S.role==='owner' && Object.values(S.profiles).some(p=>tidOf(p)!==MAIN_TID);
+const allTToggle = () => hasOtherTeachers() ? `<div class="seg" role="group"><button data-act="c-allt" data-on="0" aria-pressed="${!S.allT}">${tr('c.mine')}</button><button data-act="c-allt" data-on="1" aria-pressed="${!!S.allT}">${tr('c.allT')}</button></div>` : '';
 function allEntries(){
   const out=[];
-  for(const [sid,p] of Object.entries(S.profiles)) for(const [eid,ix] of Object.entries(p.index||{})){
+  for(const [sid,p] of Object.entries(S.profiles)) if(seesStudent(p)) for(const [eid,ix] of Object.entries(p.index||{})){
     const rv = S.feedback[sid]?.reviews?.[eid];
     out.push({sid,eid,...ix,name:p.name,level:p.level,status:rv?.status||'submitted',rv});
   }
@@ -1396,11 +1500,13 @@ function animateEnter(m){
 function renderMain0(){
   const m=$('#main'); const v=S.view.name;
   if(v==='login'){ m.innerHTML=vLogin(); setTimeout(()=>$('#login-email')?.focus(),50); return; }
+  if(v==='landing'){ m.innerHTML=vLanding(); return; }
+  if(v==='verify'){ m.innerHTML=vVerify(); return; }
   if(S.mode==='teacher' && !(S.loaded.p && S.loaded.f)){ m.innerHTML=`<div class="loading">${tr('load.teacher')}</div>`; return; }
   if(S.mode==='student' && S.myProfile===undefined){ m.innerHTML=`<div class="loading">${tr('load.student')}</div>`; return; }
   const fn = {inbox:vInbox, students:vStudents, student:vStudent, insights:vInsights, prompt:vPrompt, bank:vBank, review:vReview, ledger:vLedger, board:vBoard, bookings:vBookings, market:vMarket, learn:vLearn, book:vBook, rating:()=>S.mode==='teacher'?vRatingT():vRatingS(),
               home:vHome, write:vWrite, entry:vEntry, mistakes:vMistakes, words:vWords, setup:vSetup, pay:vPay,
-              news:vNews, newsEdit:vNewsEdit, study:vStudy, set:vSet, setEdit:vSetEdit}[v];
+              news:vNews, newsEdit:vNewsEdit, study:vStudy, set:vSet, setEdit:vSetEdit, team:vTeam, me:vMe, centre:vCentre}[v];
   m.innerHTML = fn ? fn() : '';
   after[v] && after[v]();
 }
@@ -1434,7 +1540,7 @@ function vInbox(){
   if(!all.length) return `<div class="page-head"><div><h1>${tr('inbox.h')}</h1><p>${tr('inbox.p')}</p></div></div>
     <div class="empty"><h3>${tr('inbox.emptyH')}</h3><p>${tr('inbox.emptyP')}</p>
     ${S.demo?'':`<p style="margin-top:16px"><button class="btn primary" data-act="demo">${tr('inbox.explore')}</button></p>`}</div>`;
-  return `<div class="page-head"><div><h1>${tr('inbox.h')}</h1><p>${waiting.length? tr('inbox.waiting',{n:waiting.length}) : tr('inbox.caught')}</p></div>
+  return `<div class="page-head"><div><h1>${tr('inbox.h')}</h1><p>${waiting.length? tr('inbox.waiting',{n:waiting.length}) : tr('inbox.caught')}</p></div>${allTToggle()}
     ${waiting.length?`<button class="btn pen" data-act="open-review" data-sid="${esc(waiting[0].sid)}" data-eid="${esc(waiting[0].eid)}">${I.pen} ${tr('inbox.start')}</button>`:''}</div>
     ${waiting.length?`<div class="list">${waiting.map(e=>entryCard(e)).join('')}</div>`:''}
     ${prog.length?`<div class="section"><h2>${tr('inbox.prog')}</h2><div class="list">${prog.map(e=>entryCard(e)).join('')}</div></div>`:''}
@@ -1455,13 +1561,13 @@ function studentStats(sid){
 }
 function topErr(errs){ const e=Object.entries(errs).sort((a,b)=>b[1]-a[1])[0]; return e? TYPE[e[0]] : null; }
 function vStudents(){
-  const ids = Object.keys(S.profiles).sort((a,b)=>(S.profiles[a].name||'').localeCompare(S.profiles[b].name||''));
+  const ids = myStudentIds().sort((a,b)=>(S.profiles[a].name||'').localeCompare(S.profiles[b].name||''));
   if(!ids.length) return `<div class="page-head"><div><h1>${tr('stu.h')}</h1></div></div><div class="empty"><h3>${tr('stu.emptyH')}</h3><p>${tr('stu.emptyP')}</p></div>`;
-  return `<div class="page-head"><div><h1>${tr('stu.h')}</h1><p>${tr('stu.count',{n:ids.length})}</p></div>
+  return `<div class="page-head"><div><h1>${tr('stu.h')}</h1><p>${tr('stu.count',{n:ids.length})}</p></div>${allTToggle()}
     <input class="inp" id="stu-q" placeholder="${tr('stu.search')}" style="max-width:240px" value="${esc(S.view.q||'')}" aria-label="${tr('stu.search')}"></div>
     <div class="scards" id="scards">${ids.map(sid=>{ const p=S.profiles[sid], st=studentStats(sid), te=topErr(st.errs);
       return `<button class="scard" data-act="open-student" data-sid="${esc(sid)}" data-name="${esc((p.name||'').toLowerCase())}">
-        <span class="top-r">${avatar(p.name,sid)}<span style="min-width:0"><span class="nm">${esc(p.name||tr('stu.unnamed'))}</span><br><span class="small faint">${st.last?tr('stu.last',{d:fmtDate(st.last)}):tr('stu.none')}</span></span><span class="lvl" style="margin-left:auto">${esc(p.level||'–')}</span></span>
+        <span class="top-r">${avatar(p.name,sid)}<span style="min-width:0"><span class="nm">${esc(p.name||tr('stu.unnamed'))}</span><br><span class="small faint">${st.last?tr('stu.last',{d:fmtDate(st.last)}):tr('stu.none')}</span></span><span class="lvl" style="margin-left:auto">${esc(p.level||'–')}</span></span>${S.allT&&tidOf(p)!==MAIN_TID?`<span class="small muted">${I.team} ${esc(tName(tidOf(p)))}</span>`:''}
         <span class="kv"><div><b>${st.entries}</b>${tr('k.entries')}</div><div><b>${fmtBand(st.latest)}</b>${tr('k.latest')}</div><div><b style="${st.waiting?'color:var(--pen)':''}">${st.waiting}</b>${tr('k.toMark')}</div></span>
         ${te?`<span class="small muted">${tr('stu.most')} <span class="tchip t-${te.k}" style="padding:1px 8px 1px 3px"><span class="code">${te.code}</span>${te.name}</span></span>`:`<span class="small faint">${tr('stu.noMarked')}</span>`}
       </button>`; }).join('')}</div>`;
@@ -1497,10 +1603,10 @@ function vStudent(){
     ${lgs?`<button class="btn sm" data-act="lg-open" data-id="${esc(lgs.id)}">${I.coin} <span class="pill lg-${lgL.status}">${tr('lg.st.'+lgL.status)}</span>${lgL.left>0?`<span class="num">${tr('lg.left')} ${money(lgL.left)}</span>`:''}</button>`:''}</div>
     <div class="stats"><div class="stat"><b>${st.entries}</b><span>${tr('k.entries')}</span></div><div class="stat"><b>${st.words.toLocaleString()}</b><span>${tr('k.words')}</span></div><div class="stat"><b>${fmtBand(st.latest)}</b><span>${tr('k.latest')}</span></div><div class="stat"><b>${st.waiting}</b><span>${tr('k.waiting')}</span></div></div>
     <div class="grid2 section"><div class="card"><h3>${tr('stu.trend')}</h3>${bandChart(st.pts)}</div><div class="card"><h3>${tr('stu.recur')}</h3>${errorBars(st.errs)}</div></div>
-    ${planEditor(sid)}
+    ${S.role==='staff'?'':teacherPick(sid)}${S.role==='staff'?'':planEditor(sid)}
     <div class="section"><h2>${tr('stu.entries')}</h2><div class="list">${entries.map(e=>entryCard(e)).join('') || `<p class="faint">${tr('stu.noEntries')}</p>`}</div></div>
     <div class="section"><h2>${tr('stu.given',{name:esc((p.name||'').split(' ')[0])})}</h2>${vocab.length?`<div class="vocab">${vocab.map(v=>`<div class="v"><span><b>${esc(v.w)}</b> <span class="muted small">— ${esc(v.m)}</span>${v.ex?`<br><span class="small faint">${esc(v.ex)}</span>`:''}</span></div>`).join('')}</div>`:`<p class="small faint">${tr('stu.addWords')}</p>`}</div>
-    <div class="section danger-zone"><h2>${tr('del.zoneH')}</h2><p class="muted small" style="margin:-6px 0 12px">${tr('del.zoneP')}</p><button class="btn ghost del-big" data-act="stu-del" data-sid="${esc(sid)}">${I.trash} ${tr('del.stu')}</button></div>`;
+    ${S.role==='staff'?'':`<div class="section danger-zone"><h2>${tr('del.zoneH')}</h2><p class="muted small" style="margin:-6px 0 12px">${tr('del.zoneP')}</p><button class="btn ghost del-big" data-act="stu-del" data-sid="${esc(sid)}">${I.trash} ${tr('del.stu')}</button></div>`}`;
 }
 
 /* ---------------- teacher: delete a student and everything of theirs ---------------- */
@@ -1576,7 +1682,7 @@ function vBank(){
       <div class="list" style="margin-top:14px">${bank.map((b,i)=>`<div class="row" style="flex-wrap:nowrap;justify-content:space-between;padding:8px 10px;border-radius:8px;background:var(--sheet-2)"><span class="hand" style="font-size:16px">${esc(b)}</span><button class="btn ghost sm" data-act="bank-del" data-i="${i}" aria-label="${tr('bank.delAria')}">${tr('delete')}</button></div>`).join('')}</div>
     </div>`;
 }
-async function savePrefs(){ if(!S.prefs) S.prefs={bank:DEFAULT_BANK.slice()}; try{ await S.db.doc('teacher/prefs').set(S.prefs); }catch(e){ dbErr(e,'bank'); } }
+async function savePrefs(){ if(!S.prefs) S.prefs={bank:DEFAULT_BANK.slice()}; try{ await S.db.doc(prefsPath()).set(S.prefs); }catch(e){ dbErr(e,'bank'); } }
 
 /* ---------------- teacher: payments (tuition ledger) ---------------- */
 const METHODS = ['cash','card','click','payme','transfer'];
@@ -3384,8 +3490,9 @@ seller = a person who sells things | The seller gave me a free melon. | sotuvchi
    private/mail:   {url, secret, on:{...}} teacher only. url = the teacher's Google Apps Script web app,
                    which checks the secret and sends with GmailApp, BCC to the students. */
 const MAIL_EVENTS = ['ann','post','task','prompt','review','pay','book','order','news'];
-const SCRIPT_SRC = secret => `// Lexora email script, version 3: each student gets their own email from your Gmail,
-// and readers of the daily newspaper get a note every morning when their paper comes out.
+const SCRIPT_SRC = secret => `// Lexora email script, version 4: each student gets their own email from your Gmail,
+// readers of the daily newspaper get a note every morning when their paper comes out,
+// and booked lessons get a Google Meet link (an event in your Google Calendar).
 // 1) Paste all of this into a new project at https://script.google.com
 // 2) Deploy > New deployment > Web app. Execute as: Me. Who has access: Anyone.
 // 3) Copy the Web app URL into Lexora > Noticeboard > Email.
@@ -3396,21 +3503,41 @@ function doPost(e) {
     const d = JSON.parse(e.postData.contents);
     if (d.secret !== SECRET) return out({ ok: false, error: 'wrong secret' });
     if (d.action === 'news') return out(saveNews(d));
-    if (d.test && !(d.to || d.bcc || []).length) { let timer = true; try { ensureTrigger(); } catch (err) { timer = false; } return out({ ok: true, v: 3, timer: timer, left: MailApp.getRemainingDailyQuota() }); }
+    if (d.action === 'meet') return out(makeMeet(d));
+    if (d.test && !(d.to || d.bcc || []).length) { let timer = true; try { ensureTrigger(); } catch (err) { timer = false; } return out({ ok: true, v: 4, timer: timer, left: MailApp.getRemainingDailyQuota() }); }
     const ok = x => /^[^@\\s,;<>]+@[^@\\s,;<>]+\\.[^@\\s,;<>]+$/.test(x);
     const list = (d.to || d.bcc || []).filter(ok).slice(0, 50);
-    if (!list.length) return out({ ok: false, v: 3, error: 'no recipients' });
+    if (!list.length) return out({ ok: false, v: 4, error: 'no recipients' });
     const subject = String(d.subject || '').slice(0, 200), text = String(d.text || '').slice(0, 10000);
     const opts = { htmlBody: String(d.html || '').slice(0, 30000), name: String(d.from || 'Lexora').slice(0, 60) };
     let sent = 0;
     list.forEach(to => { GmailApp.sendEmail(to, subject, text, opts); sent++; });  // each student gets their own email
-    return out({ ok: true, v: 3, sent: sent, left: MailApp.getRemainingDailyQuota() });
+    return out({ ok: true, v: 4, sent: sent, left: MailApp.getRemainingDailyQuota() });
   } catch (err) {
     return out({ ok: false, error: String(err) });
   }
 }
 function out(o) { return ContentService.createTextOutput(JSON.stringify(o)).setMimeType(ContentService.MimeType.JSON); }
 function okMail(x) { return /^[^@\\s,;<>]+@[^@\\s,;<>]+\\.[^@\\s,;<>]+$/.test(x); }
+
+// Google Meet: a Calendar event with a Meet link; the guests get Google's invitation too.
+function makeMeet(d) {
+  CalendarApp.getDefaultCalendar();  // asks for Calendar permission when you authorize the script
+  const guests = (d.guests || []).filter(okMail).slice(0, 50).map(function (x) { return { email: x }; });
+  const body = { summary: String(d.title || 'Lexora lesson').slice(0, 200), description: String(d.desc || '').slice(0, 2000),
+    start: { dateTime: String(d.start) }, end: { dateTime: String(d.end) }, attendees: guests,
+    conferenceData: { createRequest: { requestId: 'lx' + Date.now() + Math.floor(Math.random() * 1e6), conferenceSolutionKey: { type: 'hangoutsMeet' } } } };
+  const api = 'https://www.googleapis.com/calendar/v3/calendars/primary/events', head = { Authorization: 'Bearer ' + ScriptApp.getOAuthToken() };
+  let res = UrlFetchApp.fetch(api + '?conferenceDataVersion=1&sendUpdates=' + (guests.length ? 'all' : 'none'),
+    { method: 'post', contentType: 'application/json', payload: JSON.stringify(body), headers: head, muteHttpExceptions: true });
+  if (res.getResponseCode() >= 300) return { ok: false, v: 4, error: res.getContentText().slice(0, 300) };
+  let ev = JSON.parse(res.getContentText());
+  for (let i = 0; i < 5 && !ev.hangoutLink; i++) {
+    Utilities.sleep(1500);
+    ev = JSON.parse(UrlFetchApp.fetch(api + '/' + ev.id, { headers: head, muteHttpExceptions: true }).getContentText());
+  }
+  return ev.hangoutLink ? { ok: true, v: 4, url: ev.hangoutLink, id: ev.id } : { ok: false, v: 4, error: 'no Meet link yet' };
+}
 
 // Daily newspaper: Lexora sends the plan for the next days; sendNews() runs every 15 minutes
 // and emails each reader once, when their issue comes out.
@@ -3427,8 +3554,8 @@ function saveNews(d) {
     try { if (JSON.parse(all[k]).date >= from) P.deleteProperty(k); } catch (e) { P.deleteProperty(k); }
   });
   if (Object.keys(keep).length) P.setProperties(keep, false);
-  try { ensureTrigger(); } catch (err) { return { ok: true, v: 3, saved: Object.keys(keep).length, timer: false }; }
-  return { ok: true, v: 3, saved: Object.keys(keep).length };
+  try { ensureTrigger(); } catch (err) { return { ok: true, v: 4, saved: Object.keys(keep).length, timer: false }; }
+  return { ok: true, v: 4, saved: Object.keys(keep).length };
 }
 function ensureTrigger() {
   const has = ScriptApp.getProjectTriggers().some(function (t) { return t.getHandlerFunction() === 'sendNews'; });
@@ -3687,7 +3814,7 @@ function vBookings(){
     <button class="btn primary sm" style="margin-top:14px" data-act="svc-new">+ ${tr('bk.addSvc')}</button></div>
   <div class="section"><h2>${tr('bk.slotH')}</h2><p class="muted small" style="margin:-6px 0 12px">${tr('bk.slotP')}</p>
     <div class="card slot-add"><label class="field"><span>${tr('bk.date')}</span><input class="inp" type="date" id="sl-date" min="${todayStr()}" value="${todayStr()}"></label><label class="field"><span>${tr('bk.from')}</span><input class="inp" type="time" id="sl-from" value="16:00" step="300"></label><label class="field"><span>${tr('bk.to')}</span><input class="inp" type="time" id="sl-to" value="17:30" step="300"></label><button class="btn primary" data-act="slot-add">+ ${tr('bk.addSlot')}</button></div>
-    <div class="slots" style="margin-top:14px">${slots.length?slots.map(x=>{ const n=countFor(x.id), past=x.date<todayStr(); return `<div class="slot ${past?'past':''}"><span>${slotText(x)}</span>${n?`<span class="small num" style="color:var(--blue)">${tr('bk.booked',{n})}</span>`:''}${past?`<span class="small faint">${tr('bk.past')}</span>`:''}<button class="btn ghost sm" data-act="slot-del" data-id="${esc(x.id)}" aria-label="${tr('delete')}">✕</button></div>`; }).join(''):`<p class="faint">${tr('bk.noSlot')}</p>`}</div></div>`;
+    <div class="slots" style="margin-top:14px">${slots.length?slots.map(x=>{ const n=countFor(x.id), past=x.date<todayStr(); return `<div class="slot ${past?'past':''}"><span>${slotText(x)}</span>${past?'':meetSlotBtn(x)}${n?`<span class="small num" style="color:var(--blue)">${tr('bk.booked',{n})}</span>`:''}${past?`<span class="small faint">${tr('bk.past')}</span>`:''}<button class="btn ghost sm" data-act="slot-del" data-id="${esc(x.id)}" aria-label="${tr('delete')}">✕</button></div>`; }).join(''):`<p class="faint">${tr('bk.noSlot')}</p>`}</div></div>`;
 }
 function svcCard(x, teacher){
   const k=SVC_KINDS.includes(x.kind)?x.kind:'other';
@@ -3729,7 +3856,7 @@ function vBook(){
     <button class="btn pen" style="margin-top:14px" data-act="ask-open">${I.spark} ${tr('ask.btn')}</button>`:`<p class="faint">${tr('bk.noFree')}</p>`}</div>
   ${mine.length?`<div class="section"><h2>${tr('bk.mine')}</h2><div class="list">${mine.map(r=>{ const st=S.myBStat?.[r.id]||'wait', sv=svcById[r.serviceId];
     return `<div class="req ${st}"><span class="svc-ic sm">${I[SVC_IC[sv?.kind]||'bulb']}</span><div style="min-width:0"><b>${reqWhat(r,sv)}</b><div class="small muted">${slotText(slotById[r.slotId])}${sv?` · ${priceText(sv.price)}`:''}</div>${r.note?`<div class="small req-note">“${esc(r.note)}”</div>`:''}</div>
-      <div class="req-act"><span class="pill bk-${st}">${tr('bk.st.'+st)}</span>${st==='wait'?`<button class="btn sm ghost" data-act="bk-cancel" data-id="${esc(r.id)}">${tr('bk.cancel')}</button>`:st==='no'?delBtn('bk-cancel',S.uid,r.id):''}</div></div>`; }).join('')}</div></div>`:''}`;
+      <div class="req-act">${st==='ok'?joinBtn(r.slotId):''}<span class="pill bk-${st}">${tr('bk.st.'+st)}</span>${st==='wait'?`<button class="btn sm ghost" data-act="bk-cancel" data-id="${esc(r.id)}">${tr('bk.cancel')}</button>`:st==='no'?delBtn('bk-cancel',S.uid,r.id):''}</div></div>`; }).join('')}</div></div>`:''}`;
 }
 function openBook(serviceId){
   const sv=S.svc.services.find(x=>x.id===serviceId); if(!sv) return; const up=upcoming();
@@ -4001,7 +4128,7 @@ function saveReview(status){
   saveChain = saveChain.then(async()=>{
     await S.db.doc(`feedback/${sid}/reviews/${eid}`).set(d);
     const fb = clone(S.feedback[sid]) || {reviews:{},vocab:[]}; fb.reviews=fb.reviews||{};
-    fb.reviews[eid] = {status:d.status, overall:overallBand(d.bands), bands:d.bands, errorCounts:d.errorCounts, reviewedAt:d.reviewedAt||null, updatedAt:d.updatedAt};
+    fb.reviews[eid] = {status:d.status, overall:overallBand(d.bands), bands:d.bands, errorCounts:d.errorCounts, reviewedAt:d.reviewedAt||null, updatedAt:d.updatedAt, by:myTid()};
     fb.vocab = (fb.vocab||[]).filter(v=>v.eid!==eid).concat((d.vocab||[]).map(v=>({...v,eid})));
     S.feedback[sid]=fb;
     await S.db.doc(`feedback/${sid}`).set(fb);
@@ -4059,7 +4186,7 @@ function vLogin(){
       <button class="btn ghost sm" style="align-self:flex-start" data-act="login-step" data-s="signin">${tr('lo.have')}</button>`;
   else if(st==='reset') form = `${emailF()}<button class="btn primary" data-act="pw-reset">${tr('lo.reset')}</button>
       <button class="btn ghost sm" style="align-self:flex-start" data-act="login-step" data-s="signin">${tr('lo.backSignIn')}</button>`;
-  else if(st==='teacher') form = `<div class="notice info" style="margin:0">${tr('lo.tInfo')}</div>${emailF(tr('lo.tEmail'))}<button class="btn primary" data-act="send-link">${tr('lo.sendLink')}</button>
+  else if(st==='teacher') form = `<div class="notice info" style="margin:0">${tr('lo.tInfo')}<br><span style="font-weight:500">${tr('c.staffInfo')}</span></div>${emailF(tr('lo.tEmail'))}<button class="btn primary" data-act="send-link">${tr('lo.sendLink')}</button>
       <button class="btn ghost sm" style="align-self:flex-start" data-act="login-step" data-s="signin">${tr('lo.backStudent')}</button>`;
   else if(st==='confirm') form = `${emailF(tr('lo.again'))}<button class="btn primary" data-act="confirm-link">${tr('lo.finish')}</button>`;
   else if(st==='sent') form = `<div class="notice info" style="margin:0">${tr('lo.sentTo',{email:em})}</div>
@@ -4073,6 +4200,467 @@ function vLogin(){
       ${st==='teacher'?'<span></span>':`<button class="btn ghost sm" data-act="login-step" data-s="teacher">${tr('lo.teacher')}</button>`}
       <button class="btn ghost sm" data-act="explore">${tr('lo.example')}</button></div>
   </article>`;
+}
+
+/* ================= teaching centre: public teachers, team, staff teachers, levels, Google Meet ================= */
+const MAIN_TID = 'main';                       // the owner's own teacher profile
+const myTid = () => S.role==='staff' ? S.staffTid : MAIN_TID;
+const tidOf = p => (p && p.teacher) || MAIN_TID;
+const prefsPath = () => S.role==='staff' ? 'teacher/prefs-'+S.staffTid : 'teacher/prefs';
+const CLANGS = ['English','Russian','Uzbek','Korean','German','Turkish','Arabic','French','Chinese','Spanish','Japanese','Italian'];
+const TLEVEL_STEPS = [0, 60, 150, 300, 500];
+const TPTS = {student:10, entry:1, gain:20};
+const round1 = v => Math.round(v*10)/10;
+const TEAM_FIELDS = ['name','photo','headline','langs','levels','years','bio','achievements'];
+function tLevel(score){
+  score=+score||0; let i=0; while(i<TLEVEL_STEPS.length-1 && score>=TLEVEL_STEPS[i+1]) i++;
+  const next=TLEVEL_STEPS[i+1], prev=TLEVEL_STEPS[i];
+  return {n:i+1, name:tr('lv.'+(i+1)), next, toNext: next!=null? next-score : 0, pct: next!=null? Math.round((score-prev)/(next-prev)*100) : 100};
+}
+const stars = n => `<span class="tstars" aria-label="${tr('lv.aria',{n})}">${[1,2,3,4,5].map(i=>`<i class="${i<=n?'on':''}">★</i>`).join('')}</span>`;
+const levelBadge = (st) => { const L=tLevel(st?.score); return `<span class="tlevel lv${L.n}">${stars(L.n)}<b>${L.name}</b></span>`; };
+function tPhoto(t, tid, cls='tph'){ return t?.photo ? `<img class="${cls}" src="${esc(t.photo)}" alt="" loading="lazy">` : `<span class="${cls} ini">${avatar(t?.name||'?', tid)}</span>`; }
+const teamList = (all) => Object.entries(S.team||{}).filter(([,t])=>all || t.visible).map(([tid,t])=>({tid,...t}))
+  .sort((a,b)=>(b.stats?.score||0)-(a.stats?.score||0) || (a.order||0)-(b.order||0) || (a.name||'').localeCompare(b.name||''));
+const tName = tid => S.team?.[tid]?.name || (tid===MAIN_TID ? (S.me?.name||tr('teacher')) : tr('c.noTeacher'));
+
+/* ---------- levels: computed on the owner's page (only it sees every student) and published to the profile ---------- */
+function teacherStats(tid){
+  const sids=Object.keys(S.profiles).filter(sid=>tidOf(S.profiles[sid])===tid), monthAgo=Date.now()-30*864e5;
+  let reviews=0, gainSum=0, gains=0, bands=[], active=0;
+  for(const sid of sids){
+    const p=S.profiles[sid]||{}, fb=S.feedback[sid]||{};
+    const marked=Object.entries(fb.reviews||{}).filter(([,r])=>(r.status==='reviewed'||r.status==='revise') && r.overall!=null)
+      .sort((a,b)=>(p.index?.[a[0]]?.date||'').localeCompare(p.index?.[b[0]]?.date||''));
+    reviews+=marked.length;
+    if(marked.length){ bands.push(marked[marked.length-1][1].overall); }
+    if(marked.length>=2){ const g=marked[marked.length-1][1].overall-marked[0][1].overall; gainSum+=Math.max(0,g); gains++; }
+    if(Object.values(p.index||{}).some(e=>(e.submittedAt||0)>monthAgo)) active++;
+  }
+  const bonus=+(S.team[tid]?.bonus)||0;
+  const score = sids.length*TPTS.student + reviews*TPTS.entry + Math.round(gainSum*TPTS.gain) + bonus;
+  return {students:sids.length, active, reviews, gain: gains? round1(gainSum/gains) : 0, band: bands.length? round1(bands.reduce((a,b)=>a+b,0)/bands.length) : null, score: Math.max(0,score)};
+}
+let centreT=null;
+function centreScheduleSync(){ if(S.mode!=='teacher' || S.role==='staff') return; clearTimeout(centreT); centreT=setTimeout(centreSync, 1200); }
+async function centreSync(){
+  if(S.mode!=='teacher' || S.role==='staff' || !S.teamLoaded || !S.loaded.p || !S.loaded.f) return;
+  for(const [tid,t] of Object.entries(S.team)){
+    const st=teacherStats(tid), old=t.stats||{};
+    if(['students','active','reviews','gain','band','score'].every(k=>old[k]===st[k])) continue;
+    try{ await S.db.doc('teachers/'+tid).update({stats:st}); }catch(e){ return; }
+  }
+}
+
+/* ---------- live data ---------- */
+function startCentre(role){
+  S.team={}; S.teamLoaded=false; S.leads={}; S.offers={items:[]}; S.sreq={}; S.staffMap={}; S.tpriv={}; S.meetSlots={};
+  S.myLessons=null; S.myTPriv=null; S._tprivKey=null; S._tprivUn=null;
+  const quiet=()=>{};
+  const teamFrom = q => { const o={}; q.docs.forEach(d=>{ if(d.exists) o[d.id]=d.data(); }); S.team=o; S.teamLoaded=true; };
+  if(role==='guest'){
+    S.unsubs.push(S.db.collection('teachers').where('visible',true).onSnapshot(q=>{ teamFrom(q); if(S.view.name==='landing') renderMain(); }, ()=>{ S.teamLoaded=true; if(S.view.name==='landing') renderMain(); }));
+    return;
+  }
+  S.unsubs.push(S.db.collection('teachers').onSnapshot(q=>{ teamFrom(q); refreshAny(); if(role==='owner') centreScheduleSync(); }, ()=>{ S.teamLoaded=true; }));
+  const col = (path, key, after) => S.unsubs.push(S.db.collection(path).onSnapshot(q=>{ const o={}; q.docs.forEach(d=>{ if(d.exists) o[d.id]=d.data(); }); S[key]=o; after&&after(); refreshAny(); }, quiet));
+  const one = (path, key, def) => S.unsubs.push(S.db.doc(path).onSnapshot(s=>{ S[key]=s.exists?s.data():def; refreshAny(); }, ()=>{ S[key]=def; }));
+  if(role==='owner'){
+    col('leads','leads'); col('staffReq','sreq'); col('teacherPriv','tpriv');
+    col('staff','staffEmails', ()=>{ S.staffMap={}; for(const [em,x] of Object.entries(S.staffEmails||{})) if(x?.tid) S.staffMap[x.tid]=em; });
+    one('centre/offers','offers',{items:[]}); one('private/meet','meetDoc',{});
+  }
+  if(role==='staff'){
+    const t=S.staffTid;
+    one('centre/offers','offers',{items:[]}); one('staffReq/'+t,'mySreq',null); one('teacherPriv/'+t,'myTPriv',null);
+    S.unsubs.push(S.db.collection('leads').where('tid',t).onSnapshot(q=>{ const o={}; q.docs.forEach(d=>{ if(d.exists) o[d.id]=d.data(); }); S.leads=o; refreshAny(); }, quiet));
+  }
+  if(role==='student'){
+    one('lessons/'+S.uid,'myLessons',null);
+    // the chosen teacher's Meet link follows the journal (it can only be read once the journal exists)
+    S.unsubs.push(S.db.doc('journals/'+S.uid).onSnapshot(s=>{
+      const key=tidOf(s.exists?s.data():null)+':'+s.exists; if(key===S._tprivKey) return; S._tprivKey=key;
+      if(S._tprivUn){ try{ S._tprivUn(); }catch(e){} }
+      S._tprivUn = s.exists ? S.db.doc('teacherPriv/'+tidOf(s.data())).onSnapshot(x=>{ S.myTPriv=x.exists?x.data():null; refreshAny(); }, ()=>{ S.myTPriv=null; }) : null;
+    }, quiet));
+    S.unsubs.push(()=>{ if(S._tprivUn){ try{ S._tprivUn(); }catch(e){} S._tprivUn=null; } });
+  }
+}
+
+/* ---------- staff teacher: signs in with email + password on the student form ---------- */
+async function staffTidFor(user){
+  if(!user?.email) return null;
+  try{ const s=await S.db.doc('staff/'+user.email.toLowerCase()).get(); return s.exists ? (s.data().tid||null) : null; }catch(e){ return null; }
+}
+function startStaff(tid){
+  S.mode='teacher'; S.role='staff'; S.staffTid=tid; S.view={name:'inbox'}; S.loaded={}; S.profiles={}; S.feedback={};
+  S.plans={}; S.svc={services:[],slots:[]}; S.mail={url:'',secret:'',on:{}}; S.contacts={}; S.bookings={}; S.bstat={}; S.claims={}; S.cstat={};
+  const onErr = e => { if(e && e.code!=='revoked') toast(tr('live.paused')); };
+  const fbUn={}, seen=new Set();
+  const doneF = () => { if(Object.keys(S.profiles).every(sid=>seen.has(sid))) S.loaded.f=true; };
+  S.unsubs.push(S.db.collection('journals').where('teacher',tid).onSnapshot(q=>{
+    const p={}; q.docs.forEach(d=>{ if(d.exists) p[d.id]=d.data(); }); S.profiles=p; S.loaded.p=true;
+    for(const sid of Object.keys(p)) if(!fbUn[sid]) fbUn[sid]=S.db.doc('feedback/'+sid).onSnapshot(x=>{ if(x.exists) S.feedback[sid]=x.data(); else delete S.feedback[sid]; seen.add(sid); doneF(); checkNewEntries(); refresh(); }, e=>{ seen.add(sid); doneF(); onErr(e); });
+    for(const sid of Object.keys(fbUn)) if(!p[sid]){ try{ fbUn[sid](); }catch(e){} delete fbUn[sid]; delete S.feedback[sid]; }
+    doneF(); checkNewEntries(); refresh();
+  }, onErr));
+  S.unsubs.push(()=>Object.values(fbUn).forEach(u=>{ try{ u(); }catch(e){} }));
+  S.unsubs.push(S.db.doc('settings/prompt').onSnapshot(s=>{ S.prompt = s.exists? s.data(): null; refresh(); }, ()=>{}));
+  S.db.doc(prefsPath()).get().then(s=>{ S.prefs = s.exists? s.data(): {bank:DEFAULT_BANK.slice()}; }).catch(()=>{ S.prefs={bank:DEFAULT_BANK.slice()}; });
+  startCentre('staff');
+  S.db.doc('teachers/'+tid).update({lastSeen:Date.now()}).catch(()=>{});
+  refresh(); renderMain();
+}
+function vVerify(){
+  return `<article class="paper" style="max-width:600px;margin:24px auto 0"><span class="label">${tr('c.staffK')}</span>
+    <h1 class="login-h" style="font-size:clamp(30px,4vw,42px)">${tr('c.verifyH')}</h1>
+    <p class="muted" style="margin-top:14px;font-size:16px;max-width:46ch">${tr('c.verifyP',{email:esc(S.user?.email||'')})}</p>
+    <div class="row" style="margin-top:22px;gap:10px;flex-wrap:wrap"><button class="btn primary" data-act="c-verified">${tr('c.verifyDone')}</button>
+      <button class="btn ghost" data-act="c-verify-again">${tr('c.verifyAgain')}</button><button class="btn ghost" data-act="sign-out">${tr('top.signOut')}</button></div></article>`;
+}
+
+/* ---------- guest landing page ---------- */
+function vLanding(){
+  const all=teamList(false), f=S.view.lang||'';
+  const list = f ? all.filter(t=>(t.langs||[]).includes(f)) : all;
+  const langs=[...new Set(all.flatMap(t=>t.langs||[]))];
+  const students=all.reduce((a,t)=>a+(+t.stats?.students||0),0);
+  const card = t => { const st=t.stats||{};
+    return `<button class="tcard" data-act="c-tprof" data-tid="${esc(t.tid)}">
+      <span class="tcard-top">${tPhoto(t,t.tid)}<span style="min-width:0"><b class="tname">${esc(t.name||'')}</b>${t.headline?`<span class="small muted tcard-hl">${esc(t.headline)}</span>`:''}</span></span>
+      ${levelBadge(st)}
+      <span class="tchips">${(t.langs||[]).map(l=>`<span class="lchip">${esc(l)}</span>`).join('')}${t.levels?`<span class="lchip ghost">${esc(t.levels)}</span>`:''}</span>
+      ${t.bio?`<span class="small tcard-bio">${esc(t.bio.slice(0,150))}${t.bio.length>150?'…':''}</span>`:''}
+      <span class="tkv"><span><b class="num">${+st.students||0}</b>${tr('c.kStudents')}</span><span><b class="num">${st.gain>0?'+'+st.gain:'–'}</b>${tr('c.kGain')}</span><span><b class="num">${+t.years||'–'}</b>${tr('c.kYears')}</span></span>
+      <span class="tcard-go">${tr('c.viewProfile')} →</span></button>`; };
+  const loading = !S.teamLoaded;
+  return `<section class="lp-hero"><div class="lp-hero-in">
+      <span class="lp-kicker">${tr('c.kicker')}</span>
+      <h1>${tr('c.h')}</h1>
+      <p>${tr('c.p')}</p>
+      <div class="row lp-cta"><button class="btn pen" data-act="c-trial">${I.spark} ${tr('c.trial')}</button><a class="btn lp-ghost" href="#teachers">${tr('c.meet')}</a></div>
+      <div class="lp-stats"><div><b class="num">${all.length||'–'}</b><span>${tr('c.sTeachers')}</span></div><div><b class="num">${students||'–'}</b><span>${tr('c.sStudents')}</span></div><div><b class="num">${langs.length||'–'}</b><span>${tr('c.sLangs')}</span></div></div>
+    </div><div class="lp-art" aria-hidden="true">${I.nib}</div></section>
+    <section class="section" id="teachers"><div class="page-head" style="margin-bottom:14px"><div><h1>${tr('c.teachersH')}</h1><p>${tr('c.teachersP')}</p></div></div>
+      ${langs.length>1?`<div class="lp-filter" role="group" aria-label="${tr('c.filter')}"><button data-act="c-lang" data-l="" aria-pressed="${!f}">${tr('c.all')}</button>${langs.map(l=>`<button data-act="c-lang" data-l="${esc(l)}" aria-pressed="${f===l}">${esc(l)}</button>`).join('')}</div>`:''}
+      ${loading?`<div class="loading">${tr('c.loading')}</div>`: list.length?`<div class="tgrid">${list.map(card).join('')}</div>`:`<div class="empty"><h3>${tr('c.noneH')}</h3><p>${tr('c.noneP')}</p></div>`}
+    </section>
+    <section class="section lp-how"><h2>${tr('c.howH')}</h2><div class="lp-steps">
+      ${[1,2,3,4].map(i=>`<div class="card lp-step"><span class="lp-n">${i}</span><h3>${tr('c.how'+i+'H')}</h3><p class="muted small">${tr('c.how'+i+'P')}</p></div>`).join('')}</div></section>
+    <section class="section lp-levels card"><div><h2>${tr('c.lvH')}</h2><p class="muted">${tr('c.lvP')}</p></div>
+      <div class="lp-lv">${[1,2,3,4,5].map(n=>`<span class="tlevel lv${n}">${stars(n)}<b>${tr('lv.'+n)}</b></span>`).join('')}</div></section>
+    <section class="section lp-end"><h2>${tr('c.endH')}</h2><p class="muted">${tr('c.endP')}</p>
+      <div class="row" style="justify-content:center;gap:10px;flex-wrap:wrap;margin-top:14px"><button class="btn pen" data-act="c-trial">${tr('c.trial')}</button><button class="btn" data-act="c-signin">${tr('c.signin')}</button>${S.demo?'':`<button class="btn ghost" data-act="explore">${tr('lo.example')}</button>`}</div></section>`;
+}
+function openTeacherProfile(tid){
+  const t=S.team[tid]; if(!t) return; const st=t.stats||{}, L=tLevel(st.score);
+  showDlg(`<div>${dlgHead(tr('c.profileK'), esc(t.name||''))}
+    <div class="dlg-body tprof">
+      <div class="row" style="gap:16px;align-items:flex-start">${tPhoto(t,tid,'tph lg')}<div style="min-width:0">
+        ${t.headline?`<p style="font-weight:600">${esc(t.headline)}</p>`:''}${levelBadge(st)}
+        <div class="tchips" style="margin-top:8px">${(t.langs||[]).map(l=>`<span class="lchip">${esc(l)}</span>`).join('')}${t.levels?`<span class="lchip ghost">${esc(t.levels)}</span>`:''}</div></div></div>
+      <div class="tkv big"><span><b class="num">${+st.students||0}</b>${tr('c.kStudents')}</span><span><b class="num">${st.gain>0?'+'+st.gain:'–'}</b>${tr('c.kGain')}</span><span><b class="num">${st.band!=null?fmtBand(st.band):'–'}</b>${tr('c.kBand')}</span><span><b class="num">${+t.years||'–'}</b>${tr('c.kYears')}</span></div>
+      ${t.bio?`<div><span class="label">${tr('c.bio')}</span><p style="margin-top:6px;white-space:pre-line">${esc(t.bio)}</p></div>`:''}
+      ${(t.achievements||[]).length?`<div><span class="label">${tr('c.ach')}</span><ul class="tach">${t.achievements.map(a=>`<li>${esc(a)}</li>`).join('')}</ul></div>`:''}
+      <p class="small faint">${tr('c.lvNote',{level:L.name})}</p>
+    </div>
+    <div class="dlg-foot"><button type="button" class="btn ghost" data-act="dlg-close">${tr('close')}</button>${S.mode==='guest'?`<button type="button" class="btn pen" data-act="c-trial" data-tid="${esc(tid)}">${tr('c.trialWith',{name:esc((t.name||'').split(' ')[0])})}</button>`:''}</div></div>`, {type:'tprof', id:tid});
+}
+function openTrial(tid){
+  const all=teamList(false), langs=[...new Set([...all.flatMap(t=>t.langs||[]), 'English'])];
+  const pre = tid && S.team[tid] ? (S.team[tid].langs||[])[0] : '';
+  showDlg(`<form id="tr-form" novalidate>${dlgHead(tr('c.trialK'), tr('c.trialH'))}
+    <div class="dlg-body"><p class="muted">${tr('c.trialP')}</p>
+      <label class="field"><span>${tr('c.fName')}</span><input class="inp" id="tr-name" maxlength="80" autocomplete="name" required></label>
+      <label class="field"><span>${tr('c.fContact')}</span><input class="inp" id="tr-contact" maxlength="120" placeholder="+998 90 123 45 67 / @telegram" required></label>
+      <div class="grid2" style="gap:12px"><label class="field"><span>${tr('c.fLang')}</span><select class="inp" id="tr-lang">${langs.map(l=>`<option ${l===pre?'selected':''}>${esc(l)}</option>`).join('')}</select></label>
+        <label class="field"><span>${tr('c.fLevel')}</span><select class="inp" id="tr-level"><option value="">${tr('c.notSure')}</option><option value="0">${tr('c.beginner')}</option>${LEVELS.map(l=>`<option>${l}</option>`).join('')}</select></label></div>
+      <label class="field"><span>${tr('c.fTeacher')}</span><select class="inp" id="tr-tid"><option value="">${tr('c.anyTeacher')}</option>${all.map(t=>`<option value="${esc(t.tid)}" ${t.tid===tid?'selected':''}>${esc(t.name||'')}</option>`).join('')}</select></label>
+      <label class="field"><span>${tr('c.fMsg')} <span class="faint">${tr('optional')}</span></span><textarea class="inp" id="tr-msg" rows="3" maxlength="500" placeholder="${tr('c.fMsgPh')}"></textarea></label>
+      <p class="lg-err" id="tr-err" role="alert"></p></div>
+    <div class="dlg-foot"><button type="button" class="btn ghost" data-act="dlg-close">${tr('cancel')}</button><button class="btn pen" id="tr-go">${tr('c.send')}</button></div></form>`, {type:'trial'});
+  $('#tr-form').addEventListener('submit', async e=>{
+    e.preventDefault(); const name=$('#tr-name').value.trim(), contact=$('#tr-contact').value.trim();
+    if(!name){ $('#tr-err').textContent=tr('c.needName'); return; } if(contact.length<3){ $('#tr-err').textContent=tr('c.needContact'); return; }
+    const lv=$('#tr-level').value, d={name, contact, lang:$('#tr-lang').value, level: lv==='0'?'beginner':lv, tid:$('#tr-tid').value, msg:$('#tr-msg').value.trim(), at:Date.now()};
+    const btn=$('#tr-go'); btn.disabled=true;
+    try{ await S.db.collection('leads').doc().set(d);
+      $('#tr-form').innerHTML=`${dlgHead(tr('c.trialK'), tr('c.thanksH'))}<div class="dlg-body"><p>${tr('c.thanksP',{name:esc(name.split(' ')[0])})}</p></div><div class="dlg-foot"><button type="button" class="btn primary" data-act="dlg-close">${tr('app.ok')}</button></div>`;
+    }catch(err){ btn.disabled=false; $('#tr-err').textContent=tr('c.sendFail'); }
+  });
+}
+
+/* ---------- teacher profile form (owner edits anyone; a teacher edits their own) ---------- */
+function teacherFields(t, opt){
+  t=t||{};
+  return `<div class="tform">
+    <div class="row" style="gap:14px;align-items:center">${tPhoto(t, opt.tid||'new','tph lg')}<div class="stack" style="gap:6px;flex:1;min-width:0">
+      <label class="btn sm" style="align-self:flex-start;cursor:pointer">${I.up} ${tr('c.fPhoto')}<input type="file" accept="image/*" id="tf-file" hidden></label>
+      <input class="inp" id="tf-photo-url" placeholder="${tr('c.fPhotoUrl')}" value="${t.photo&&!t.photo.startsWith('data:')?esc(t.photo):''}">
+      <input type="hidden" id="tf-photo" value="${esc(t.photo||'')}"></div></div>
+    <label class="field"><span>${tr('c.fTName')}</span><input class="inp" id="tf-name" maxlength="80" value="${esc(t.name||'')}" required></label>
+    <label class="field"><span>${tr('c.fHeadline')}</span><input class="inp" id="tf-headline" maxlength="120" placeholder="${tr('c.fHeadlinePh')}" value="${esc(t.headline||'')}"></label>
+    <div class="field"><span>${tr('c.fLangs')}</span><div class="lpick">${[...new Set([...CLANGS,...(t.langs||[])])].map(l=>`<label class="lchip pick"><input type="checkbox" class="tf-lang" value="${esc(l)}" ${(t.langs||[]).includes(l)?'checked':''}> ${esc(l)}</label>`).join('')}</div>
+      <input class="inp" id="tf-lang-x" placeholder="${tr('c.fLangOther')}" style="margin-top:6px"></div>
+    <div class="grid2" style="gap:12px"><label class="field"><span>${tr('c.fLevels')}</span><input class="inp" id="tf-levels" maxlength="40" placeholder="A1 – C1, IELTS" value="${esc(t.levels||'')}"></label>
+      <label class="field"><span>${tr('c.fYears')}</span><input class="inp" id="tf-years" type="number" min="0" max="60" value="${esc(t.years??'')}"></label></div>
+    <label class="field"><span>${tr('c.fBio')}</span><textarea class="inp" id="tf-bio" rows="4" maxlength="1500" placeholder="${tr('c.fBioPh')}">${esc(t.bio||'')}</textarea></label>
+    <label class="field"><span>${tr('c.fAch')}</span><textarea class="inp" id="tf-ach" rows="4" maxlength="1500" placeholder="${tr('c.fAchPh')}">${esc((t.achievements||[]).join('\n'))}</textarea></label>
+    <label class="field"><span>${tr('c.fMeet')} <span class="faint">${tr('c.fMeetHint')}</span></span><span class="row" style="gap:6px"><input class="inp" id="tf-meet" placeholder="https://meet.google.com/abc-defg-hij" value="${esc(opt.meet||'')}"><a class="btn sm" href="https://meet.google.com/new" target="_blank" rel="noopener">${tr('c.newMeet')}</a></span></label>
+    ${opt.owner?`<label class="field"><span>${tr('c.fEmail')} <span class="faint">${tr('optional')}</span></span><input class="inp" id="tf-email" type="email" placeholder="teacher@gmail.com" value="${esc(opt.email||'')}" ${opt.tid===MAIN_TID?'disabled':''}><span class="small faint">${opt.tid===MAIN_TID?tr('c.fEmailOwner'):tr('c.fEmailHint')}</span></label>
+      <label class="small row" style="gap:8px;cursor:pointer"><input type="checkbox" id="tf-visible" ${t.visible!==false?'checked':''}> ${tr('c.fVisible')}</label>`:''}
+    <p class="lg-err" id="tf-err" role="alert"></p></div>`;
+}
+function wireTeacherFields(){
+  const f=$('#tf-file'); if(!f) return;
+  const show = src => { const ph=document.querySelector('.tform .tph'); if(ph){ const img=document.createElement('img'); img.className='tph lg'; img.src=src; img.alt=''; ph.replaceWith(img); } };
+  f.addEventListener('change', async ()=>{ const file=f.files[0]; if(!file) return;
+    try{ const url=await shrinkPhoto(file); $('#tf-photo').value=url; $('#tf-photo-url').value=''; show(url); }catch(e){ toast(tr('c.photoFail')); } });
+  $('#tf-photo-url').addEventListener('change', e=>{ const v=e.target.value.trim(); if(/^https:\/\//.test(v)){ $('#tf-photo').value=v; show(v); } else if(!v){ $('#tf-photo').value=''; } });
+}
+// square-crop and shrink an uploaded photo so it fits inside the profile document
+function shrinkPhoto(file){
+  return new Promise((ok,bad)=>{ const img=new Image(), u=URL.createObjectURL(file);
+    img.onload=()=>{ const n=320, c=document.createElement('canvas'); c.width=c.height=n; const s=Math.min(img.width,img.height);
+      c.getContext('2d').drawImage(img,(img.width-s)/2,(img.height-s)/2,s,s,0,0,n,n); URL.revokeObjectURL(u);
+      const d=c.toDataURL('image/jpeg',0.82); d.length<250000 ? ok(d) : bad(new Error('big')); };
+    img.onerror=()=>{ URL.revokeObjectURL(u); bad(new Error('img')); }; img.src=u; });
+}
+function readTeacherFields(){
+  const name=$('#tf-name').value.trim(); if(!name) return {err:tr('c.needName')};
+  const langs=[...document.querySelectorAll('.tf-lang:checked')].map(x=>x.value);
+  $('#tf-lang-x').value.split(',').map(x=>x.trim()).filter(Boolean).forEach(x=>{ const l=x[0].toUpperCase()+x.slice(1); if(!langs.includes(l)) langs.push(l); });
+  const meet=$('#tf-meet').value.trim();
+  if(meet && !/^https:\/\/(meet\.google\.com|[\w.-]+\.(zoom\.us|jit\.si|8x8\.vc))\//.test(meet)) return {err:tr('c.badMeet')};
+  const d={name, photo:$('#tf-photo').value.trim(), headline:$('#tf-headline').value.trim(), langs, levels:$('#tf-levels').value.trim(),
+    years: $('#tf-years').value==='' ? null : Math.max(0,Math.min(60,Math.round(+$('#tf-years').value||0))), bio:$('#tf-bio').value.trim(),
+    achievements:$('#tf-ach').value.split('\n').map(x=>x.replace(/^[-•*]\s*/,'').trim()).filter(Boolean).slice(0,20)};
+  return {d, meet};
+}
+function openTeacherEdit(tid){
+  const isNew=!tid, t=isNew?{visible:true}:S.team[tid], id=isNew?('t-'+newId()):tid;
+  showDlg(`<form id="tf-form" novalidate>${dlgHead(isNew?tr('c.addK'):tr('c.editK'), isNew?tr('c.addH'):esc(t?.name||''))}
+    <div class="dlg-body">${teacherFields(t,{owner:true, tid:id, meet:S.tpriv?.[tid]?.meet||'', email:S.staffMap?.[tid]||''})}</div>
+    <div class="dlg-foot"><button type="button" class="btn ghost" data-act="dlg-close">${tr('cancel')}</button><button class="btn primary" id="tf-go">${tr('save')}</button></div></form>`, {type:'tedit', id});
+  wireTeacherFields();
+  $('#tf-form').addEventListener('submit', async e=>{
+    e.preventDefault(); const r=readTeacherFields(); if(r.err){ $('#tf-err').textContent=r.err; return; }
+    const email=(($('#tf-email')?.value)||'').trim().toLowerCase();
+    if(email && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)){ $('#tf-err').textContent=tr('auth.email'); return; }
+    if(email && email===S.teacherEmail){ $('#tf-err').textContent=tr('c.ownerEmail'); return; }
+    const taken=email && Object.entries(S.staffMap||{}).find(([t2,em])=>em===email && t2!==id); if(taken){ $('#tf-err').textContent=tr('c.emailTaken'); return; }
+    const btn=$('#tf-go'); btn.disabled=true;
+    try{
+      const base=isNew?{visible:true, order:Date.now(), stats:{students:0,active:0,reviews:0,gain:0,band:null,score:0}}:clone(S.team[id]);
+      await S.db.doc('teachers/'+id).set({...base, ...r.d, visible: $('#tf-visible')? $('#tf-visible').checked : true});
+      await S.db.doc('teacherPriv/'+id).set({meet:r.meet});
+      if(id!==MAIN_TID){ const old=S.staffMap?.[id];
+        if(old && old!==email) await S.db.doc('staff/'+old).delete();
+        if(email && old!==email) await S.db.doc('staff/'+email).set({tid:id, name:r.d.name}); }
+      closeDlg(); toast(tr('c.saved'));
+    }catch(err){ btn.disabled=false; $('#tf-err').textContent=lgErrText(err); }
+  });
+}
+async function removeTeacher(tid){
+  const db=S.db;
+  for(const [sid,p] of Object.entries(S.profiles)) if(tidOf(p)===tid) await db.doc('journals/'+sid).update({teacher:MAIN_TID});
+  const em=S.staffMap?.[tid]; if(em) await db.doc('staff/'+em).delete();
+  for(const c of ['teacherPriv','staffReq']) await db.doc(c+'/'+tid).delete();
+  await db.doc('teachers/'+tid).delete();
+}
+
+/* ---------- owner: Teachers page ---------- */
+function centreActivity(limit){
+  const ev=[];
+  for(const [sid,fb] of Object.entries(S.feedback)){ const p=S.profiles[sid]; if(!p) continue;
+    for(const [eid,r] of Object.entries(fb.reviews||{})) if(r.reviewedAt && (r.status==='reviewed'||r.status==='revise'))
+      ev.push({at:r.reviewedAt, tid:r.by||tidOf(p), sid, name:p.name, title:p.index?.[eid]?.title||'', band:r.overall, st:r.status}); }
+  for(const [sid,p] of Object.entries(S.profiles)) for(const [eid,e] of Object.entries(p.index||{})) if(e.submittedAt)
+    ev.push({at:e.submittedAt, tid:tidOf(p), sid, name:p.name, title:e.title||'', kind:'entry'});
+  return ev.sort((a,b)=>b.at-a.at).slice(0,limit);
+}
+const newLeads = () => S.role==='staff' ? 0 : Object.values(S.leads||{}).filter(l=>!l.st).length;
+const pendingStaffReq = () => Object.values(S.sreq||{}).reduce((a,r)=>a+(r.items||[]).filter(i=>!(r.st||{})[i.id]).length,0);
+function lastActive(tid){
+  const acts=centreActivity(400).filter(e=>e.tid===tid && e.kind!=='entry');
+  return Math.max(S.team[tid]?.lastSeen||0, acts[0]?.at||0) || null;
+}
+function vTeam(){
+  const list=teamList(true), hasMain=!!S.team[MAIN_TID];
+  const leads=Object.entries(S.leads||{}).map(([id,l])=>({id,...l})).sort((a,b)=>(!!a.st-!!b.st)||(b.at-a.at));
+  const act=centreActivity(25);
+  const row = t => { const st=teacherStats(t.tid), L=tLevel(st.score), la=lastActive(t.tid), em=t.tid===MAIN_TID?S.me?.email:S.staffMap?.[t.tid];
+    return `<div class="trow card">
+      <div class="trow-who">${tPhoto(t,t.tid)}<div style="min-width:0"><b>${esc(t.name||'')}</b>${t.tid===MAIN_TID?` <span class="pill">${tr('c.you')}</span>`:''}${t.visible===false?` <span class="pill st-inreview">${tr('c.hidden')}</span>`:''}
+        <div class="small muted">${(t.langs||[]).map(esc).join(' · ')||'–'}</div>
+        <div class="small faint">${em?tr('c.signsIn',{email:esc(em)}):tr('c.noLogin')}</div></div></div>
+      <div class="trow-lv">${levelBadge(st)}<div class="tprog" title="${L.next!=null?tr('c.toNext',{n:L.toNext}):''}"><i style="width:${L.pct}%"></i></div><span class="small faint num">${tr('c.pts',{n:st.score})}${L.next!=null?' · '+tr('c.toNext',{n:L.toNext}):''}</span></div>
+      <div class="tkv"><span><b class="num">${st.students}</b>${tr('c.kStudents')}</span><span><b class="num">${st.active}</b>${tr('c.kActive')}</span><span><b class="num">${st.reviews}</b>${tr('c.kMarked')}</span><span><b class="num">${st.gain>0?'+'+st.gain:'–'}</b>${tr('c.kGain')}</span></div>
+      <div class="trow-act"><span class="small faint">${la?tr('c.lastActive',{ago:ago(la)}):tr('c.neverActive')}</span>
+        <span class="row" style="gap:4px;flex-wrap:wrap;justify-content:flex-end"><button class="btn ghost sm" data-act="c-bonus" data-tid="${esc(t.tid)}" data-n="-10">−10</button><button class="btn ghost sm" data-act="c-bonus" data-tid="${esc(t.tid)}" data-n="10">+10</button>
+        <button class="btn sm" data-act="c-tedit" data-tid="${esc(t.tid)}">${tr('edit')}</button>${t.tid===MAIN_TID?'':`<button class="btn ghost sm" data-act="c-tdel" data-tid="${esc(t.tid)}" style="color:var(--pen)">${I.trash}</button>`}</span></div></div>`; };
+  const offers=S.offers?.items||[];
+  const reqs=Object.entries(S.sreq||{}).flatMap(([tid,r])=>(r.items||[]).map(i=>({tid, ...i, st:(r.st||{})[i.id]||'wait'}))).sort((a,b)=>(a.st==='wait'?0:1)-(b.st==='wait'?0:1)||b.at-a.at);
+  return `<div class="page-head"><div><h1>${tr('c.teamH')}</h1><p>${tr('c.teamP')}</p></div><button class="btn primary" data-act="c-tedit">+ ${tr('c.addTeacher')}</button></div>${centreRulesNote()}
+    ${hasMain?'':`<div class="notice info" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"><span>${tr('c.mainFirst')}</span><button class="btn sm primary" data-act="c-tedit" data-tid="${MAIN_TID}">${tr('c.mainBtn')}</button></div>`}
+    ${list.length?`<div class="tlist">${list.map(row).join('')}</div>`:`<div class="empty"><h3>${tr('c.teamEmptyH')}</h3><p>${tr('c.teamEmptyP')}</p></div>`}
+    <div class="section"><h2>${tr('c.leadsH')}</h2>${leads.length?`<div class="list">${leads.map(l=>`<div class="req ${l.st?'ok':'wait'}">${avatar(l.name,l.id)}<div style="min-width:0"><b>${esc(l.name)}</b> <span class="faint">·</span> <span class="num">${esc(l.contact)}</span>
+        <div class="small muted">${[l.lang, l.level==='beginner'?tr('c.beginner'):l.level, l.tid?tr('c.forT',{name:esc(tName(l.tid))}):tr('c.anyTeacher')].filter(Boolean).map(x=>x).join(' · ')} · ${ago(l.at)}</div>${l.msg?`<div class="small req-note">“${esc(l.msg)}”</div>`:''}</div>
+        <div class="req-act">${l.st?`<span class="pill bk-ok">${tr('c.contacted')}</span><button class="btn ghost sm" data-act="c-lead-del" data-id="${esc(l.id)}" style="color:var(--pen)">${tr('delete')}</button>`:`<button class="btn sm primary" data-act="c-lead-done" data-id="${esc(l.id)}">${tr('c.markContacted')}</button>`}</div></div>`).join('')}</div>`:`<p class="faint">${tr('c.noLeads')}</p>`}</div>
+    <div class="section"><h2>${tr('c.actH')}</h2>${act.length?`<div class="tact">${act.map(e=>`<div class="tact-row"><span class="tact-dot ${e.kind==='entry'?'in':''}"></span><span>${e.kind==='entry'
+        ? tr('c.actEntry',{s:esc(e.name||''), t:esc(e.title), teacher:esc(tName(e.tid))})
+        : tr(e.st==='revise'?'c.actRevise':'c.actReview',{teacher:`<b>${esc(tName(e.tid))}</b>`, s:esc(e.name||''), t:esc(e.title), band:e.band!=null?fmtBand(e.band):'–'})}</span><span class="small faint">${ago(e.at)}</span></div>`).join('')}</div>`:`<p class="faint">${tr('c.noAct')}</p>`}</div>
+    <div class="section"><h2>${tr('c.offersH')}</h2><p class="muted small" style="margin:-6px 0 12px">${tr('c.offersP')}</p>
+      ${offers.length?`<div class="svc-grid">${offers.map(o=>`<article class="svc"><h3>${esc(o.title)}</h3>${o.desc?`<p class="muted">${esc(o.desc)}</p>`:''}<div class="svc-foot"><b class="num">${priceText(o.price)}</b><span class="row" style="gap:2px"><button class="btn ghost sm" data-act="c-offer" data-id="${esc(o.id)}">${tr('edit')}</button><button class="btn ghost sm" data-act="c-offer-del" data-id="${esc(o.id)}" style="color:var(--pen)">${tr('delete')}</button></span></div></article>`).join('')}</div>`:''}
+      <button class="btn primary sm" style="margin-top:14px" data-act="c-offer">+ ${tr('c.addOffer')}</button>
+      ${reqs.length?`<h3 style="margin-top:20px">${tr('c.reqsH')}</h3><div class="list">${reqs.map(r=>{ const o=offers.find(x=>x.id===r.offerId);
+        return `<div class="req ${r.st}">${avatar(tName(r.tid),r.tid)}<div style="min-width:0"><b>${esc(tName(r.tid))}</b> <span class="faint">·</span> ${esc(o?.title||r.title||'–')}<div class="small muted">${ago(r.at)}${o?' · '+priceText(o.price):''}</div>${r.note?`<div class="small req-note">“${esc(r.note)}”</div>`:''}</div>
+          <div class="req-act"><span class="pill bk-${r.st}">${tr('bk.st.'+r.st)}</span>${r.st==='wait'?`<span class="row" style="gap:6px"><button class="btn sm ghost" data-act="c-sreq" data-tid="${esc(r.tid)}" data-id="${esc(r.id)}" data-st="no">${tr('bk.decline')}</button><button class="btn sm primary" data-act="c-sreq" data-tid="${esc(r.tid)}" data-id="${esc(r.id)}" data-st="ok">${tr('c.accept')}</button></span>`:''}</div></div>`; }).join('')}</div>`:''}</div>
+    <div class="card section rank-how"><h3>${tr('c.lvHowH')}</h3><ul class="small muted"><li>${tr('c.lvHow1',{n:TPTS.student})}</li><li>${tr('c.lvHow2',{n:TPTS.entry})}</li><li>${tr('c.lvHow3',{n:TPTS.gain})}</li><li>${tr('c.lvHow4')}</li>
+      <li>${[1,2,3,4,5].map(n=>`${tr('lv.'+n)} ${TLEVEL_STEPS[n-1]}+`).join(' · ')}</li></ul></div>`;
+}
+const centreRulesNote = () => S.demo ? `<div class="notice info">${tr('c.demoNote')}</div>` : '';
+function openOffer(id){
+  const o=(S.offers?.items||[]).find(x=>x.id===id)||{};
+  showDlg(`<form id="of-form" novalidate>${dlgHead(tr('c.offersH'), id?esc(o.title):tr('c.addOffer'))}
+    <div class="dlg-body"><label class="field"><span>${tr('c.oTitle')}</span><input class="inp" id="of-t" maxlength="100" value="${esc(o.title||'')}" placeholder="${tr('c.offerPh')}"></label>
+      <label class="field"><span>${tr('mk.desc')}</span><textarea class="inp" id="of-d" rows="3" maxlength="500">${esc(o.desc||'')}</textarea></label>
+      <label class="field"><span>${tr('c.oPrice')}</span><input class="inp" id="of-p" type="number" min="0" step="1000" value="${esc(o.price??0)}"></label><p class="lg-err" id="of-err"></p></div>
+    <div class="dlg-foot"><button type="button" class="btn ghost" data-act="dlg-close">${tr('cancel')}</button><button class="btn primary">${tr('save')}</button></div></form>`, {type:'offer', id});
+  $('#of-form').addEventListener('submit', async e=>{ e.preventDefault(); const title=$('#of-t').value.trim(); if(!title){ $('#of-err').textContent=tr('c.needTitle'); return; }
+    const items=clone(S.offers?.items||[]), x={id:id||newId(), title, desc:$('#of-d').value.trim(), price:Math.max(0,+$('#of-p').value||0)};
+    const i=items.findIndex(y=>y.id===x.id); i<0?items.push(x):items.splice(i,1,x);
+    try{ await S.db.doc('centre/offers').set({items}); closeDlg(); toast(tr('c.saved')); }catch(err){ $('#of-err').textContent=lgErrText(err); } });
+}
+
+/* ---------- staff teacher: My profile + From the centre ---------- */
+function vMe(){
+  const tid=myTid(), t=S.team[tid];
+  if(!t) return `<div class="page-head"><div><h1>${tr('c.meH')}</h1></div></div><div class="empty"><h3>${tr('c.meMissing')}</h3></div>`;
+  const st=S.role==='staff'?(t.stats||{}):teacherStats(tid), L=tLevel(st.score);
+  return `<div class="page-head"><div><h1>${tr('c.meH')}</h1><p>${tr('c.meP')}</p></div><button class="btn" data-act="c-tprof" data-tid="${esc(tid)}">${tr('c.preview')}</button></div>
+    <div class="card section tme-lv" style="margin-top:0"><div>${levelBadge(st)}<div class="tprog lg"><i style="width:${L.pct}%"></i></div>
+      <p class="small muted">${L.next!=null?tr('c.meNext',{n:L.toNext, level:tLevel(L.next).name}):tr('c.meTop')}</p></div>
+      <div class="tkv"><span><b class="num">${+st.students||0}</b>${tr('c.kStudents')}</span><span><b class="num">${+st.reviews||0}</b>${tr('c.kMarked')}</span><span><b class="num">${st.gain>0?'+'+st.gain:'–'}</b>${tr('c.kGain')}</span><span><b class="num">${+st.score||0}</b>${tr('c.kPts')}</span></div></div>
+    <form id="me-form" class="card section" style="padding:20px" novalidate>${teacherFields(t,{tid, meet:S.myTPriv?.meet||''})}<button class="btn primary" style="margin-top:14px">${tr('save')}</button></form>`;
+}
+after.me = () => { wireTeacherFields(); const f=$('#me-form'); if(!f) return; f.addEventListener('submit', async e=>{
+  e.preventDefault(); const r=readTeacherFields(); if(r.err){ $('#tf-err').textContent=r.err; return; }
+  const tid=myTid(); try{ await S.db.doc('teachers/'+tid).update(r.d); await S.db.doc('teacherPriv/'+tid).set({meet:r.meet}); toast(tr('c.saved')); }catch(err){ $('#tf-err').textContent=lgErrText(err); } }); };
+function vCentre(){
+  const offers=S.offers?.items||[], mine=(S.mySreq?.items||[]).slice().sort((a,b)=>b.at-a.at), st=S.mySreq?.st||{};
+  const leads=Object.entries(S.leads||{}).map(([id,l])=>({id,...l})).sort((a,b)=>b.at-a.at);
+  return `<div class="page-head"><div><h1>${tr('c.centreH')}</h1><p>${tr('c.centreP')}</p></div></div>
+    ${offers.length?`<div class="svc-grid">${offers.map(o=>`<article class="svc"><h3>${esc(o.title)}</h3>${o.desc?`<p class="muted">${esc(o.desc)}</p>`:''}<div class="svc-foot"><b class="num">${priceText(o.price)}</b><button class="btn pen sm" data-act="c-ask" data-id="${esc(o.id)}">${tr('c.ask')}</button></div></article>`).join('')}</div>`:`<div class="empty"><h3>${tr('c.noOffers')}</h3></div>`}
+    ${mine.length?`<div class="section"><h2>${tr('c.myReqs')}</h2><div class="list">${mine.map(r=>{ const o=offers.find(x=>x.id===r.offerId), s=st[r.id]||'wait';
+      return `<div class="req ${s}"><div style="min-width:0"><b>${esc(o?.title||r.title||'–')}</b><div class="small muted">${ago(r.at)}</div>${r.note?`<div class="small req-note">“${esc(r.note)}”</div>`:''}</div><div class="req-act"><span class="pill bk-${s}">${tr('bk.st.'+s)}</span></div></div>`; }).join('')}</div></div>`:''}
+    <div class="section"><h2>${tr('c.myLeads')}</h2>${leads.length?`<div class="list">${leads.map(l=>`<div class="req ${l.st?'ok':'wait'}">${avatar(l.name,l.id)}<div style="min-width:0"><b>${esc(l.name)}</b> · <span class="num">${esc(l.contact)}</span><div class="small muted">${[l.lang,l.level==='beginner'?tr('c.beginner'):l.level].filter(Boolean).join(' · ')} · ${ago(l.at)}</div>${l.msg?`<div class="small req-note">“${esc(l.msg)}”</div>`:''}</div></div>`).join('')}</div>`:`<p class="faint">${tr('c.noLeads')}</p>`}</div>`;
+}
+function openOfferAsk(offerId){
+  const o=(S.offers?.items||[]).find(x=>x.id===offerId); if(!o) return;
+  showDlg(`<form id="ask-form" novalidate>${dlgHead(tr('c.centreH'), esc(o.title))}<div class="dlg-body">${o.desc?`<p class="muted">${esc(o.desc)}</p>`:''}<b class="num">${priceText(o.price)}</b>
+    <label class="field"><span>${tr('bk.note')} <span class="faint">${tr('optional')}</span></span><input class="inp" id="ask-note" maxlength="200"></label><p class="lg-err" id="ask-err"></p></div>
+    <div class="dlg-foot"><button type="button" class="btn ghost" data-act="dlg-close">${tr('cancel')}</button><button class="btn pen">${tr('c.ask')}</button></div></form>`, {type:'ask'});
+  $('#ask-form').addEventListener('submit', async e=>{ e.preventDefault();
+    const items=clone(S.mySreq?.items||[]); items.push({id:newId(), offerId, title:o.title, note:$('#ask-note').value.trim(), at:Date.now()});
+    try{ await S.db.doc('staffReq/'+S.staffTid).set({...(S.mySreq?.st?{st:S.mySreq.st}:{}), name:S.team[S.staffTid]?.name||'', items}); closeDlg(); toast(tr('c.asked')); }catch(err){ $('#ask-err').textContent=lgErrText(err); } });
+}
+
+/* ---------- students: choose a teacher, see them, join lessons ---------- */
+function teacherSelect(id, cur){
+  const list=teamList(false); if(cur && S.team[cur] && !list.some(t=>t.tid===cur)) list.push({tid:cur,...S.team[cur]});
+  if(!list.length) return '';
+  return `<select class="inp" id="${id}">${list.map(t=>`<option value="${esc(t.tid)}" ${t.tid===(cur||MAIN_TID)?'selected':''}>${esc(t.name||'')}${(t.langs||[]).length?' · '+esc(t.langs.join(', ')):''}</option>`).join('')}</select>`;
+}
+function myTeacherCard(){
+  if(S.mode!=='student') return '';
+  const tid=tidOf(S.myProfile), t=S.team?.[tid], meet=S.myTPriv?.meet;
+  const today=todayStr(), links=Object.entries(S.myLessons?.links||{}).map(([id,x])=>({id,...x})).filter(x=>(x.date||'')>=today).sort((a,b)=>(a.date+a.from).localeCompare(b.date+b.from));
+  if(!t && !meet && !links.length) return '';
+  return `<div class="card section tmine"><div class="row" style="gap:12px;min-width:0">${t?tPhoto(t,tid):''}<div style="min-width:0"><span class="label">${tr('c.yourTeacher')}</span><b style="display:block">${esc(t?.name||tName(tid))}</b>${t?levelBadge(t.stats):''}</div></div>
+    <div class="tmine-act">${links.map(x=>`<a class="btn pen sm" href="${esc(x.url)}" target="_blank" rel="noopener">${I.video} ${tr('c.joinAt',{when:slotText(x)})}</a>`).join('')}
+      ${meet?`<a class="btn ${links.length?'':'pen'} sm" href="${esc(meet)}" target="_blank" rel="noopener">${I.video} ${tr('c.join')}</a>`:''}</div></div>`;
+}
+const joinBtn = slotId => { const x=S.myLessons?.links?.[slotId]; return x?.url ? `<a class="btn pen sm" href="${esc(x.url)}" target="_blank" rel="noopener">${I.video} ${tr('c.join')}</a>` : ''; };
+function teacherPick(sid){
+  if(S.role==='staff' || !Object.keys(S.team||{}).length) return '';
+  const cur=tidOf(S.profiles[sid]), list=teamList(true);
+  return `<div class="section card" style="padding:16px 20px"><h3>${tr('c.stuTeacher')}</h3><div class="row" style="gap:8px;margin-top:8px;flex-wrap:wrap">
+    <select class="inp" id="stu-tid" style="max-width:320px">${list.map(t=>`<option value="${esc(t.tid)}" ${t.tid===cur?'selected':''}>${esc(t.name||'')}</option>`).join('')}${S.team[cur]?'':`<option value="${esc(cur)}" selected>${esc(tName(cur))}</option>`}</select>
+    <button class="btn sm" data-act="c-move" data-sid="${esc(sid)}">${tr('c.move')}</button></div></div>`;
+}
+
+/* ---------- Google Meet links for booked lessons (owner, through the email script) ---------- */
+const meetSlot = id => S.meetDoc?.slots?.[id];
+function meetSlotBtn(x){ if(S.role==='staff') return ''; const m=meetSlot(x.id); return `<button class="btn ${m?'':'ghost'} sm meet-b" data-act="c-meet" data-id="${esc(x.id)}" title="Google Meet">${I.video}${m?' '+tr('c.meetOn'):''}</button>`; }
+async function makeMeet(slot, guests){
+  const start=new Date(slot.date+'T'+(slot.from||'09:00')), end=new Date(slot.date+'T'+(slot.to||slot.from||'10:00')); if(!(end>start)) end.setTime(start.getTime()+80*60000);
+  if(S.demo) return {ok:true, url:'https://meet.google.com/abc-defg-hij'};
+  if(!S.mail?.url || !S.mail?.secret) return {ok:false, error:'nomail'};
+  const r=await mailPost({action:'meet', title:'Lexora · '+tr('c.lessonT'), desc:'', start:start.toISOString(), end:end.toISOString(), guests});
+  if(!r.ok && !(r.v>=4)) return {ok:false, error:'old'};
+  return r;
+}
+// give every confirmed student of a slot the slot's link
+async function shareMeet(slotId, url){
+  const slot=S.svc.slots.find(x=>x.id===slotId); if(!slot) return 0; let n=0;
+  for(const [uid,b] of Object.entries(S.bookings||{})) for(const r of (b.items||[])) if(r.slotId===slotId && S.bstat?.[uid]?.[r.id]==='ok'){
+    const cur=(await S.db.doc('lessons/'+uid).get()), d=cur.exists?cur.data():{links:{}}; d.links=d.links||{};
+    d.links[slotId]={url, date:slot.date, from:slot.from, to:slot.to}; await S.db.doc('lessons/'+uid).set(d); n++; }
+  return n;
+}
+const slotGuests = slotId => Object.entries(S.bookings||{}).flatMap(([uid,b])=>(b.items||[]).filter(r=>r.slotId===slotId && S.bstat?.[uid]?.[r.id]==='ok').map(()=>S.contacts?.[uid]?.email)).filter(Boolean);
+async function saveSlotMeet(slotId, url){
+  const slots={...(S.meetDoc?.slots||{}), [slotId]:{url, at:Date.now()}};
+  await S.db.doc('private/meet').set({slots}); S.meetDoc={slots};
+  return shareMeet(slotId, url);
+}
+function openMeet(slotId){
+  const slot=S.svc.slots.find(x=>x.id===slotId); if(!slot) return; const m=meetSlot(slotId);
+  showDlg(`<form id="mt-form" novalidate>${dlgHead('Google Meet', slotText(slot))}
+    <div class="dlg-body"><p class="muted">${tr('c.meetP')}</p>
+      ${m?`<div class="notice info" style="margin:0;display:flex;gap:8px;align-items:center;flex-wrap:wrap"><a href="${esc(m.url)}" target="_blank" rel="noopener" style="word-break:break-all">${esc(m.url)}</a></div>`:''}
+      <button type="button" class="btn pen" id="mt-auto">${I.video} ${m?tr('c.meetRedo'):tr('c.meetAuto')}</button>
+      <label class="field"><span>${tr('c.meetPaste')}</span><input class="inp" id="mt-url" placeholder="https://meet.google.com/abc-defg-hij" value="${esc(m?.url||'')}"></label>
+      <p class="small faint">${tr('c.meetHelp')}</p><p class="lg-err" id="mt-err" role="alert"></p></div>
+    <div class="dlg-foot"><button type="button" class="btn ghost" data-act="dlg-close">${tr('close')}</button><button class="btn primary">${tr('c.meetSave')}</button></div></form>`, {type:'meet', id:slotId});
+  const done = n => { closeDlg(); toast(tr('c.meetShared',{n})); };
+  $('#mt-auto').addEventListener('click', async ()=>{ const b=$('#mt-auto'); b.disabled=true; b.textContent=tr('c.meetWorking');
+    const r=await makeMeet(slot, slotGuests(slotId));
+    if(r.ok && r.url){ try{ done(await saveSlotMeet(slotId, r.url)); }catch(e){ $('#mt-err').textContent=lgErrText(e); } }
+    else { $('#mt-err').textContent = r.error==='nomail'?tr('c.meetNoMail'):r.error==='old'?tr('c.meetOld'):tr('c.meetFail',{e:String(r.error||'')}); b.disabled=false; b.innerHTML=`${I.video} ${tr('c.meetAuto')}`; } });
+  $('#mt-form').addEventListener('submit', async e=>{ e.preventDefault(); const url=$('#mt-url').value.trim();
+    if(!/^https:\/\//.test(url)){ $('#mt-err').textContent=tr('c.badMeet'); return; }
+    try{ done(await saveSlotMeet(slotId, url)); }catch(err){ $('#mt-err').textContent=lgErrText(err); } });
+}
+// when the owner confirms a booking: reuse the slot's link, or quietly create one if the script can
+async function meetOnConfirm(uid, r){
+  if(S.role==='staff' || !r) return; const slot=S.svc.slots.find(x=>x.id===r.slotId); if(!slot) return;
+  let m=meetSlot(slot.id);
+  if(!m){ const res=await makeMeet(slot, [S.contacts?.[uid]?.email].filter(Boolean)); if(!(res.ok && res.url)) return; await saveSlotMeet(slot.id, res.url); return; }
+  const cur=await S.db.doc('lessons/'+uid).get(), d=cur.exists?cur.data():{links:{}}; d.links=d.links||{};
+  d.links[slot.id]={url:m.url, date:slot.date, from:slot.from, to:slot.to}; await S.db.doc('lessons/'+uid).set(d);
+}
+
+/* ---------- example data for the demo ---------- */
+function seedCentre(db){
+  const day = n => { const d=new Date(); d.setDate(d.getDate()+n); return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate()); };
+  db.m.set('teachers/main', {name:'Samandar Y. (example)', headline:'English for journals, exams and economics', langs:['English','Uzbek','Russian'], levels:'A2 – C1, IELTS', years:4, visible:true, order:1,
+    bio:'I teach English through daily writing: my students keep a journal and I mark every entry, so we always know what to fix next.', achievements:['IELTS 8.0','Founder of a university business club','60+ students taught'], stats:{students:0,active:0,reviews:0,gain:0,band:null,score:0}});
+  db.m.set('teachers/t-dilnoza', {name:'Dilnoza R. (example)', headline:'Russian and English for teenagers', langs:['Russian','English'], levels:'A1 – B2', years:6, visible:true, order:2,
+    bio:'Patient lessons with a lot of speaking. I prepare school students for exams and olympiads.', achievements:['CELTA','Two city olympiad winners'], stats:{students:1,active:1,reviews:1,gain:0,band:6,score:11}});
+  db.m.set('teachers/t-jin', {name:'Jin-woo P. (example)', headline:'Korean from zero to TOPIK II', langs:['Korean'], levels:'TOPIK I – II', years:3, visible:true, order:3,
+    bio:'Native speaker. Grammar made simple, lots of K-drama listening practice.', achievements:['TOPIK 6','Korean Education Centre volunteer'], stats:{students:0,active:0,reviews:0,gain:0,band:null,score:0}});
+  db.m.set('teacherPriv/main', {meet:'https://meet.google.com/abc-defg-hij'}); db.m.set('teacherPriv/t-dilnoza', {meet:'https://meet.google.com/xyz-abcd-efg'});
+  db.m.set('staff/dilnoza@example.com', {tid:'t-dilnoza', name:'Dilnoza R. (example)'});
+  db.m.set('leads/l1', {name:'Kamola', contact:'+998 90 111 22 33', lang:'English', level:'A2', tid:'main', msg:'I want IELTS 6.5 by summer.', at:Date.now()-3*3600e3});
+  db.m.set('leads/l2', {name:'Bekzod', contact:'@bekzod_k', lang:'Korean', level:'beginner', tid:'', msg:'', at:Date.now()-26*3600e3});
+  db.m.set('centre/offers', {items:[{id:'of1', title:'Classroom for group lessons', desc:'A room at the centre with a whiteboard and projector, per lesson.', price:50000},
+    {id:'of2', title:'Ads for your course', desc:'We post your course on the centre’s Instagram and Telegram.', price:100000},
+    {id:'of3', title:'Teaching workshop', desc:'Monthly workshop: lesson planning and exam preparation.', price:0}]});
+  db.m.set('staffReq/t-dilnoza', {name:'Dilnoza R. (example)', items:[{id:'r1', offerId:'of2', title:'Ads for your course', note:'For my new B1 group', at:Date.now()-5*3600e3}]});
+  db.m.set('lessons/ex-aziza', {links:{x:{url:'https://meet.google.com/abc-defg-hij', date:day(1), from:'18:00', to:'19:20'}}});
+  const j=db.m.get('journals/ex-madina'); if(j) db.m.set('journals/ex-madina', {...j, teacher:'t-dilnoza'});
 }
 
 /* ---------------- student ---------------- */
@@ -4094,6 +4682,7 @@ function vSetup(){
     <p class="muted" style="margin-top:10px">${tr('su.p')}</p>
     <div class="stack" style="margin-top:20px">
       <label class="field"><span>${tr('su.name')}</span><input class="inp" id="setup-name" value="${esc(S.me?.name||'')}" placeholder="${tr('su.namePh')}"></label>
+      ${teacherSelect('setup-teacher','')?`<label class="field"><span>${tr('c.chooseTeacher')}</span>${teacherSelect('setup-teacher','')}</label>`:''}
       <label class="field"><span>${tr('su.level')}</span><select class="inp" id="setup-level">${LEVELS.map(l=>`<option ${l==='B1'?'selected':''}>${l}</option>`).join('')}</select></label>
       <button class="btn primary" data-act="setup-save">${tr('su.open')}</button>
       ${S.canWrite===false?`<div class="notice">${tr('su.viewOnly')}</div>`:''}
@@ -4115,7 +4704,7 @@ function vHome(){
       <button class="btn" data-act="new-entry">${I.pen} ${wroteToday?tr('home.another'):tr('home.today')}</button></div>
     <div class="prompt-card"><span class="label">${tr('home.prompt')}</span>${S.prompt?.text?`<q>${esc(S.prompt.text)}</q><button class="btn sm" style="align-self:flex-start;margin-top:auto" data-act="new-entry" data-prompt="1">${tr('home.about')}</button>`:`<p class="muted">${tr('home.noPrompt')}</p>`}</div>
   </div>
-  ${payCard()}${pmHome()}${rankCard()}
+  ${myTeacherCard()}${payCard()}${pmHome()}${rankCard()}
   ${homeBoard()}${mailPref()}
   ${fresh.length?`<div class="notice info" style="margin-top:16px;display:flex;gap:8px;align-items:center;flex-wrap:wrap"><span>${tr('home.checked',{n:fresh.length})}</span>${fresh.map(e=>`<button class="btn sm" data-act="open-entry" data-eid="${esc(e.eid)}">${esc(e.title||tr('untitled'))}</button>`).join('')}</div>`:''}
   <div class="stats section" style="margin-top:20px"><div class="stat"><b>${ents.length}</b><span>${tr('k.entries')}</span></div><div class="stat"><b>${words.toLocaleString()}</b><span>${tr('k.words')}</span></div><div class="stat"><b>${streak()}</b><span>${tr('k.streak')}</span></div><div class="stat"><b>${fmtBand(pts.length?pts[pts.length-1].v:null)}</b><span>${tr('k.latest')}</span></div></div>
@@ -4297,7 +4886,7 @@ document.addEventListener('click', async ev => {
     case 'bank-add': { const v=$('#bank-new').value.trim(); if(!v) break; S.prefs=S.prefs||{bank:DEFAULT_BANK.slice()}; S.prefs.bank.unshift(v); await savePrefs(); renderMain(); break; }
     case 'bank-del': S.prefs=S.prefs||{bank:DEFAULT_BANK.slice()}; S.prefs.bank.splice(+b.dataset.i,1); await savePrefs(); renderMain(); break;
     // student
-    case 'setup-save': { const name=$('#setup-name').value.trim(); if(!name){ toast(tr('su.typeName')); break; } const prof={name,level:$('#setup-level').value,joinedAt:Date.now(),updatedAt:Date.now(),index:{}}; b.disabled=true; try{ await S.db.doc(`journals/${S.uid}`).set(prof); }catch(e){ b.disabled=false; dbErr(e,'journal'); } break; }
+    case 'setup-save': { const name=$('#setup-name').value.trim(); if(!name){ toast(tr('su.typeName')); break; } const prof={name,level:$('#setup-level').value,joinedAt:Date.now(),updatedAt:Date.now(),index:{}}; const tch=$('#setup-teacher')?.value; if(tch) prof.teacher=tch; b.disabled=true; try{ await S.db.doc(`journals/${S.uid}`).set(prof); }catch(e){ b.disabled=false; dbErr(e,'journal'); } break; }
     case 'new-entry': startEdit({prompt:!!b.dataset.prompt}); break;
     case 'mood': S.edit.mood = S.edit.mood===b.dataset.k? null : b.dataset.k; document.querySelectorAll('.mood').forEach(m=>m.setAttribute('aria-pressed', m.dataset.k===S.edit.mood)); if(!S.edit.eid&&!S.edit.revisionOf) LS.set(draftKey(),S.edit); break;
     case 'submit-entry': submitEntry(); break;
@@ -4345,6 +4934,7 @@ document.addEventListener('click', async ev => {
     // extra lessons
     case 'bk-set': { const uid=b.dataset.uid, st=b.dataset.st; try{ await S.db.doc('bookingStatus/'+uid).set({...(S.bstat[uid]||{}), [b.dataset.id]:st});
       const r=(S.bookings[uid]?.items||[]).find(x=>x.id===b.dataset.id), sv=r&&S.svc.services.find(x=>x.id===r.serviceId), sl=r&&S.svc.slots.find(x=>x.id===r.slotId);
+      if(r && st==='ok') meetOnConfirm(uid, r).catch(()=>{});
       if(r && st!=='wait') notify('book',[uid],()=>({subject:tr(st==='ok'?'em.bookOk':'em.bookNo',{what:sv?.title||r.want||tr('em.bookK')}), kicker:tr('em.bookK'), lines:[sl?tr('em.bookWhen',{when:slotText(sl).replace(/&[a-z]+;/g,' ')}):'']}));
     }catch(e){ dbErr(e,'svc'); } break; }
     case 'svc-new': openSvc(null); break;
@@ -4468,6 +5058,36 @@ document.addEventListener('keydown', ev=>{
   if((ev.key==='Enter'||ev.key===' ') && ev.target.classList?.contains('mk')){ ev.preventDefault(); ev.target.click(); }
 });
 window.addEventListener('resize', ()=>{ if(S.pop) closePop(); });
+/* teaching-centre buttons */
+document.addEventListener('click', async ev => {
+  const b=ev.target.closest('[data-act^="c-"]'); if(!b) return;
+  const act=b.dataset.act;
+  switch(act){
+    case 'c-signin': S.view={name:'login', step:'signin', email:LS.get('last-email','')||''}; closeDlg(); renderTop(); renderNav(); renderMain(); window.scrollTo({top:0}); break;
+    case 'c-landing': S.view={name:'landing'}; renderTop(); renderNav(); renderMain(); break;
+    case 'c-lang': S.view.lang=b.dataset.l; renderMain(); break;
+    case 'c-tprof': openTeacherProfile(b.dataset.tid); break;
+    case 'c-trial': openTrial(b.dataset.tid||''); break;
+    case 'c-allt': S.allT = b.dataset.on==='1'; refresh(); renderMain(); break;
+    case 'c-tedit': openTeacherEdit(b.dataset.tid||null); break;
+    case 'c-tdel': { const t=S.team[b.dataset.tid]; if(!t) break;
+      if(!b.dataset.armed){ b.dataset.armed='1'; b.innerHTML=`${I.trash} ${tr('c.delSure')}`; toast(tr('c.delInfo',{name:t.name||''}),5000); break; }
+      b.disabled=true; try{ await removeTeacher(b.dataset.tid); toast(tr('c.deleted')); }catch(e){ dbErr(e,'svc'); b.disabled=false; } break; }
+    case 'c-bonus': { const tid=b.dataset.tid, t=S.team[tid]; if(!t) break; try{ await S.db.doc('teachers/'+tid).update({bonus:(+t.bonus||0)+(+b.dataset.n)}); }catch(e){ dbErr(e,'svc'); } break; }
+    case 'c-lead-done': try{ await S.db.doc('leads/'+b.dataset.id).update({st:'done'}); }catch(e){ dbErr(e,'svc'); } break;
+    case 'c-lead-del': if(!b.dataset.armed){ b.dataset.armed='1'; b.textContent=tr('del.sure'); break; } try{ await S.db.doc('leads/'+b.dataset.id).delete(); }catch(e){ dbErr(e,'svc'); } break;
+    case 'c-offer': openOffer(b.dataset.id||null); break;
+    case 'c-offer-del': { if(!b.dataset.armed){ b.dataset.armed='1'; b.textContent=tr('del.sure'); break; }
+      try{ await S.db.doc('centre/offers').set({items:(S.offers?.items||[]).filter(x=>x.id!==b.dataset.id)}); }catch(e){ dbErr(e,'svc'); } break; }
+    case 'c-sreq': { const tid=b.dataset.tid, r=S.sreq[tid]; if(!r) break; try{ await S.db.doc('staffReq/'+tid).set({...r, st:{...(r.st||{}), [b.dataset.id]:b.dataset.st}}); }catch(e){ dbErr(e,'svc'); } break; }
+    case 'c-ask': openOfferAsk(b.dataset.id); break;
+    case 'c-move': { const v=$('#stu-tid')?.value; if(!v) break; try{ await S.db.doc('journals/'+b.dataset.sid).update({teacher:v}); toast(tr('c.moved',{name:esc(tName(v))})); }catch(e){ dbErr(e,'journal'); } break; }
+    case 'c-meet': openMeet(b.dataset.id); break;
+    case 'c-verify-again': try{ await S.au.sendEmailVerification(S.user); toast(tr('c.verifySent')); }catch(e){ toast(authMsg(e)); } break;
+    case 'c-verified': { b.disabled=true; try{ await S.user.reload(); await S.user.getIdToken(true); }catch(e){}
+      if(S.auth.currentUser?.emailVerified){ teardown(); startStaff(S.staffTid); } else { toast(tr('c.notYet')); b.disabled=false; } break; }
+  }
+});
 function setLang(l){
   if(!DICT[l] || l===LANG) return;
   if(S.view.name==='login'){ const em=$('#login-email'); if(em) S.view.email=em.value; }

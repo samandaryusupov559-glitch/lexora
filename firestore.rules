@@ -19,22 +19,42 @@ service cloud.firestore {
     function isMe(uid) {
       return signedIn() && request.auth.uid == uid;
     }
+    // Teachers of the centre (not the owner): the owner lists their email in /staff/{email}.
+    // They count only after they confirm their email.
+    function staffPath() {
+      return /databases/$(database)/documents/staff/$(request.auth.token.email.lower());
+    }
+    function isStaff() {
+      return signedIn() && request.auth.token.email_verified == true && exists(staffPath());
+    }
+    function staffTid() {
+      return get(staffPath()).data.tid;
+    }
+    // The staff teacher this student chose (journals without a teacher belong to the owner).
+    function teachesJournal(uid) {
+      return isStaff() && get(/databases/$(database)/documents/journals/$(uid)).data.get('teacher', 'main') == staffTid();
+    }
 
     // A student's journal: profile document + entries.
+    // The student picks a teacher when they start; only the owner can move them to another teacher.
     match /journals/{uid} {
-      allow read, write: if isMe(uid) || isTeacher();
+      allow read: if isMe(uid) || isTeacher() || (isStaff() && resource.data.teacher == staffTid());
+      allow create, delete: if isMe(uid) || isTeacher();
+      allow update: if isTeacher()
+        || (isMe(uid) && request.resource.data.get('teacher', 'main') == resource.data.get('teacher', 'main'));
       match /entries/{eid} {
-        allow read, write: if isMe(uid) || isTeacher();
+        allow read: if isMe(uid) || isTeacher() || teachesJournal(uid);
+        allow write: if isMe(uid) || isTeacher();
       }
     }
 
     // Teacher's feedback: the student may read their own, only the teacher writes.
     match /feedback/{uid} {
-      allow read: if isMe(uid) || isTeacher();
-      allow write: if isTeacher();
+      allow read: if isMe(uid) || isTeacher() || teachesJournal(uid);
+      allow write: if isTeacher() || teachesJournal(uid);
       match /reviews/{eid} {
-        allow read: if isMe(uid) || isTeacher();
-        allow write: if isTeacher();
+        allow read: if isMe(uid) || isTeacher() || teachesJournal(uid);
+        allow write: if isTeacher() || teachesJournal(uid);
       }
     }
 
@@ -46,7 +66,7 @@ service cloud.firestore {
 
     // Teacher's private comment bank.
     match /teacher/{doc} {
-      allow read, write: if isTeacher();
+      allow read, write: if isTeacher() || (isStaff() && doc == 'prefs-' + staffTid());
     }
 
     // Payments (tuition ledger): students, payments and lesson-price settings. Only the teacher.
@@ -191,6 +211,64 @@ service cloud.firestore {
       allow read: if isMe(uid) || isTeacher();
       allow write: if isTeacher()
         || (isMe(uid) && request.resource.data.keys().hasOnly(['name', 'news', 'study', 'cards']));
+    }
+
+    // ---------- Teaching centre ----------
+    // Public teacher profiles. Guests see the ones marked visible; signed-in users see all.
+    // A staff teacher may edit their own profile text, never their level, stats or visibility.
+    match /teachers/{tid} {
+      allow read: if resource.data.visible == true || signedIn();
+      allow write: if isTeacher();
+      allow update: if isStaff() && staffTid() == tid
+        && request.resource.data.diff(resource.data).affectedKeys()
+             .hasOnly(['name', 'photo', 'headline', 'langs', 'levels', 'years', 'bio', 'achievements', 'lastSeen']);
+    }
+    // A teacher's own Google Meet link: the owner, that teacher and that teacher's students.
+    match /teacherPriv/{tid} {
+      allow read: if isTeacher() || (isStaff() && staffTid() == tid)
+        || (signedIn() && exists(/databases/$(database)/documents/journals/$(request.auth.uid))
+            && get(/databases/$(database)/documents/journals/$(request.auth.uid)).data.get('teacher', 'main') == tid);
+      allow write: if isTeacher()
+        || (isStaff() && staffTid() == tid && request.resource.data.keys().hasOnly(['meet']));
+    }
+    // Who may sign in as a teacher of the centre. Only the owner adds people.
+    match /staff/{email} {
+      allow read: if isTeacher() || (signedIn() && request.auth.token.email.lower() == email);
+      allow write: if isTeacher();
+    }
+    // Trial-lesson requests from visitors. Anyone may send one; only the owner and the chosen teacher read it.
+    match /leads/{id} {
+      allow create: if request.resource.data.keys().hasOnly(['name', 'contact', 'lang', 'level', 'tid', 'msg', 'at'])
+        && request.resource.data.keys().hasAll(['name', 'contact', 'at'])
+        && request.resource.data.name is string && request.resource.data.name.size() > 0 && request.resource.data.name.size() <= 80
+        && request.resource.data.contact is string && request.resource.data.contact.size() >= 3 && request.resource.data.contact.size() <= 120
+        && request.resource.data.get('lang', '') is string && request.resource.data.get('lang', '').size() <= 40
+        && request.resource.data.get('level', '') is string && request.resource.data.get('level', '').size() <= 20
+        && request.resource.data.get('tid', '') is string && request.resource.data.get('tid', '').size() <= 40
+        && request.resource.data.get('msg', '') is string && request.resource.data.get('msg', '').size() <= 500
+        && request.resource.data.at is int;
+      allow read: if isTeacher() || (isStaff() && resource.data.tid == staffTid());
+      allow update, delete: if isTeacher();
+    }
+    // Services the centre offers its teachers. Teachers read them; only the owner changes them.
+    match /centre/{doc} {
+      allow read: if isTeacher() || isStaff();
+      allow write: if isTeacher();
+    }
+    // A teacher's requests for those services. The answer lives in "st", which only the owner writes.
+    match /staffReq/{tid} {
+      allow read: if isTeacher() || (isStaff() && staffTid() == tid);
+      allow write: if isTeacher()
+        || (isStaff() && staffTid() == tid
+            && request.resource.data.items is list && request.resource.data.items.size() <= 50
+            && (resource == null
+                  ? request.resource.data.keys().hasOnly(['name', 'items'])
+                  : request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name', 'items'])));
+    }
+    // Google Meet links for a student's booked lessons. Only the owner writes them.
+    match /lessons/{uid} {
+      allow read: if isMe(uid) || isTeacher();
+      allow write: if isTeacher();
     }
   }
 }
