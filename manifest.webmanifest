@@ -2,7 +2,7 @@
   "id": "./",
   "name": "Lexora · Online til markazi",
   "short_name": "Lexora",
-  "description": "Ustozlar, onlayn darslar, kundalik, to'lovlar va do'kon — bir joyda.",
+  "description": "Your English journal, lessons, payments and shop in one place.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
