@@ -3763,11 +3763,11 @@ function openMailSetup(){
   $('#em-copy').addEventListener('click', async ()=>{ try{ await navigator.clipboard.writeText(SCRIPT_SRC(secret)); toast(tr('pf.copied')); }catch(e){ toast(tr('em.copyFail')); } });
   $('#em-form').addEventListener('submit', async e=>{
     e.preventDefault(); const url=$('#em-url').value.trim(), err=$('#em-err');
-    if(!/^https:\/\/script\.google\.com\/macros\/s\/[\w-]+\/exec$/.test(url)){ err.textContent=tr('em.badUrl'); return; }
-    const btn=$('#em-save'); btn.disabled=true; err.textContent=tr('em.checking');
+    if(!/^https:\/\/script\.google\.com\/macros\/s\/[\w-]+\/exec$/.test(url)){ err.textContent=tr('em.badUrl'); err.scrollIntoView({block:'nearest'}); return; }
+    const btn=$('#em-save'); btn.disabled=true; err.textContent=tr('em.checking'); err.scrollIntoView({block:'nearest'});
     const prev={...S.mail}; S.mail={...S.mail, url, secret};
     const r = S.demo ? {ok:true} : await mailPost({test:true});
-    if(!r.ok){ S.mail=prev; btn.disabled=false; err.textContent = r.error==='wrong secret' ? tr('em.badSecret') : r.error==='timeout' ? tr('em.timeout') : r.error==='auth' ? tr('em.needAuth') : tr('em.noReach')+(r.error&&r.error!=='notjson'?' ('+esc(r.error)+')':''); return; }
+    if(!r.ok){ S.mail=prev; btn.disabled=false; setTimeout(()=>err.scrollIntoView({block:'nearest'}),0); err.textContent = r.error==='wrong secret' ? tr('em.badSecret') : r.error==='timeout' ? tr('em.timeout') : r.error==='auth' ? tr('em.needAuth') : tr('em.noReach')+(r.error&&r.error!=='notjson'?' ('+esc(r.error)+')':''); return; }
     try{ await S.db.doc('private/mail').set({url, secret, on:S.mail.on||{}, v:S.demo?3:(r.v>=2?r.v:1)}); publishUpload(url, secret).catch(()=>{}); closeDlg(); toast(tr('em.saved')); refresh(); }catch(e2){ btn.disabled=false; dbErr(e2,'mail'); }
   });
 }
