@@ -221,13 +221,15 @@ service cloud.firestore {
       allow write: if isTeacher();
       allow update: if isStaff() && staffTid() == tid
         && request.resource.data.diff(resource.data).affectedKeys()
-             .hasOnly(['name', 'photo', 'headline', 'langs', 'levels', 'years', 'bio', 'achievements', 'lessonLen', 'lastSeen']);
+             .hasOnly(['name', 'photo', 'headline', 'langs', 'levels', 'years', 'bio', 'achievements', 'lessonLen', 'services', 'lastSeen']);
     }
     // A teacher's own Google Meet link: the owner, that teacher and that teacher's students.
     match /teacherPriv/{tid} {
       allow read: if isTeacher() || (isStaff() && staffTid() == tid)
         || (signedIn() && exists(/databases/$(database)/documents/journals/$(request.auth.uid))
-            && get(/databases/$(database)/documents/journals/$(request.auth.uid)).data.get('teacher', 'main') == tid);
+            && get(/databases/$(database)/documents/journals/$(request.auth.uid)).data.get('teacher', 'main') == tid)
+        || (signedIn() && exists(/databases/$(database)/documents/enrollStatus/$(request.auth.uid))
+            && get(/databases/$(database)/documents/enrollStatus/$(request.auth.uid)).data.get(tid, '') == 'ok');
       allow write: if isTeacher()
         || (isStaff() && staffTid() == tid && request.resource.data.keys().hasOnly(['meet']));
     }
@@ -253,6 +255,49 @@ service cloud.firestore {
         && request.resource.data.get('msg', '') is string && request.resource.data.get('msg', '').size() <= 500
         && request.resource.data.at is int;
       allow read, update, delete: if isTeacher();
+    }
+    // A student's requests to take lessons with more teachers; the owner answers in enrollStatus.
+    match /enroll/{uid} {
+      allow read: if isMe(uid) || isTeacher();
+      allow write: if isTeacher()
+        || (isMe(uid) && request.resource.data.keys().hasOnly(['name', 'items'])
+            && request.resource.data.items is list && request.resource.data.items.size() <= 20);
+    }
+    match /enrollStatus/{uid} {
+      allow read: if isMe(uid) || isTeacher();
+      allow write: if isTeacher();
+    }
+    // Extra students of each teacher (written by the owner when they accept).
+    match /roster/{tid} {
+      allow read: if isTeacher() || (isStaff() && staffTid() == tid);
+      allow write: if isTeacher();
+    }
+    // Public site settings, e.g. the discount for students with 2+ teachers.
+    match /site/{doc} {
+      allow read: if true;
+      allow write: if isTeacher();
+    }
+    // "Lesson started" flags. Signed-in users read them; a teacher switches only their own.
+    match /live/{tid} {
+      allow read: if signedIn();
+      allow write: if isTeacher()
+        || (isStaff() && staffTid() == tid && request.resource.data.keys().hasOnly(['on', 'at', 'until']));
+    }
+    // Orders for a teacher's own services. The student creates one; that teacher or the owner answers.
+    match /torders/{id} {
+      allow create: if signedIn() && request.resource.data.uid == request.auth.uid
+        && request.resource.data.keys().hasOnly(['uid', 'name', 'tid', 'svcId', 'title', 'price', 'note', 'at'])
+        && request.resource.data.title is string && request.resource.data.title.size() <= 120
+        && request.resource.data.get('note', '') is string && request.resource.data.get('note', '').size() <= 300
+        && request.resource.data.tid is string && request.resource.data.tid.size() <= 40
+        && request.resource.data.price is number && request.resource.data.at is int;
+      allow read: if isTeacher() || (signedIn() && resource.data.uid == request.auth.uid)
+        || (isStaff() && resource.data.tid == staffTid());
+      allow update: if isTeacher()
+        || (isStaff() && resource.data.tid == staffTid()
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['st'])
+            && request.resource.data.st in ['ok', 'no', 'done']);
+      allow delete: if isTeacher() || (signedIn() && resource.data.uid == request.auth.uid && !('st' in resource.data));
     }
     // Trial-lesson requests from visitors. Anyone may send one; only the owner and the chosen teacher read it.
     match /leads/{id} {
