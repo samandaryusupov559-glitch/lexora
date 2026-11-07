@@ -1031,7 +1031,7 @@ a.btn{text-decoration:none}
 <div id="toast" class="toast" hidden role="status" aria-live="polite"></div>
 
 <script type="module">
-import { LANGS, DICT } from './i18n.js?v=2026.11.08a';
+import { LANGS, DICT } from './i18n.js?v=2026.11.08b';
 /* ---------------- constants ---------------- */
 const TYPES = [['gr','Gr'],['t','T'],['art','Art'],['prep','Prep'],['ww','WW'],['sp','Sp'],['p','P'],['wo','WO'],['agr','Agr'],['st','St'],['good','★']]
   .map(([k,code])=>({k, code, get name(){ return tr('type.'+k); }}));
@@ -3549,7 +3549,7 @@ seller = a person who sells things | The seller gave me a free melon. | sotuvchi
    private/mail:   {url, secret, on:{...}} teacher only. url = the teacher's Google Apps Script web app,
                    which checks the secret and sends with GmailApp, BCC to the students. */
 const MAIL_EVENTS = ['ann','post','task','prompt','review','pay','book','order','news','live'];
-const SCRIPT_SRC = secret => `// Lexora email script, version 5: each student gets their own email from your Gmail,
+const SCRIPT_SRC = secret => `// Lexora email script, version 6: each student gets their own email from your Gmail,
 // readers of the daily newspaper get a note every morning when their paper comes out,
 // booked lessons get a Google Meet link (an event in your Google Calendar),
 // and teachers can upload library files (saved to a "Lexora library" folder in your Google Drive).
@@ -3561,19 +3561,22 @@ const SECRET = '${secret}';
 function doPost(e) {
   try {
     const d = JSON.parse(e.postData.contents);
-    if (d.action === 'upload') return out(d.key && d.key === uploadKey() ? saveFile(d) : { ok: false, v: 5, error: 'wrong key' });
+    if (d.action === 'upload' || d.action === 'upsession' || d.action === 'upshare') {
+      if (!d.key || d.key !== uploadKey()) return out({ ok: false, v: 6, error: 'wrong key' });
+      return out(d.action === 'upload' ? saveFile(d) : d.action === 'upsession' ? upSession(d) : shareFile(d));
+    }
     if (d.secret !== SECRET) return out({ ok: false, error: 'wrong secret' });
     if (d.action === 'news') return out(saveNews(d));
     if (d.action === 'meet') return out(makeMeet(d));
-    if (d.test && !(d.to || d.bcc || []).length) { let timer = true; try { ensureTrigger(); } catch (err) { timer = false; } return out({ ok: true, v: 5, timer: timer, left: MailApp.getRemainingDailyQuota() }); }
+    if (d.test && !(d.to || d.bcc || []).length) { let timer = true; try { ensureTrigger(); } catch (err) { timer = false; } return out({ ok: true, v: 6, timer: timer, left: MailApp.getRemainingDailyQuota() }); }
     const ok = x => /^[^@\\s,;<>]+@[^@\\s,;<>]+\\.[^@\\s,;<>]+$/.test(x);
     const list = (d.to || d.bcc || []).filter(ok).slice(0, 50);
-    if (!list.length) return out({ ok: false, v: 5, error: 'no recipients' });
+    if (!list.length) return out({ ok: false, v: 6, error: 'no recipients' });
     const subject = String(d.subject || '').slice(0, 200), text = String(d.text || '').slice(0, 10000);
     const opts = { htmlBody: String(d.html || '').slice(0, 30000), name: String(d.from || 'Lexora').slice(0, 60) };
     let sent = 0;
     list.forEach(to => { GmailApp.sendEmail(to, subject, text, opts); sent++; });  // each student gets their own email
-    return out({ ok: true, v: 5, sent: sent, left: MailApp.getRemainingDailyQuota() });
+    return out({ ok: true, v: 6, sent: sent, left: MailApp.getRemainingDailyQuota() });
   } catch (err) {
     return out({ ok: false, error: String(err) });
   }
@@ -3584,14 +3587,33 @@ function uploadKey() {
   return Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, SECRET + ':upload')
     .map(function (b) { return ('0' + (b & 255).toString(16)).slice(-2); }).join('');
 }
-function saveFile(d) {
-  if (!d.data || d.data.length > 45000000) return { ok: false, v: 5, error: 'file too big' };
+function libFolder() {
   const it = DriveApp.getFoldersByName('Lexora library');
-  const folder = it.hasNext() ? it.next() : DriveApp.createFolder('Lexora library');
+  return it.hasNext() ? it.next() : DriveApp.createFolder('Lexora library');
+}
+// Big files: the browser sends the file straight to Google Drive in parts; the script only opens the upload.
+function upSession(d) {
+  const res = UrlFetchApp.fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=resumable', {
+    method: 'post', contentType: 'application/json; charset=UTF-8', muteHttpExceptions: true,
+    headers: { Authorization: 'Bearer ' + ScriptApp.getOAuthToken(), 'X-Upload-Content-Type': String(d.mime || 'application/octet-stream'),
+      'X-Upload-Content-Length': String(d.size || 0), Origin: String(d.origin || '') },
+    payload: JSON.stringify({ name: String(d.name || 'file').slice(0, 150), parents: [libFolder().getId()] }) });
+  const h = res.getHeaders(), loc = h.Location || h.location;
+  return loc ? { ok: true, v: 6, url: loc } : { ok: false, v: 6, error: res.getContentText().slice(0, 300) };
+}
+function shareFile(d) {
+  const f = DriveApp.getFileById(String(d.id || ''));
+  const p = f.getParents(); if (!p.hasNext() || p.next().getName() !== 'Lexora library') return { ok: false, v: 6, error: 'not a library file' };
+  f.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+  return { ok: true, v: 6, id: f.getId(), url: 'https://drive.google.com/file/d/' + f.getId() + '/view' };
+}
+function saveFile(d) {
+  if (!d.data || d.data.length > 45000000) return { ok: false, v: 6, error: 'file too big' };
+  const folder = libFolder();
   const blob = Utilities.newBlob(Utilities.base64Decode(d.data), String(d.mime || 'application/octet-stream'), String(d.name || 'file').slice(0, 150));
   const f = folder.createFile(blob);
   f.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
-  return { ok: true, v: 5, id: f.getId(), url: 'https://drive.google.com/file/d/' + f.getId() + '/view' };
+  return { ok: true, v: 6, id: f.getId(), url: 'https://drive.google.com/file/d/' + f.getId() + '/view' };
 }
 function okMail(x) { return /^[^@\\s,;<>]+@[^@\\s,;<>]+\\.[^@\\s,;<>]+$/.test(x); }
 
@@ -3605,13 +3627,13 @@ function makeMeet(d) {
   const api = 'https://www.googleapis.com/calendar/v3/calendars/primary/events', head = { Authorization: 'Bearer ' + ScriptApp.getOAuthToken() };
   let res = UrlFetchApp.fetch(api + '?conferenceDataVersion=1&sendUpdates=' + (guests.length ? 'all' : 'none'),
     { method: 'post', contentType: 'application/json', payload: JSON.stringify(body), headers: head, muteHttpExceptions: true });
-  if (res.getResponseCode() >= 300) return { ok: false, v: 5, error: res.getContentText().slice(0, 300) };
+  if (res.getResponseCode() >= 300) return { ok: false, v: 6, error: res.getContentText().slice(0, 300) };
   let ev = JSON.parse(res.getContentText());
   for (let i = 0; i < 5 && !ev.hangoutLink; i++) {
     Utilities.sleep(1500);
     ev = JSON.parse(UrlFetchApp.fetch(api + '/' + ev.id, { headers: head, muteHttpExceptions: true }).getContentText());
   }
-  return ev.hangoutLink ? { ok: true, v: 5, url: ev.hangoutLink, id: ev.id } : { ok: false, v: 5, error: 'no Meet link yet' };
+  return ev.hangoutLink ? { ok: true, v: 6, url: ev.hangoutLink, id: ev.id } : { ok: false, v: 6, error: 'no Meet link yet' };
 }
 
 // Daily newspaper: Lexora sends the plan for the next days; sendNews() runs every 15 minutes
@@ -3629,8 +3651,8 @@ function saveNews(d) {
     try { if (JSON.parse(all[k]).date >= from) P.deleteProperty(k); } catch (e) { P.deleteProperty(k); }
   });
   if (Object.keys(keep).length) P.setProperties(keep, false);
-  try { ensureTrigger(); } catch (err) { return { ok: true, v: 5, saved: Object.keys(keep).length, timer: false }; }
-  return { ok: true, v: 5, saved: Object.keys(keep).length };
+  try { ensureTrigger(); } catch (err) { return { ok: true, v: 6, saved: Object.keys(keep).length, timer: false }; }
+  return { ok: true, v: 6, saved: Object.keys(keep).length };
 }
 function ensureTrigger() {
   const has = ScriptApp.getProjectTriggers().some(function (t) { return t.getHandlerFunction() === 'sendNews'; });
@@ -5205,15 +5227,40 @@ function openLibItem(id){
 async function uploadKeyFor(secret){ const b=await crypto.subtle.digest('SHA-256', new TextEncoder().encode(secret+':upload')); return [...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join(''); }
 // the owner shares the upload address and key (not the email secret) with teachers
 async function publishUpload(url, secret){ if(!url||!secret||S.demo) return; const key=await uploadKeyFor(secret); if(S.upCfg?.url===url && S.upCfg?.key===key) return; await S.db.doc('centre/upload').set({url, key}); S.upCfg={url, key}; }
-const LIB_MAX = 30*1024*1024;
-async function uploadFile(file){
-  if(S.demo) return {ok:true, url:'https://drive.google.com/file/d/1DemoUploadedFileForTheExample00/view'};
-  const cfg = S.role==='owner' && S.mail?.url && S.mail?.secret ? {url:S.mail.url, key:await uploadKeyFor(S.mail.secret)} : S.upCfg;
+const LIB_SMALL = 30*1024*1024, LIB_MAX = 1024*1024*1024;
+const upCfgNow = async () => S.role==='owner' && S.mail?.url && S.mail?.secret ? {url:S.mail.url, key:await uploadKeyFor(S.mail.secret)} : S.upCfg;
+const upCall = (cfg, b) => fetch(cfg.url,{method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body:JSON.stringify({...b, key:cfg.key})}).then(r=>r.json());
+// big files go straight to Google Drive in 8 MB parts (resumable upload opened by the script); small ones can also go through the script
+async function uploadFile(file, onPct){
+  if(S.demo){ for(let p=0;p<=1;p+=.25){ onPct&&onPct(p); await new Promise(r=>setTimeout(r,60)); } return {ok:true, url:'https://drive.google.com/file/d/1DemoUploadedFileForTheExample00/view'}; }
+  const cfg=await upCfgNow();
   if(!cfg?.url || !cfg?.key) return {ok:false, error:'nocfg'};
   if(file.size>LIB_MAX) return {ok:false, error:'big'};
-  const data=await new Promise((ok,bad)=>{ const r=new FileReader(); r.onload=()=>ok(String(r.result).split(',')[1]||''); r.onerror=bad; r.readAsDataURL(file); });
-  try{ const res=await fetch(cfg.url,{method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body:JSON.stringify({action:'upload', key:cfg.key, name:file.name, mime:file.type, data})});
-    const j=await res.json(); if(!j.ok && !(j.v>=5)) return {ok:false, error:'old'}; return j; }catch(e){ return {ok:false, error:String(e&&e.message||e)}; }
+  try{
+    const ses=await upCall(cfg, {action:'upsession', name:file.name, mime:file.type||'application/octet-stream', size:file.size, origin:location.origin});
+    if(ses.ok && ses.url){
+      const CH=8*1024*1024; let start=0, done=null;
+      while(start<file.size){
+        const end=Math.min(start+CH, file.size); let r=null;
+        for(let tries=0; tries<3 && !r; tries++){ try{ r=await fetch(ses.url,{method:'PUT', headers:{'Content-Range':`bytes ${start}-${end-1}/${file.size}`}, body:file.slice(start,end)}); }catch(e){ await new Promise(w=>setTimeout(w,1500)); } }
+        if(!r) return {ok:false, error:'network'};
+        if(r.status===308){ const rg=r.headers.get('Range'); start = rg ? (+rg.split('-')[1]+1) : end; onPct&&onPct(start/file.size); continue; }
+        if(r.ok){ done=await r.json(); onPct&&onPct(1); break; }
+        return {ok:false, error:'HTTP '+r.status};
+      }
+      if(!done?.id) return {ok:false, error:'no file id'};
+      const sh=await upCall(cfg, {action:'upshare', id:done.id});
+      return sh.ok ? sh : {ok:false, error:sh.error||'share'};
+    }
+    if(!(ses.v>=6)){ // script v5 or older: only the small way works
+      if(file.size>LIB_SMALL) return {ok:false, error:'old'};
+      onPct&&onPct(.3);
+      const data=await new Promise((ok,bad)=>{ const rd=new FileReader(); rd.onload=()=>ok(String(rd.result).split(',')[1]||''); rd.onerror=bad; rd.readAsDataURL(file); });
+      const j=await upCall(cfg, {action:'upload', name:file.name, mime:file.type, data}); onPct&&onPct(1);
+      if(!j.ok && !(j.v>=5)) return {ok:false, error:'old'}; return j;
+    }
+    return {ok:false, error:ses.error||'session'};
+  }catch(e){ return {ok:false, error:String(e&&e.message||e)}; }
 }
 const kindOf = f => /^audio\//.test(f.type)?'audio' : /^video\//.test(f.type)?'video' : 'book';
 function openLibEdit(id){
@@ -5224,7 +5271,7 @@ function openLibEdit(id){
       <label class="field"><span>${tr('c.fLevel')}</span><select class="inp" id="lb-level">${LIB_LEVELS.map(l=>`<option value="${l}" ${l===x.level?'selected':''}>${l==='all'?tr('c.libAllLv'):l}</option>`).join('')}</select></label></div>
     <label class="field"><span>${tr('c.libKind')}</span><select class="inp" id="lb-kind">${LIB_KINDS.map(k=>`<option value="${k}" ${k===x.kind?'selected':''}>${libIcon(k)} ${tr('c.lib.'+k)}</option>`).join('')}</select></label>
     <label class="field"><span>${tr('c.oTitle')}</span><input class="inp" id="lb-title" maxlength="120" value="${esc(x.title||'')}" placeholder="${tr('c.libTitlePh')}"></label>
-    ${id?'':`<label class="lib-drop"><input type="file" id="lb-file" accept=".pdf,.epub,.doc,.docx,.ppt,.pptx,audio/*,video/*" hidden><b>📤 ${tr('c.libPick')}</b><span class="small faint" id="lb-fname">${tr('c.libPickHint')}</span></label>
+    ${id?'':`<label class="lib-drop"><input type="file" id="lb-file" accept=".pdf,.epub,.doc,.docx,.ppt,.pptx,audio/*,video/*" hidden><b>📤 ${tr('c.libPick')}</b><span class="small faint" id="lb-fname">${tr('c.libPickHint')}</span><progress id="lb-prog" max="100" value="0" hidden style="width:100%"></progress></label>
     <p class="small faint" style="text-align:center;margin:-4px 0 0">${tr('c.libOr')}</p>`}
     <label class="field"><span>${tr('c.libUrl')}</span><input class="inp" id="lb-url" value="${esc(x.url||'')}" placeholder="https://youtu.be/… / https://drive.google.com/…"></label>
     <label class="field"><span>${tr('mk.desc')} <span class="faint">${tr('optional')}</span></span><textarea class="inp" id="lb-desc" rows="2" maxlength="400">${esc(x.desc||'')}</textarea></label>
@@ -5233,12 +5280,13 @@ function openLibEdit(id){
   if(S.role==='owner') publishUpload(S.mail?.url, S.mail?.secret).catch(()=>{});
   const fi=$('#lb-file'); if(fi) fi.addEventListener('change', ()=>{ const f=fi.files[0]; if(!f) return;
     $('#lb-fname').textContent=f.name+' · '+(f.size/1048576).toFixed(1)+' MB'+(f.size>LIB_MAX?' — '+tr('c.libBig'):'');
+    $('#lb-prog').hidden=true;
     if(!$('#lb-title').value.trim()) $('#lb-title').value=f.name.replace(/\.[^.]+$/,'').replace(/[_-]+/g,' ');
     $('#lb-kind').value=kindOf(f); $('#lb-url').value=''; });
   $('#lb-form').addEventListener('submit', async e=>{ e.preventDefault(); const err=$('#lb-err'), title=$('#lb-title').value.trim(), file=fi?.files?.[0]; let url=$('#lb-url').value.trim();
     if(!title){ err.textContent=tr('c.needTitle'); return; }
-    if(file){ const btn=$('#lb-form .btn.primary'); btn.disabled=true; err.textContent=''; $('#lb-fname').textContent=tr('c.libUploading');
-      const r=await uploadFile(file); btn.disabled=false;
+    if(file){ const btn=$('#lb-form .btn.primary'), pr=$('#lb-prog'); btn.disabled=true; err.textContent=''; $('#lb-fname').textContent=tr('c.libUploading'); pr.hidden=false; pr.value=0;
+      const r=await uploadFile(file, p=>{ pr.value=Math.round(p*100); $('#lb-fname').textContent=tr('c.libPct',{p:Math.round(p*100)}); }); btn.disabled=false;
       if(!r.ok){ err.textContent = r.error==='nocfg'?tr(S.role==='owner'?'c.libNoCfgOwner':'c.libNoCfg') : r.error==='old'?tr('c.libOld') : r.error==='big'?tr('c.libBig') : tr('c.libUpFail',{e:esc(r.error||'')}); $('#lb-fname').textContent=file.name; return; }
       url=r.url; }
     if(!/^https:\/\//.test(url)){ err.textContent=tr(fi?'c.libNeedFile':'c.libBadUrl'); return; }
