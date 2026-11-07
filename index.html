@@ -974,6 +974,7 @@ td.nwc.off{color:var(--ink-3);font-size:18px}
 .promo-ed{padding:20px}
 .lv-steps{margin:0 0 4px 18px;display:flex;flex-direction:column;gap:10px}
 .live-b{white-space:nowrap}
+.live-grp{display:inline-flex;gap:6px;align-items:center;margin-right:8px}
 .tsvc-list{display:flex;flex-direction:column;gap:8px;margin-top:8px}
 .tsvc{display:flex;justify-content:space-between;gap:12px;align-items:center;padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:var(--sheet-2)}
 a.btn{text-decoration:none}
@@ -3512,7 +3513,7 @@ seller = a person who sells things | The seller gave me a free melon. | sotuvchi
    contacts/{uid}: {email, lang, off} written by the student (email must be their sign-in email).
    private/mail:   {url, secret, on:{...}} teacher only. url = the teacher's Google Apps Script web app,
                    which checks the secret and sends with GmailApp, BCC to the students. */
-const MAIL_EVENTS = ['ann','post','task','prompt','review','pay','book','order','news'];
+const MAIL_EVENTS = ['ann','post','task','prompt','review','pay','book','order','news','live'];
 const SCRIPT_SRC = secret => `// Lexora email script, version 4: each student gets their own email from your Gmail,
 // readers of the daily newspaper get a note every morning when their paper comes out,
 // and booked lessons get a Google Meet link (an event in your Google Calendar).
@@ -3650,7 +3651,7 @@ function mailHtml(lang, m){
     <div style="padding:24px">${m.kicker?`<div style="font-size:12px;letter-spacing:1.5px;text-transform:uppercase;color:#7882A2;font-weight:700;margin-bottom:6px">${esc(m.kicker)}</div>`:''}
       <h1 style="margin:0 0 14px;font-size:22px;line-height:1.3;color:#121A33">${esc(m.title||m.subject)}</h1>
       ${(m.lines||[]).filter(Boolean).map(p).join('')}
-      <a href="${esc(siteUrl())}" style="display:inline-block;margin-top:6px;background:#D11F3B;color:#fff;text-decoration:none;font-weight:700;padding:12px 20px;border-radius:12px">${esc(trL(lang,'em.btn'))}</a></div>
+      <a href="${esc(m.href||siteUrl())}" style="display:inline-block;margin-top:6px;background:#D11F3B;color:#fff;text-decoration:none;font-weight:700;padding:12px 20px;border-radius:12px">${esc(m.btn||trL(lang,'em.btn'))}</a></div>
     <div style="padding:14px 24px;font-size:12px;color:#7882A2;border-top:1px solid #ECEFF7">${esc(trL(lang,'em.foot'))}</div></div></div>`;
 }
 
@@ -4784,7 +4785,7 @@ const isLive = l => !!(l && l.on && (l.until||0)>Date.now());
 
 function vStuTeachers(){
   const mine=myTids(), all=teamList(false), st=S.myEnrollSt||{}, req=(S.myEnroll?.items||[]);
-  const mineCards = mine.map(tid=>{ const t=S.team[tid]; if(!t) return ''; const meet=meetOf(tid), live=isLive(S.lives?.[tid]);
+  const mineCards = mine.map(tid=>{ const t=S.team[tid]; if(!t) return ''; const live=isLive(S.lives?.[tid]), meet=(live&&S.lives[tid].url)||meetOf(tid);
     return `<div class="card tmine2">${tPhoto(t,tid)}<div style="min-width:0;flex:1"><b>${esc(t.name||'')}</b> ${live?`<span class="livedot">${tr('c.liveNow')}</span>`:''}
       <div class="small muted">${(t.langs||[]).map(esc).join(' · ')}${t.lessonLen?' · '+lenText(t.lessonLen):''}</div>${levelBadge(t.stats)}</div>
       <div class="tmine-act">${meet?`<a class="btn ${live?'pen':''} sm" href="${esc(meet)}" target="_blank" rel="noopener">${I.video} ${tr('c.join')}</a>`:`<span class="small faint">${tr('c.noMeetYet')}</span>`}
@@ -4849,32 +4850,42 @@ const myMeet = () => S.role==='staff' ? S.myTPriv?.meet : S.tpriv?.[MAIN_TID]?.m
 const myLive = () => S.role==='staff' ? S.myLive : S.lives?.[MAIN_TID];
 function liveTopBtn(){
   if(S.mode!=='teacher' || S.view.name==='verify' || (S.role==='owner' && !S.team?.[MAIN_TID])) return '';
-  return isLive(myLive()) ? `<button class="btn sm pen live-b" data-act="c-live-end">${I.video} ${tr('c.liveEnd')}</button>`
-    : `<button class="btn sm primary live-b" data-act="c-live">${I.video} ${tr('c.liveStart')}</button>`;
+  const L=myLive();
+  return isLive(L) ? `<span class="live-grp"><a class="btn sm live-b" href="${esc(L.url||myMeet()||'#')}" target="_blank" rel="noopener"><span class="livedot">${tr('c.liveNow')}</span></a><button class="btn sm pen live-b" data-act="c-live-end">${tr('c.liveEnd')}</button></span>`
+    : `<span class="live-grp"><button class="btn sm primary live-b" data-act="c-live">${I.video} ${tr('c.liveStart')}</button>${myMeet()?`<button class="btn sm ghost live-b" data-act="c-live-other" title="${tr('c.liveOtherH')}">${tr('c.liveOther')}</button>`:''}</span>`;
 }
+// students of this teacher: their own (journal) students plus extra students on the roster
+function liveStudents(){ const tid=myTid(); const a=Object.keys(S.profiles).filter(uid=>tidOf(S.profiles[uid])===tid);
+  const ro=S.role==='staff'?S.myRoster:S.rosters?.[tid]; return [...new Set([...a, ...Object.keys(ro?.students||{})])]; }
+// the lesson stays open until the teacher ends it (6 hours at most, in case they forget)
 async function goLive(url){
-  const tid=myTid(), len=+S.team?.[tid]?.lessonLen||80;
-  await S.db.doc('live/'+tid).set({on:true, at:Date.now(), until:Date.now()+(len+20)*60000});
-  if(S.role==='owner') S.lives={...(S.lives||{}), [tid]:{on:true, at:Date.now(), until:Date.now()+(len+20)*60000}};
+  const tid=myTid(), d={on:true, at:Date.now(), until:Date.now()+6*3600e3, url};
+  await S.db.doc('live/'+tid).set(d);
+  if(S.role==='staff') S.myLive=d; else S.lives={...(S.lives||{}), [tid]:d};
   renderTop(); toast(tr('c.liveOn'));
+  const who=liveStudents(), nm=S.team?.[tid]?.name||S.me?.name||tr('teacher');
+  if(who.length) notify('live', who, ()=>({subject:tr('em.liveS',{name:nm}), kicker:tr('em.liveK'), lines:[tr('em.liveL')], href:url, btn:tr('c.join')})).catch(()=>{});
 }
 function openLiveSetup(){
-  showDlg(`<form id="lv-form" novalidate>${dlgHead('Google Meet', tr('c.liveSetupH'))}<div class="dlg-body">
-    <ol class="lv-steps"><li>${tr('c.liveS1')} <a class="btn sm" href="https://meet.google.com/new" target="_blank" rel="noopener">${I.video} meet.google.com/new</a></li><li>${tr('c.liveS2')}</li><li>${tr('c.liveS3')}</li></ol>
-    <label class="field"><span>${tr('c.fMeet')}</span><input class="inp" id="lv-url" placeholder="https://meet.google.com/abc-defg-hij"></label><p class="lg-err" id="lv-err"></p></div>
-    <div class="dlg-foot"><button type="button" class="btn ghost" data-act="dlg-close">${tr('cancel')}</button><button class="btn pen">${tr('c.liveSaveStart')}</button></div></form>`, {type:'live'});
+  const saved=myMeet();
+  showDlg(`<form id="lv-form" novalidate>${dlgHead('Google Meet', saved?tr('c.liveOtherH'):tr('c.liveSetupH'))}<div class="dlg-body">
+    <ol class="lv-steps"><li>${tr('c.liveS1')} <a class="btn sm" href="https://meet.google.com/new" target="_blank" rel="noopener">${I.video} meet.google.com/new</a></li><li>${tr('c.liveS2')}</li><li>${tr('c.liveS3b')}</li></ol>
+    <label class="field"><span>${tr('c.fMeet')}</span><input class="inp" id="lv-url" placeholder="https://meet.google.com/abc-defg-hij"></label>
+    <label class="small row" style="gap:8px;cursor:pointer"><input type="checkbox" id="lv-keep" ${saved?'':'checked'}> ${tr('c.liveKeep')}</label>
+    <p class="small faint">${tr('c.liveTip')}</p><p class="lg-err" id="lv-err"></p></div>
+    <div class="dlg-foot"><button type="button" class="btn ghost" data-act="dlg-close">${tr('cancel')}</button><button class="btn pen">${tr('c.liveSend')}</button></div></form>`, {type:'live'});
   $('#lv-form').addEventListener('submit', async e=>{ e.preventDefault(); const url=$('#lv-url').value.trim();
     if(!/^https:\/\/meet\.google\.com\//.test(url)){ $('#lv-err').textContent=tr('c.badMeet'); return; }
-    const w=window.open(url,'_blank','noopener');
-    try{ await S.db.doc('teacherPriv/'+myTid()).set({meet:url}); if(S.role==='staff') S.myTPriv={meet:url}; else S.tpriv={...(S.tpriv||{}), [MAIN_TID]:{meet:url}};
+    try{ if($('#lv-keep').checked){ await S.db.doc('teacherPriv/'+myTid()).set({meet:url}); if(S.role==='staff') S.myTPriv={meet:url}; else S.tpriv={...(S.tpriv||{}), [MAIN_TID]:{meet:url}}; }
       closeDlg(); await goLive(url); }catch(err){ $('#lv-err').textContent=lgErrText(err); } });
 }
 // students: a big "join now" when one of their teachers has started
 function liveBanner(){
   if(S.mode!=='student') return '';
-  return myTids().filter(t=>isLive(S.lives?.[t]) && meetOf(t)).map(t=>`<div class="livebar"><span class="livedot">${tr('c.liveNow')}</span>
+  const urlOf = t => S.lives?.[t]?.url || meetOf(t);
+  return myTids().filter(t=>isLive(S.lives?.[t]) && urlOf(t)).map(t=>`<div class="livebar"><span class="livedot">${tr('c.liveNow')}</span>
     <span style="min-width:0"><b>${tr('c.liveStarted',{name:esc(tName(t))})}</b><br><span class="small">${tr('c.liveAgo',{ago:ago(S.lives[t].at)})}</span></span>
-    <a class="btn pen" href="${esc(meetOf(t))}" target="_blank" rel="noopener">${I.video} ${tr('c.join')}</a></div>`).join('');
+    <a class="btn pen" href="${esc(urlOf(t))}" target="_blank" rel="noopener">${I.video} ${tr('c.join')}</a></div>`).join('');
 }
 
 /* ---------- teachers' own services (IELTS mock, essay checking, speaking club…) ---------- */
@@ -4945,7 +4956,7 @@ function seedCentre(db){
   db.m.set('enroll/ex-aziza', {name:'Aziza (example)', items:[{id:'e1', tid:'t-dilnoza', lang:'Russian', note:'', at:Date.now()-4*864e5},{id:'e2', tid:'t-jin', lang:'Korean', note:'I want to start Korean', at:Date.now()-3600e3}]});
   db.m.set('enrollStatus/ex-aziza', {'t-dilnoza':'ok'});
   db.m.set('roster/t-dilnoza', {students:{'ex-aziza':{name:'Aziza (example)', lang:'Russian', since:Date.now()-4*864e5}}});
-  db.m.set('live/t-dilnoza', {on:true, at:Date.now()-5*60000, until:Date.now()+60*60000});
+  db.m.set('live/t-dilnoza', {on:true, at:Date.now()-5*60000, until:Date.now()+6*3600e3, url:'https://meet.google.com/xyz-abcd-efg'});
   db.m.set('torders/o1', {uid:'ex-aziza', name:'Aziza (example)', tid:'t-dilnoza', svcId:'s1', title:'Speaking club', price:30000, note:'Saturday please', at:Date.now()-2*3600e3});
   db.m.set('leads/l2', {name:'Bekzod', contact:'@bekzod_k', lang:'Korean', level:'beginner', tid:'', msg:'', at:Date.now()-26*3600e3});
   db.m.set('centre/offers', {items:[{id:'of1', title:'Classroom for group lessons', desc:'A room at the centre with a whiteboard and projector, per lesson.', price:50000},
@@ -5381,6 +5392,7 @@ document.addEventListener('click', async ev => {
     case 'c-enroll-x': try{ await S.db.doc('enroll/'+S.uid).set({name:S.myProfile?.name||'', items:(S.myEnroll?.items||[]).filter(i=>i.tid!==b.dataset.tid)}); }catch(e){ dbErr(e,'svc'); } break;
     case 'c-en-set': b.disabled=true; try{ await setEnroll(b.dataset.uid, b.dataset.tid, b.dataset.st); }catch(e){ b.disabled=false; dbErr(e,'svc'); } break;
     case 'c-live': { const url=myMeet(); if(url){ window.open(url,'_blank','noopener'); try{ await goLive(url); }catch(e){ dbErr(e,'svc'); } } else openLiveSetup(); break; }
+    case 'c-live-other': openLiveSetup(); break;
     case 'c-live-end': try{ await S.db.doc('live/'+myTid()).set({on:false, at:Date.now(), until:0}); if(S.role==='owner') S.lives={...(S.lives||{}), [MAIN_TID]:{on:false}}; else S.myLive={on:false}; renderTop(); toast(tr('c.liveOff')); }catch(e){ dbErr(e,'svc'); } break;
     case 'c-tsvc': openTsvc(b.dataset.tid, b.dataset.id||null); break;
     case 'c-tsvc-del': { if(!b.dataset.armed){ b.dataset.armed='1'; b.textContent=tr('del.sure'); break; } const tid=b.dataset.tid;

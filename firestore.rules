@@ -277,11 +277,15 @@ service cloud.firestore {
       allow read: if true;
       allow write: if isTeacher();
     }
-    // "Lesson started" flags. Signed-in users read them; a teacher switches only their own.
+    // "Lesson started" flags with today's Meet link. Only that teacher's students read them.
     match /live/{tid} {
-      allow read: if signedIn();
+      allow read: if isTeacher() || (isStaff() && staffTid() == tid)
+        || (signedIn() && exists(/databases/$(database)/documents/journals/$(request.auth.uid))
+            && get(/databases/$(database)/documents/journals/$(request.auth.uid)).data.get('teacher', 'main') == tid)
+        || (signedIn() && exists(/databases/$(database)/documents/enrollStatus/$(request.auth.uid))
+            && get(/databases/$(database)/documents/enrollStatus/$(request.auth.uid)).data.get(tid, '') == 'ok');
       allow write: if isTeacher()
-        || (isStaff() && staffTid() == tid && request.resource.data.keys().hasOnly(['on', 'at', 'until']));
+        || (isStaff() && staffTid() == tid && request.resource.data.keys().hasOnly(['on', 'at', 'until', 'url']));
     }
     // Orders for a teacher's own services. The student creates one; that teacher or the owner answers.
     match /torders/{id} {
