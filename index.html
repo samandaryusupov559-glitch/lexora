@@ -1355,7 +1355,7 @@ async function boot(){
   catch(e){ toast(tr('fb.load')); S.setupMissing=true; startDemo('teacher'); return; }
   const app = fa.initializeApp(fc);
   S.auth = au.getAuth(app); S.au = au;
-  S.realDb = new FireDB(fs.initializeFirestore(app,{ignoreUndefinedProperties:true}), fs);
+  S.realDb = new FireDB(fs.initializeFirestore(app,{ignoreUndefinedProperties:true, experimentalForceLongPolling:true}), fs);
   S.teacherEmail = String(cfg.TEACHER_EMAIL).trim().toLowerCase();
   if(au.isSignInWithEmailLink(S.auth, location.href)){
     const email = LS.get('signin-email', null);
@@ -4406,6 +4406,8 @@ function openSugPop(s, rect){
   placePop($('#pop .pop'), rect);
 }
 let saveT=null, saveChain=Promise.resolve();
+// A Firestore write that never answers (blocked network) must not freeze the review screen.
+const withTimeout=(p,ms=20000)=>Promise.race([p,new Promise((_,no)=>setTimeout(()=>no({code:'save-timeout'}),ms))]);
 function setSaved(ok){ const R=S.review; if(!R) return; R.saved=ok; const el=$('#save-state'); if(el){ el.textContent= ok?tr('saved'):tr('saving'); el.classList.toggle('busy',!ok); } }
 function scheduleSave(){ setSaved(false); clearTimeout(saveT); saveT=setTimeout(()=>saveReview(), 1200); }
 function saveReview(status){
@@ -4414,18 +4416,21 @@ function saveReview(status){
   const {sid,eid}=R; const d=clone(R.data);
   d.annotations=d.annotations.filter(a=>a.start>=0);
   d.updatedAt=Date.now(); d.errorCounts=countErrors(d.annotations); d.entryWords=wc(R.entry.body);
+  const prevSt=R.data.status, prevAt=R.data.reviewedAt;
   if(status){ d.status=status; d.reviewedAt=Date.now(); R.data.status=status; R.data.reviewedAt=d.reviewedAt; }
   else if(!d.status || d.status==='submitted'){ d.status='inreview'; R.data.status='inreview'; }
-  saveChain = saveChain.then(async()=>{
-    await S.db.doc(`feedback/${sid}/reviews/${eid}`).set(d);
+  const run = saveChain.then(async()=>{
+    await withTimeout(S.db.doc(`feedback/${sid}/reviews/${eid}`).set(d));
     const fb = clone(S.feedback[sid]) || {reviews:{},vocab:[]}; fb.reviews=fb.reviews||{};
     fb.reviews[eid] = {status:d.status, overall:overallBand(d.bands), bands:d.bands, errorCounts:d.errorCounts, reviewedAt:d.reviewedAt||null, updatedAt:d.updatedAt, by:myTid()};
     fb.vocab = (fb.vocab||[]).filter(v=>v.eid!==eid).concat((d.vocab||[]).map(v=>({...v,eid})));
     S.feedback[sid]=fb;
-    await S.db.doc(`feedback/${sid}`).set(fb);
+    await withTimeout(S.db.doc(`feedback/${sid}`).set(fb));
     if(S.review===R) setSaved(true);
-  }).catch(e=>{ dbErr(e,'marks'); });
-  return saveChain;
+    return true;
+  }).catch(e=>{ dbErr(e,'marks'); if(status){ R.data.status=prevSt; R.data.reviewedAt=prevAt; } return false; });
+  saveChain = run;
+  return run;
 }
 async function aiSuggest(){
   const R=S.review; if(!R) return;
@@ -5835,8 +5840,9 @@ document.addEventListener('click', async ev => {
     case 'vocab-add': { const w=$('#vw').value.trim(), m=$('#vm').value.trim(), x=$('#vx').value.trim(); if(!w||!m){ toast(tr('t.wordMeaning')); break; } R.data.vocab=R.data.vocab||[]; R.data.vocab.push({w,m,ex:x}); $('#vw').value=$('#vm').value=$('#vx').value=''; renderVocab(); scheduleSave(); $('#vw').focus(); break; }
     case 'vocab-del': R.data.vocab.splice(+b.dataset.i,1); renderVocab(); scheduleSave(); break;
     case 'finish': { const st=b.dataset.st; if(overallBand(R.data.bands)==null && st==='reviewed' && !b.dataset.ok){ b.dataset.ok='1'; b.textContent=tr('t.noBands'); break; }
-      document.querySelectorAll('[data-act="finish"]').forEach(x=>x.disabled=true);
-      await saveReview(st); toast(st==='reviewed'?tr('t.returned'):tr('t.revReq'));
+      const fbtns=document.querySelectorAll('[data-act="finish"]'); fbtns.forEach(x=>x.disabled=true);
+      if(!(await saveReview(st))){ fbtns.forEach(x=>x.disabled=false); break; }
+      toast(st==='reviewed'?tr('t.returned'):tr('t.revReq'));
       { const sid=R.sid, title=R.entry.title||''; notify('review',[sid],()=>({subject:tr(st==='reviewed'?'em.reviewT':'em.reviseT',{title}), kicker:tr('em.reviewK'), lines:[tr('em.reviewL')]})); }
       const next=allEntries().filter(x=>x.status==='submitted'&&!(x.sid===R.sid&&x.eid===R.eid)).sort((a,b)=>(a.submittedAt||0)-(b.submittedAt||0))[0];
       if(next) openReview(next.sid,next.eid); else go('inbox'); break; }
