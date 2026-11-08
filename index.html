@@ -879,6 +879,9 @@ td.nwc.off{color:var(--ink-3);font-size:18px}
 .ste-side h3 svg,.nw-mail h3 svg{width:20px;height:20px;flex:none} .ste-side h3{display:flex;gap:8px;align-items:center}
 .page-head > div > .label{display:flex;margin-bottom:8px}
 .wp-frame{width:100%;min-height:520px;border:0;display:block;background:transparent}
+.sv-own{border-top:4px solid var(--line)} .sv-own.on{border-top-color:var(--ok,#1E8A4C)}
+.ste-fixes{padding:16px 20px;border-left:4px solid var(--pen)} .ste-fixl{margin:6px 0 0;padding-left:22px;display:grid;gap:6px} .ste-fixl s{color:var(--pen)}
+.ste-g{display:flex;gap:10px;align-items:flex-start;justify-content:space-between;padding:10px 12px;border:1px solid var(--line);border-radius:12px} .ste-g-rule{margin-top:4px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .nw-plan tbody th .row{justify-content:flex-start} .nw-rm{margin-left:auto;padding:6px 8px} .nw-rm span{display:none} .rm-list li::before{content:"•";color:var(--pen)}
 
 /* ---------- teaching centre ---------- */
@@ -970,6 +973,10 @@ td.nwc.off{color:var(--ink-3);font-size:18px}
 .tmine2{display:flex;gap:14px;align-items:center;padding:14px 18px;flex-wrap:wrap}.tmine2 .tph{width:54px;height:54px;border-radius:16px}
 .tcard.as-div:hover{transform:none}
 .pr-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-top:12px}
+.pc-tbl{width:100%;border-collapse:collapse;margin-top:8px}.pc-tbl th,.pc-tbl td{padding:8px 10px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}.pc-tbl thead th{font-size:12.5px;color:var(--muted,#5A6585);font-weight:600}
+.pc-tbl.ed td{padding:5px 6px}.pc-tbl.ed .inp{min-width:90px}
+.pc-ed{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px;margin:14px 0 6px} .pc-how{margin:8px 0 0;padding-left:20px;display:grid;gap:4px}
+.tcard-price{font-weight:700;font-size:15px}
 @media (max-width:700px){.pr-grid{grid-template-columns:1fr}}
 .promo-ed{padding:20px}
 .lv-steps{margin:0 0 4px 18px;display:flex;flex-direction:column;gap:10px}
@@ -1474,7 +1481,7 @@ function renderTop(){
   $('#top').innerHTML = `<div class="brand"><span class="mark" aria-hidden="true">${I.pen}</span><span class="logo">Lex<i>ora</i></span><span class="sub">${S.mode==='guest'?tr('c.sub'):S.view.name==='login'?tr('sub.login'):S.role==='staff'?tr('c.subStaff'):S.mode==='teacher'?tr('sub.teacher'):tr('sub.student')}</span></div>${installBtn()}${langs}${right}`;
 }
 const PM_VIEWS = new Set(['news','newsEdit','study','set','setEdit']);
-function navBtn(name,label,icon,count,dim){ const cur = S.view.name===name || (name==='students' && S.view.name==='student') || (name==='inbox' && S.view.name==='review') || (name==='home' && S.view.name==='entry') || (name==='market' && PM_VIEWS.has(S.view.name));
+function navBtn(name,label,icon,count,dim){ const cur = S.view.name===name || (name==='students' && S.view.name==='student') || (name==='inbox' && S.view.name==='review') || (name==='home' && S.view.name==='entry') || (name==='market' && PM_VIEWS.has(S.view.name) && S.mode==='teacher') || (name==='services' && (PM_VIEWS.has(S.view.name)||S.view.name==='services'));
   return `<button data-act="go" data-v="${name}" ${cur?'aria-current="page"':''}>${I[icon]}<span>${label}</span>${count?`<span class="cnt ${dim?'dim':''}">${count}</span>`:''}</button>`; }
 function renderNav(){
   const n=$('#nav');
@@ -1495,7 +1502,7 @@ function renderNav(){
     const unseen = studentEntries().filter(e=>e.isNew).length;
     document.title = (unseen?`(${unseen}) `:'')+'Lexora · '+tr('title.student');
     const owe = S.myBalance && S.myBalance.left>0;
-    n.innerHTML = navBtn('home',tr('nav.home'),'home',unseen) + navBtn('write',tr('nav.write'),'pen') + navBtn('mistakes',tr('nav.mistakes'),'flag') + navBtn('words',tr('nav.words'),'book',(S.myFeedback?.vocab||[]).length,true) + navBtn('learn',tr('nav.learn'),'bulb',(S.board?.posts||[]).length,true) + navBtn('teachers',tr('c.navTeachers'),'team',Object.values(S.myLiveFor||{}).some(isLive)?'●':(promoOn(S.promo)?'%':0)) + navBtn('club',tr('c.clubNav'),'bulb',clubVideoOn()?'●':0) + navBtn('library',tr('c.libNav'),'book') + navBtn('book',tr('nav.book'),'spark') + (S.rating?.on!==false && (S.rating?.list||[]).length ? navBtn('rating',tr('rt.h'),'trophy') : '') + navBtn('market',tr('nav.shop'),'bag') + (S.myBalance? navBtn('pay',tr('nav.pay'),'coin',owe?'!':0,false) : '');
+    n.innerHTML = navBtn('home',tr('nav.home'),'home',unseen) + navBtn('write',tr('nav.write'),'pen') + navBtn('mistakes',tr('nav.mistakes'),'flag') + navBtn('words',tr('nav.words'),'book',(S.myFeedback?.vocab||[]).length,true) + navBtn('learn',tr('nav.learn'),'bulb',(S.board?.posts||[]).length,true) + navBtn('teachers',tr('c.navTeachers'),'team',Object.values(S.myLiveFor||{}).some(isLive)?'●':(promoOn(S.promo)?'%':0)) + navBtn('club',tr('c.clubNav'),'bulb',clubVideoOn()?'●':0) + navBtn('library',tr('c.libNav'),'book') + navBtn('book',tr('nav.book'),'spark') + (S.rating?.on!==false && (S.rating?.list||[]).length ? navBtn('rating',tr('rt.h'),'trophy') : '') + navBtn('services',tr('nav.services'),'cards',myServiceCount(),true) + navBtn('market',tr('nav.shop'),'bag') + (S.myBalance? navBtn('pay',tr('nav.pay'),'coin',owe?'!':0,false) : '');
   }
 }
 
@@ -1565,7 +1572,7 @@ function renderMain0(){
   if(S.mode==='student' && S.myProfile===undefined){ m.innerHTML=`<div class="loading">${tr('load.student')}</div>`; return; }
   const fn = {inbox:vInbox, students:vStudents, student:vStudent, insights:vInsights, prompt:vPrompt, bank:vBank, review:vReview, ledger:vLedger, board:vBoard, bookings:vBookings, market:vMarket, learn:vLearn, book:vBook, rating:()=>S.mode==='teacher'?vRatingT():vRatingS(),
               home:vHome, write:vWrite, entry:vEntry, mistakes:vMistakes, words:vWords, setup:vSetup, pay:vPay,
-              news:vNews, newsEdit:vNewsEdit, study:vStudy, set:vSet, setEdit:vSetEdit, team:vTeam, me:vMe, centre:vCentre, teachers:vStuTeachers, groups:vGroups, club:vClub, library:vLibrary}[v];
+              news:vNews, newsEdit:vNewsEdit, study:vStudy, services:vServices, set:vSet, setEdit:vSetEdit, team:vTeam, me:vMe, centre:vCentre, teachers:vStuTeachers, groups:vGroups, club:vClub, library:vLibrary}[v];
   m.innerHTML = fn ? fn() : '';
   after[v] && after[v]();
 }
@@ -2300,7 +2307,28 @@ function vMarketS(){
   return `<div class="page-head"><div><h1>${tr('mk.h')}</h1><p>${tr('mk.stuP')}</p></div></div>${rulesNote()}
   ${pm}
   ${items.length?`${pm?`<div class="section"><h2>${tr('pm.more')}</h2>`:'<div>'}<div class="mk-grid">${items.map(x=>mkCard(x,false)).join('')}</div></div>`:pm?'':`<div class="empty"><h3>${tr('mk.noItems')}</h3></div>`}
-  ${mine.length||pmMine.length?`<div class="section"><h2>${tr('mk.mine')}</h2><div class="list">${pmMine.map(o=>poRow(o,false)).join('')}${mine.map(o=>orderRow(o,false)).join('')}</div></div>`:''}`;
+  ${mine.length||pmMine.length?`<div class="notice info section" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;justify-content:space-between"><span>${tr('sv.inShop',{n:mine.length+pmMine.length})}</span><button class="btn sm primary" data-act="go" data-v="services">${I.cards} ${tr('sv.h')}</button></div>`:''}`;
+}
+/* student: "My services" — everything they bought, used here (the Shop is only for buying) */
+const myServiceCount = () => (hasNews()?1:0)+(hasStudy()?1:0)+Object.values(S.myTorders||{}).filter(o=>o.st==='ok').length+(S.myOrders?.items||[]).filter(o=>ordSt(S.myOStat?.[o.id])==='paid').length;
+function vServices(){
+  const P=pmInfo(), po=myPassOrders(), now=Date.now();
+  const orders=(S.myOrders?.items||[]).slice().sort((a,b)=>(b.at||0)-(a.at||0)).map(o=>{ const st=S.myOStat?.[o.id]; return {...o, st:ordSt(st), msg:st?.msg||''}; });
+  const cards=[];
+  const one = (kind, on, until, pend, title, line, open) => `<article class="svc sv-own ${on?'on':''}"><span class="label">${kind==='news'?tr('nw.tag'):tr('st.tag')}</span><h3>${title}</h3><p class="muted small">${line}</p>
+    <div class="svc-foot"><span class="small ${on?'':'faint'}">${on?tr('st.activeTill',{d:esc(dayMonth(until))}):pend?tr('pm.pending'):until?tr('st.ended',{d:esc(dayMonth(until))}):''}</span>
+      ${on?open:pend?'':`<button class="btn pen sm" data-act="pb-open" data-k="${kind}">${until?tr('st.extendBtn'):tr('mk.buy')}</button>`}</div></article>`;
+  const nu=newsUntil(S.myPass), su=studyUntil(S.myPass), np=po.some(o=>o.kind==='news'&&o.st==='wait'), sp=po.some(o=>o.kind==='study'&&o.st==='wait'), nSets=(S.myIdx?.sets||[]).filter(x=>x.on!==false).length;
+  if(hasNews()||np||nu) cards.push(one('news', hasNews(), nu, np, esc(P.news.name), tr('sv.newsLine',{h:hh(P.news.hour)}), `<button class="btn primary sm" data-act="go" data-v="news">${I.paper} ${tr('nw.read')}</button>`));
+  if(hasStudy()||sp||su) cards.push(one('study', hasStudy(), su, sp, tr('st.name'), nSets?tr('sv.studyLine',{n:nSets}):tr('st.makingP'), `<button class="btn primary sm" data-act="go" data-v="study">${I.cards} ${tr('st.open')}</button>`));
+  const tsec=myOrdersSection();
+  const empty=!cards.length && !orders.length && !tsec && !po.length;
+  return `<div class="page-head"><div><h1>${tr('sv.h')}</h1><p>${tr('sv.p')}</p></div><button class="btn" data-act="go" data-v="market">${I.bag} ${tr('sv.toShop')}</button></div>${rulesNote()}
+    ${empty?`<div class="empty"><h3>${tr('sv.emptyH')}</h3><p>${tr('sv.emptyP')}</p><p style="margin-top:12px"><button class="btn pen" data-act="go" data-v="market">${I.bag} ${tr('mk.h')}</button></p></div>`:''}
+    ${cards.length?`<div class="svc-grid">${cards.join('')}</div>`:''}
+    ${orders.length?`<div class="section"><h2>${tr('sv.bought')}</h2><p class="muted small" style="margin:-6px 0 12px">${tr('sv.boughtP')}</p><div class="list">${orders.map(o=>orderRow(o,false)).join('')}</div></div>`:''}
+    ${tsec}
+    ${po.length?`<div class="section"><h2>${tr('sv.payments')}</h2><div class="list">${po.slice(0,8).map(o=>poRow(o,false)).join('')}</div></div>`:''}`;
 }
 function openBuy(itemId){
   const it=mkItem(itemId); if(!it || it.active===false) return; const price=+it.price||0, ms=S.payInfo.methods||[];
@@ -2511,7 +2539,10 @@ function openPmGive(kind){
 }
 
 /* ---------- the two product cards in the Shop ---------- */
-const pmBack = () => `<button class="btn ghost sm pm-back" data-act="go" data-v="market">${I.back} ${tr('mk.h')}</button>`;
+// students use what they bought in "My services"; the Shop is only for buying
+const pmBack = () => S.mode==='student' && (hasNews()||hasStudy()||myPassOrders().length)
+  ? `<button class="btn ghost sm pm-back" data-act="go" data-v="services">${I.back} ${tr('sv.h')}</button>`
+  : `<button class="btn ghost sm pm-back" data-act="go" data-v="market">${I.back} ${tr('mk.h')}</button>`;
 const newsArt = () => `<div class="pm-art-news" aria-hidden="true"><b>${esc(pmInfo().news.name)}</b><i></i><span></span><span></span><span class="s"></span><em></em><span></span><span class="s"></span></div>`;
 const cardsArt = () => `<div class="pm-art-cards" aria-hidden="true"><span>Aa</span><span>?</span><span>✓</span></div>`;
 function pmCard(kind, o){
@@ -2526,11 +2557,11 @@ function pmShopS(){
   if(P.news.on){ const on=hasNews(), pend=mine.some(o=>o.kind==='news'&&o.st==='wait');
     out.push(pmCard('news',{tag:tr('nw.tag'), title:esc(P.news.name), pitch:tr('nw.pitch',{h:hh(P.news.hour)}), feats:['f1','f2','f3','f4'].map(k=>tr('nw.'+k)), price:P.news.price, per:tr('st.days',{n:P.news.days}),
       status: on?tr('st.activeTill',{d:esc(dayMonth(newsUntil(S.myPass)))}) : pend?tr('pm.pending'):'', ok:on,
-      btns: on?`<button class="btn primary" data-act="go" data-v="news">${I.paper} ${tr('nw.read')}</button>`:`<button class="btn ghost" data-act="go" data-v="news">${tr('pm.peek')}</button>${pend?'':`<button class="btn pen" data-act="pb-open" data-k="news">${tr('mk.buy')}</button>`}`})); }
+      btns: on?`<button class="btn primary" data-act="go" data-v="services">${I.paper} ${tr('sv.openIn')}</button>`:`<button class="btn ghost" data-act="go" data-v="news">${tr('pm.peek')}</button>${pend?'':`<button class="btn pen" data-act="pb-open" data-k="news">${tr('mk.buy')}</button>`}`})); }
   if(P.study.on){ const on=hasStudy(), pend=mine.some(o=>o.kind==='study'&&o.st==='wait'), n=(S.myIdx?.sets||[]).filter(x=>x.on!==false).length;
     out.push(pmCard('study',{tag:tr('st.tag'), title:tr('st.name'), pitch:tr('st.pitch'), feats:['f1','f2','f3','f4'].map(k=>tr('st.'+k,{n})), price:P.study.price, per:tr('st.days',{n:P.study.days}),
       status: on?tr('st.activeTill',{d:esc(dloc(new Date(studyUntil(S.myPass)),{day:'numeric',month:'long'}))}) : pend?tr('pm.pending'):'', ok:on,
-      btns: on?`<button class="btn primary" data-act="go" data-v="study">${I.cards} ${tr('st.open')}</button>`:`<button class="btn ghost" data-act="go" data-v="study">${tr('pm.peek')}</button>${pend?'':`<button class="btn pen" data-act="pb-open" data-k="study">${tr('mk.buy')}</button>`}`})); }
+      btns: on?`<button class="btn primary" data-act="go" data-v="services">${I.cards} ${tr('sv.openIn')}</button>`:`<button class="btn ghost" data-act="go" data-v="study">${tr('pm.peek')}</button>${pend?'':`<button class="btn pen" data-act="pb-open" data-k="study">${tr('mk.buy')}</button>`}`})); }
   return out.length ? `<div class="pm-row">${out.join('')}</div>` : '';
 }
 function pmShopT(){
@@ -3054,38 +3085,116 @@ async function nwMailSync(){
 /* ---------- word sets: the teacher's own lesson words → one standard practice page ----------
    The page is self-contained HTML (flashcards, quiz, test, two games). Inside Lexora it runs in a sandboxed
    frame and reports scores back with postMessage; the same page can be downloaded and used offline. */
-const parseWordLines = t => String(t||'').split('\n').map(l=>l.trim()).filter(Boolean).map(l=>{
+// one word per line. "word = English meaning | example | translation", or the way teachers write it in class:
+// "word – translation" (a dash means the right side is the translation, never the meaning)
+const parseWordLines = t => String(t||'').split('\n').map(l=>l.trim().replace(/^[-•*]\s+/,'')).filter(Boolean).map(l=>{
   const [a,ex='',uz=''] = l.split(/\s+\|\s+/).map(x=>x.trim());
-  const m=(a||'').match(/^(.+?)\s*(?:=|—|–|\s-\s)\s*(.+)$/);
-  return m ? {w:m[1].trim().slice(0,80), m:m[2].trim().slice(0,200), ex:ex.slice(0,240), uz:uz.slice(0,120)} : {w:(a||'').slice(0,80), m:'', ex:ex.slice(0,240), uz:uz.slice(0,120)};
+  let m=(a||'').match(/^(.+?)\s*=\s*(.+)$/);
+  if(m) return {w:m[1].trim().slice(0,80), m:m[2].trim().slice(0,200), ex:ex.slice(0,240), uz:uz.slice(0,120)};
+  m=(a||'').match(/^(.+?)\s*(?:—|–|\s-\s)\s*(.+)$/);
+  if(m) return {w:m[1].trim().slice(0,80), m:'', ex:ex.slice(0,240), uz:(uz||m[2].trim()).slice(0,120)};
+  return {w:(a||'').slice(0,80), m:'', ex:ex.slice(0,240), uz:uz.slice(0,120)};
 }).filter(x=>x.w).slice(0,120);
 const wordLinesText = ws => (ws||[]).map(x=>[x.m?`${x.w} = ${x.m}`:x.w, ...(x.ex||x.uz?[x.ex||'']:[]), ...(x.uz?[x.uz]:[])].join(' | ')).join('\n');
-const wNorm = s => String(s||'').toLowerCase().replace(/[’‘`]/g,"'").replace(/\s+/g,' ').trim();
+const wNorm = s => String(s||'').toLowerCase().replace(/[’‘`ʻʼ]/g,"'").replace(/\s+/g,' ').trim();
+const jsonFrom = raw => { const t=String(raw||''), i0=t.indexOf('{'), i1=t.lastIndexOf('}'); if(i0<0||i1<i0) return null; try{ return JSON.parse(t.slice(i0,i1+1)); }catch(_){ return null; } };
+// a spelling fix is accepted, a different word never is
+function editDist(a,b){ a=wNorm(a); b=wNorm(b); const d=Array.from({length:b.length+1},(_,i)=>i);
+  for(let i=1;i<=a.length;i++){ let p=d[0]; d[0]=i; for(let j=1;j<=b.length;j++){ const t=d[j]; d[j]=Math.min(d[j]+1,d[j-1]+1,p+(a[i-1]===b[j-1]?0:1)); p=t; } } return d[b.length]; }
+const closeSpelling = (a,b) => editDist(a,b) <= Math.max(2, Math.round(wNorm(b).length*0.3));
 
-function wordsPrompt(words, level){
-  return `I am an English teacher. During today's lesson I collected words my student (level ${level}) did not know. Here is my list:
+// the teacher's words go to the AI with the translation/meaning they gave in class, so the AI keeps that meaning
+// ("bear – tug'moq" is the verb, not the animal) and corrects anything that is wrong
+function wordsPrompt(items, level){
+  const first=(items[0]?.w||'word').replace(/"/g,'');
+  const line = x => '- '+x.w+(x.uz?` — my translation: ${x.uz}`:'')+(x.m?` — my meaning: ${x.m}`:'')+(x.ex?` — my example: ${x.ex}`:'');
+  return `I am an English teacher. During today's lesson I collected words my student (level ${level}) did not know. Here is my list${items.some(x=>x.uz||x.m)?', with the translation or meaning I gave in class':''}:
 
-${words.map(w=>'- '+w).join('\n')}
+${items.map(line).join('\n')}
 
-Use ONLY these words, exactly as written, in the same order. Do not add, remove or change any word.
+Use ONLY these words, in the same order. Do not add or remove any word.
 For each word write:
-- "m": a short, simple English meaning that a ${level} learner understands (if the word has several meanings, use the most common one)
-- "ex": one natural example sentence that contains the word exactly as written
-- "uz": the Uzbek translation (one or two words)
+- "was": the word exactly as I wrote it
+- "w": the word itself, exactly as I wrote it. Only if it is misspelled, write the correct spelling.
+- "m": a short, simple English meaning that a ${level} learner understands. If I gave a translation or a meaning, use THE SAME meaning I taught (for example, "bear — tug'moq" is the verb, not the animal). If I gave nothing, use the most common meaning.
+- "ex": one natural example sentence at ${level} level that contains "w" exactly as written. If I gave an example, correct it if needed.
+- "uz": the correct Uzbek translation (Latin script, one to three words) for that meaning. If my translation is correct, copy it (you may fix its spelling). If it is wrong, misspelled or not the right word, write the correct one.
+- "fix": "" if everything I wrote was right. Otherwise one short sentence for me, the teacher, saying what was wrong and what is correct, e.g. "Spelling: eigthty → eighty" or "Translation: a pub is not 'qovoqxona', it is 'pab' (bar)".
+Check spelling, translations and meanings carefully. My student will see only the corrected version.
 
 Return ONLY valid JSON, with no text before or after it, in exactly this shape:
-{"words":[{"w":"${(words[0]||'word').replace(/"/g,'')}","m":"meaning","ex":"Example sentence.","uz":"tarjima"}]}`;
+{"words":[{"was":"${first}","w":"${first}","m":"meaning","ex":"Example sentence.","uz":"tarjima","fix":""}]}`;
 }
-// take the AI's answer, but keep only the teacher's own words
+// take the AI's answer, but keep only the teacher's own words (spelling fixes allowed); every change is reported
 function wordsFromAi(raw, mine){
-  const i0=raw.indexOf('{'), i1=raw.lastIndexOf('}'); let j=null; try{ j=JSON.parse(raw.slice(i0,i1+1)); }catch(_){ return null; }
-  const arr=Array.isArray(j)?j:Array.isArray(j?.words)?j.words:null; if(!arr) return null;
-  const by=new Map(arr.filter(x=>x&&x.w).map(x=>[wNorm(x.w), x]));
-  return mine.map(w=>{ const x=by.get(wNorm(w)); return {w, m:str(x?.m,200), ex:str(x?.ex,240), uz:str(x?.uz,120)}; });
+  const j=jsonFrom(raw), arr=Array.isArray(j)?j:Array.isArray(j?.words)?j.words:null; if(!arr) return null;
+  const by=new Map(); arr.forEach(x=>{ if(x && typeof x==='object') [x.was,x.w].forEach(k=>{ if(k && !by.has(wNorm(k))) by.set(wNorm(k), x); }); });
+  const fixes=[];
+  const words=mine.map((o,i)=>{
+    let x=by.get(wNorm(o.w)); if(!x && arr.length===mine.length && arr[i] && closeSpelling(arr[i].was||arr[i].w||'', o.w)) x=arr[i]; x=x||{};
+    const aw=str(x.w,80); let w=o.w; if(aw && wNorm(aw)!==wNorm(o.w) && closeSpelling(aw,o.w)) w=aw;
+    const uz=str(x.uz,120)||o.uz, m=str(x.m,200)||o.m, ex=str(x.ex,240)||o.ex;
+    let fix=str(x.fix,300);
+    if(!fix){ const p=[]; if(w!==o.w) p.push(`${o.w} → ${w}`); if(o.uz && wNorm(uz)!==wNorm(o.uz)) p.push(`${o.uz} → ${uz}`); fix=p.join('; '); }
+    if(fix) fixes.push({was:o.w, w, fix});
+    return {w, m, ex, uz};
+  });
+  return {words, fixes};
 }
 
+/* ---------- a whole lesson: the teacher pastes everything they wrote, the AI builds words + grammar + exercises ---------- */
+function lessonPrompt(notes, level){
+  return `I am a language teacher. Below are ALL the notes I wrote during today's lesson with my student (level ${level}). They mix English and Uzbek, and they may contain my own mistakes: spelling, translations, grammar, wrong rules or wrong examples.
+
+=== MY LESSON NOTES ===
+${String(notes).trim()}
+=== END OF NOTES ===
+
+Turn these notes into practice material for my student. Rules:
+1. VOCABULARY: take ONLY the words and phrases I taught in the notes (lines like "word – translation", and new words I clearly explained). Never add words that are not in my notes. Keep my order. Skip whole sentences, task instructions and headings. Write each item in its dictionary form, with the correct spelling.
+2. MEANING: if I gave a translation, it shows which meaning I taught (e.g. "bear – tug'moq" is the verb, not the animal). Use that meaning, but correct my translation if it is wrong.
+3. GRAMMAR: find every grammar point I taught (rules, patterns, "how to say…" explanations). For each one write a short, clear explanation a ${level} learner understands, in simple English, and the same explanation in Uzbek (Latin script). Use only correct examples.
+4. CORRECT MY MISTAKES: check everything — spelling, translations, meanings, grammar rules and examples. My student must see ONLY correct English and correct Uzbek; never copy a mistake. List every mistake you corrected in "fixes" so I can see it.
+5. EXERCISES: for every grammar point write 6–10 multiple-choice questions ("qs", 3 options, "a" is the index of the right option), 4–8 fill-the-gap sentences ("gaps", the gap is ___), and 3–6 short correct sentences for a word-order game ("order"). Use the lesson vocabulary where you can. Level: ${level}. Every question has exactly one correct answer.
+
+Return ONLY valid JSON, with no text before or after it, in exactly this shape:
+{"title":"Short lesson title",
+"words":[{"was":"the item as I wrote it","w":"correct word or phrase","m":"simple English meaning","ex":"Example sentence that contains w.","uz":"correct Uzbek translation"}],
+"grammar":[{"t":"Grammar point","rule":"Simple explanation in English.","uz":"Shu tushuntirish o'zbek tilida.","ex":["Correct example."],
+  "qs":[{"q":"Question?","o":["option 1","option 2","option 3"],"a":0,"why":"Short reason."}],
+  "gaps":[{"s":"I ___ born in 2004.","a":"was"}],
+  "order":["I was born in 2004."]}],
+"fixes":[{"was":"what I wrote","now":"the correct version","why":"short reason"}]}`;
+}
+function cleanGrammar(g){
+  if(!g || typeof g!=='object') return null; const t=str(g.t,100); if(!t) return null;
+  const qs=(Array.isArray(g.qs)?g.qs:[]).map(q=>{ if(!q || typeof q!=='object') return null; const o=(Array.isArray(q.o)?q.o:[]).map(x=>str(x,160)).filter(Boolean).slice(0,5), a=Math.round(+q.a);
+    return str(q.q,300) && o.length>=2 && new Set(o.map(wNorm)).size===o.length && a>=0 && a<o.length ? {q:str(q.q,300), o, a, why:str(q.why,240)} : null; }).filter(Boolean).slice(0,15);
+  const gaps=(Array.isArray(g.gaps)?g.gaps:[]).map(x=>x && typeof x==='object' ? {s:str(x.s,240), a:str(x.a,80)} : null).filter(x=>x && /_{2,}/.test(x.s) && x.a).slice(0,12);
+  const order=(Array.isArray(g.order)?g.order:[]).map(x=>str(typeof x==='string'?x:x?.s,200)).filter(s=>{ const n=s.split(/\s+/).length; return n>=3 && n<=14; }).slice(0,8);
+  return {t, rule:str(g.rule,1200), uz:str(g.uz,1200), ex:(Array.isArray(g.ex)?g.ex:[]).map(x=>str(x,240)).filter(Boolean).slice(0,10), qs, gaps, order};
+}
+// words the AI made up (not in the teacher's notes) are dropped
+function lessonFromAi(raw, notes){
+  const j=jsonFrom(raw); if(!j || typeof j!=='object' || Array.isArray(j)) return null;
+  const src=wNorm(notes).replace(/[^a-z0-9' ]+/g,' ').replace(/\s+/g,' '), seen=new Set(); let dropped=0;
+  const key = k => wNorm(k).replace(/[^a-z0-9' ]+/g,' ').replace(/\s+/g,' ').replace(/^(a|an|the|to) /,'').trim();
+  const inNotes = k => { const q=key(k); return q && (' '+src+' ').includes(' '+q+' '); };
+  const words=(Array.isArray(j.words)?j.words:[]).map(x=>{ if(!x || typeof x!=='object') return null;
+    const w=str(x.w,80), was=str(x.was,80)||w; if(!w) return null;
+    if(!inNotes(was) && !inNotes(w)){ dropped++; return null; }
+    if(seen.has(wNorm(w))) return null; seen.add(wNorm(w));
+    return {w, m:str(x.m,200), ex:str(x.ex,240), uz:str(x.uz,120)};
+  }).filter(Boolean).slice(0,120);
+  const grammar=(Array.isArray(j.grammar)?j.grammar:[]).map(cleanGrammar).filter(Boolean).slice(0,8);
+  const fixes=(Array.isArray(j.fixes)?j.fixes:[]).map(f=>f && typeof f==='object' ? {was:str(f.was,200), w:str(f.now,200), fix:str(f.why,300)} : null).filter(f=>f && (f.was||f.w)).slice(0,60);
+  if(!words.length && !grammar.length) return null;
+  return {title:str(j.title,80), words, grammar, fixes, dropped};
+}
+const gCount = gr => (gr||[]).reduce((a,g)=>a+(g.qs||[]).length+(g.gaps||[]).length+(g.order||[]).length,0);
+
 function wordsPage(set, embedded){
-  const words=(set.words||[]).filter(x=>x.w&&x.m), data=JSON.stringify({id:set.id, title:set.title, level:set.level||'', words, embedded:!!embedded}).replace(/</g,'\\u003c');
+  const words=(set.words||[]).filter(x=>x.w&&x.m), grammar=(set.grammar||[]).filter(g=>g&&g.t), data=JSON.stringify({id:set.id, title:set.title, level:set.level||'', words, grammar, embedded:!!embedded}).replace(/</g,'\\u003c');
   return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${esc(set.title||'Words')}</title>
 <style>
 *{box-sizing:border-box}html{-webkit-text-size-adjust:100%}
@@ -3121,9 +3230,13 @@ ol.rev{text-align:left;padding-left:22px}ol.rev li{margin:7px 0}.g{color:#1E6B3C
 .lt{width:42px;height:46px;border-radius:10px;border:1px solid #D8DEEB;background:#fff;font:800 20px/1 inherit;font-family:inherit;color:#121A33;cursor:pointer;text-transform:lowercase}.lt.sp{width:26px}
 .list{display:grid;gap:8px}.list div{padding:10px 13px;border:1px solid #D8DEEB;border-radius:12px;background:#fff}.list b{font-size:17px}.list .uz{color:#D11F3B}
 .foot{text-align:center;color:#7882A2;font-size:12.5px;margin-top:18px}
+.gr{margin-bottom:12px}.gr h2{margin:0 0 8px;font-size:21px}.gr p{margin:0 0 10px}.gr .uzx{color:#5A6585;border-left:3px solid #D11F3B;padding-left:10px}
+.grx{list-style:none;padding:0;margin:8px 0 0;display:grid;gap:6px}.grx li{display:flex;gap:8px;align-items:center;padding:8px 11px;background:#fff;border:1px solid #D8DEEB;border-radius:11px}
+.ow{display:flex;flex-wrap:wrap;gap:7px;margin:10px 0}.ow button{border:1px solid #D8DEEB;background:#fff;border-radius:10px;padding:9px 12px;font:600 16px/1 inherit;font-family:inherit;color:#121A33;cursor:pointer}
+.ow.built{min-height:52px;border:2px dashed #C9D1E6;border-radius:13px;padding:8px}.ow.built button{background:#E5EBFF;border-color:#2140C8}
 </style></head><body><div class="wrap"><div id="app"></div>${embedded?'':'<div class="foot">Lexora · practice page</div>'}</div>
 <script>
-const D=${data}, W=D.words;
+const D=${data}, W=D.words, G=D.grammar||[];
 const $=s=>document.querySelector(s), app=$('#app');
 const E=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const sh=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;};
@@ -3136,12 +3249,13 @@ new ResizeObserver(fit).observe(document.body);
 const hide=x=>{ if(!x.ex) return null; const re=new RegExp('(^|[^A-Za-z])('+x.w.replace(/[.*+?^\${}()|[\\]\\\\]/g,'\\\\$&')+')(?![A-Za-z])','i'); const m=x.ex.match(re); if(!m) return null;
   return E(x.ex.slice(0,m.index+m[1].length))+'<span class="gap">____</span>'+E(x.ex.slice(m.index+m[1].length+m[2].length)); };
 const others=(x,k,n)=>sh(W.filter(y=>y!==x&&nz(y[k])!==nz(x[k]))).slice(0,n).map(y=>y[k]);
-const TABS=[['learn','📖 Words'],['cards','🃏 Flashcards'],['quiz','✅ Quiz'],['test','📝 Test'],['match','🧩 Match'],['spell','🔤 Spelling']];
-let tab='cards', st={};
-function shell(inner){ app.innerHTML=\`<h1>\${E(D.title)}</h1><p class="sub">\${W.length} words\${D.level?' · '+E(D.level):''}</p>
+const TABS=[...(G.length?[['grammar','📘 Grammar']]:[]),...(W.length?[['learn','📖 Words'],['cards','🃏 Flashcards'],['quiz','✅ Quiz']]:[]),...(G.some(g=>g.qs.length||g.gaps.length)?[['gquiz','🧠 Grammar quiz']]:[]),
+  ...(W.length||G.some(g=>g.gaps.length)?[['test','📝 Test']]:[]),...(W.length>=2?[['match','🧩 Match']]:[]),...(W.length?[['spell','🔤 Spelling']]:[]),...(G.some(g=>g.order.length)?[['order','🔀 Word order']]:[])];
+let tab=W.length?'cards':'grammar', st={};
+function shell(inner){ app.innerHTML=\`<h1>\${E(D.title)}</h1><p class="sub">\${[W.length?W.length+' words':'',G.length?G.length+' grammar '+(G.length>1?'points':'point'):'',D.level].filter(Boolean).map(E).join(' · ')}</p>
   <div class="tabs">\${TABS.map(([k,n])=>\`<button data-t="\${k}" aria-pressed="\${k===tab}">\${n}</button>\`).join('')}</div>\${inner}\`; fit(); }
 app.addEventListener('click',e=>{ const b=e.target.closest('[data-t]'); if(b){ tab=b.dataset.t; st={}; go(); } });
-function go(){ if(W.length<1){ shell('<div class="card">No words yet.</div>'); return; } ({learn,cards,quiz,test,match,spell})[tab](); }
+function go(){ if(!TABS.length){ shell('<div class="card">No words yet.</div>'); return; } if(!TABS.some(t=>t[0]===tab)) tab=TABS[0][0]; ({grammar,learn,cards,quiz,gquiz,test,match,spell,order})[tab](); }
 function result(act,s,n,rev,again){ const p=n?Math.round(s/n*100):0; send(act,s,n);
   shell(\`<div class="card res"><div class="ring" style="--p:\${p}"><b>\${p}%</b></div><h2 style="margin:0 0 4px">\${p>=90?'Excellent!':p>=70?'Good job!':p>=50?'Not bad, keep going!':'Keep practising!'}</h2><p class="mut">\${s} of \${n} right</p>
     <div class="row c"><button class="btn p" id="again">Try again</button></div>\${rev?'<ol class="rev">'+rev+'</ol>':''}</div>\`); $('#again').onclick=again; }
@@ -3172,7 +3286,8 @@ function quiz(){ if(!st.qs){ st={qs:mkQuiz(),i:0,ok:0,picks:[]}; } const Q=st, n
   app.querySelectorAll('.opt').forEach(b=>b.onclick=()=>{ const v=b.textContent; Q.picks[Q.i]=v; if(v===q.a)Q.ok++; quiz(); });
   if($('#nx')) $('#nx').onclick=()=>{Q.i++;quiz();}; }
 /* test: everything at once, typed answers, with a timer */
-function test(){ if(!st.qs){ const qs=sh(W).slice(0,20).map(x=>{ const g=hide(x); return g?{q:g, hint:x.m, a:x.w}:{q:'Write the word that means: <i>'+E(x.m)+'</i>', hint:'', a:x.w}; });
+function test(){ if(!st.qs){ const gq=sh(G.flatMap(g=>g.gaps)).slice(0,W.length?8:20).map(x=>({q:gapHTML(x.s), hint:'', a:x.a}));
+    const qs=sh([...sh(W).slice(0,20-gq.length).map(x=>{ const g=hide(x); return g?{q:g, hint:x.m, a:x.w}:{q:'Write the word that means: <i>'+E(x.m)+'</i>', hint:'', a:x.w}; }), ...gq]);
     st={qs, ans:{}, start:0, mins:Math.max(3,Math.ceil(qs.length*0.6))}; }
   const T=st, n=T.qs.length;
   if(!T.start){ shell(\`<div class="card res"><h2 style="margin-top:0">📝 \${n} questions</h2><p class="mut">Type the missing word. You have \${T.mins} minutes.</p><button class="btn r" id="go">Start the test</button></div>\`); $('#go').onclick=()=>{T.start=Date.now();T.end=T.start+T.mins*60000;test();}; return; }
@@ -3214,6 +3329,37 @@ function spell(){ if(!st.q){ st={q:sh(W).slice(0,15), i:0, ok:0, pick:[], wrong:
   if($('#skip')) $('#skip').onclick=()=>{P.wrong=true;spell();};
   if($('#say')) $('#say').onclick=()=>say(x.w);
   if($('#hint')) $('#hint').onclick=()=>{ P.hinted=true; const k=P.pick.length; if(k>=x.w.length) return; const j=letters.findIndex((l,jj)=>!P.pick.includes(jj)&&l.c.toLowerCase()===x.w[k].toLowerCase()); if(j>=0)P.pick.push(j); spell(); }; }
+/* grammar: the rules from the lesson */
+function gapHTML(s){ return E(s).split(/_{2,}/).join('<span class="gap">____</span>'); }
+function grammar(){ shell(G.map((g,i)=>\`<div class="card gr"><h2>\${E(g.t)}</h2>\${g.rule?'<p>'+E(g.rule)+'</p>':''}\${g.uz?'<p class="uzx">'+E(g.uz)+'</p>':''}
+    \${g.ex.length?'<ul class="grx">'+g.ex.map((x,j)=>'<li><button class="btn" data-gx="'+i+'.'+j+'" style="padding:6px 10px">🔊</button><span>'+E(x)+'</span></li>').join('')+'</ul>':''}</div>\`).join(''));
+  app.querySelectorAll('[data-gx]').forEach(b=>b.onclick=()=>{ const [i,j]=b.dataset.gx.split('.'); say(G[+i].ex[+j]); }); }
+/* grammar quiz: choices and gaps, one at a time */
+function gquiz(){ if(!st.qs){ st={qs:sh([...G.flatMap(g=>g.qs.map(q=>({q:E(q.q), o:sh(q.o), a:q.o[q.a], why:q.why}))), ...G.flatMap(g=>g.gaps.map(x=>({q:gapHTML(x.s), a:x.a})))]).slice(0,20), i:0, ok:0, picks:[]}; }
+  const Q=st, n=Q.qs.length;
+  if(Q.i>=n) return result('gquiz',Q.ok,n,Q.qs.map((q,i)=>\`<li class="\${nz(Q.picks[i])===nz(q.a)?'g':'x'}">\${q.q} → <b>\${E(q.a)}</b></li>\`).join(''),()=>{st={};gquiz();});
+  const q=Q.qs[Q.i], p=Q.picks[Q.i], done=p!=null, ok=done&&nz(p)===nz(q.a);
+  shell(\`<p class="mut">Question \${Q.i+1} of \${n}</p><div class="bar"><i style="width:\${Q.i/n*100}%"></i></div><div class="card"><p class="q">\${q.q}</p>
+    \${q.o?q.o.map(o=>\`<button class="opt \${done?(o===q.a?'ok':(o===p?'no':'')):''}" \${done?'disabled':''}>\${E(o)}</button>\`).join('')
+      :\`<div class="row"><input class="t" id="gin" style="flex:1" value="\${done?E(p):''}" \${done?'disabled':''} autocomplete="off" autocapitalize="off" spellcheck="false">\${done?'':'<button class="btn p" id="gck">Check</button>'}</div>\`}
+    \${done?\`<div class="fb \${ok?'ok':'no'}">\${ok?'Right!':'Not quite. The answer is <b>'+E(q.a)+'</b>.'}\${q.why?'<br>'+E(q.why):''}</div><button class="btn p" id="nx">\${Q.i+1<n?'Next →':'See my score'}</button>\`:''}</div>\`);
+  const pick=v=>{ Q.picks[Q.i]=v; if(nz(v)===nz(q.a)) Q.ok++; gquiz(); };
+  app.querySelectorAll('.opt').forEach(b=>b.onclick=()=>pick(b.textContent));
+  if($('#gck')){ const go1=()=>{ const v=$('#gin').value; if(nz(v)) pick(v); }; $('#gck').onclick=go1; $('#gin').onkeydown=e=>{ if(e.key==='Enter'){ e.preventDefault(); go1(); } }; setTimeout(()=>$('#gin')&&$('#gin').focus(),30); }
+  if($('#nx')) $('#nx').onclick=()=>{Q.i++;gquiz();}; }
+/* game 3: put the words of a sentence in order */
+function order(){ if(!st.q){ st={q:sh(G.flatMap(g=>g.order)).slice(0,12), i:0, ok:0, pick:[], wrong:false}; } const P=st, n=P.q.length;
+  if(P.i>=n) return result('order',P.ok,n,'',()=>{st={};order();});
+  const s=P.q[P.i], toks=P.toks||(P.toks=(()=>{ const t=s.split(' ').filter(Boolean).map((w,j)=>({w,j})); let x=sh(t); for(let k=0;k<5&&x.map(y=>y.w).join(' ')===s;k++) x=sh(t); return x; })());
+  shell(\`<p class="mut">Sentence \${P.i+1} of \${n} · tap the words in the right order</p><div class="bar"><i style="width:\${P.i/n*100}%"></i></div><div class="card">
+    <div class="ow built">\${P.pick.map((j,k)=>\`<button data-u="\${k}">\${E(toks[j].w)}</button>\`).join('')}</div>
+    <div class="ow">\${toks.map((t,j)=>P.pick.includes(j)?'':\`<button data-j="\${j}">\${E(t.w)}</button>\`).join('')}</div>
+    \${P.wrong?'<div class="fb no">Not quite. It is: <b>'+E(s)+'</b></div>':''}
+    <div class="row" style="margin-top:12px">\${P.wrong?'<button class="btn p" id="nx">Next →</button>':'<button class="btn" id="say">🔊</button><button class="btn" id="skip">Skip</button>'}</div></div>\`);
+  const next=()=>{P.i++;P.pick=[];P.toks=null;P.wrong=false;order();};
+  app.querySelectorAll('[data-j]').forEach(b=>b.onclick=()=>{ P.pick.push(+b.dataset.j); if(P.pick.length===toks.length){ const w=P.pick.map(j=>toks[j].w).join(' '); if(nz(w)===nz(s)){ P.ok++; say(s); return next(); } P.wrong=true; } order(); });
+  app.querySelectorAll('[data-u]').forEach(b=>b.onclick=()=>{ P.pick.splice(+b.dataset.u); order(); });
+  if($('#nx')) $('#nx').onclick=next; if($('#skip')) $('#skip').onclick=()=>{P.wrong=true;order();}; if($('#say')) $('#say').onclick=()=>say(s); }
 go();
 <\/script></body></html>`;
 }
@@ -3224,7 +3370,7 @@ const vStudy = () => S.mode==='teacher' ? vStudyT() : vStudyS();
 function stCard(x, teacher, uid){
   let prog='';
   if(!teacher && hasStudy()){
-    if(x.kind==='words'){ const sc=S.myScores?.study||{}, done=['quiz','test','match','spell'].map(a=>sc[x.id+':'+a]).filter(Boolean);
+    if(x.kind==='words'){ const sc=S.myScores?.study||{}, done=['quiz','test','match','spell','gquiz','order'].map(a=>sc[x.id+':'+a]).filter(Boolean);
       const b=done.reduce((a,r)=>a+(+r.best||0),0), t=done.reduce((a,r)=>a+(+r.n||0),0);
       prog = done.length ? `<div class="st-prog"><div class="goal ${b>=t?'done':''}"><i style="width:${t?b/t*100:0}%"></i></div><span class="small muted num">${tr('st.wDone',{a:done.length})}</span></div>` : ''; }
     else if(x.kind==='cards'){ const b=S.myScores?.cards?.[x.id]||{}, m=Object.values(b).filter(v=>v>=3).length, n=+x.n||0;
@@ -3234,7 +3380,7 @@ function stCard(x, teacher, uid){
   const btn = teacher ? `<button class="btn ghost sm" data-act="st-open" data-id="${esc(x.id)}" data-uid="${esc(uid||'')}">👁 ${tr('st.try')}</button><button class="btn sm" data-act="st-edit" data-id="${esc(x.id)}" data-uid="${esc(uid||'')}">${tr('edit')}</button>`
     : hasStudy() ? `<button class="btn pen sm" data-act="st-open" data-id="${esc(x.id)}">${tr(x.kind==='test'?'st.startTest':x.kind==='words'?'st.practise':'st.start')}</button>` : `<span class="small faint">${I.lock}</span>`;
   return `<article class="st-card k-${x.kind} ${x.on===false?'off':''}"><div class="st-top"><span class="st-kind">${I[ST_IC[x.kind]]||''} ${tr('st.k.'+x.kind)}</span>${x.level?`<span class="pill">${esc(x.level)}</span>`:''}</div>
-    <h3>${esc(x.title)}</h3>${x.desc?`<p class="small muted">${esc(x.desc)}</p>`:''}<p class="small faint">${tr('st.n.'+x.kind,{n:x.n||0,m:x.mins||0})}${x.on===false?' · '+tr('mk.hidden'):''}</p>
+    <h3>${esc(x.title)}</h3>${x.desc?`<p class="small muted">${esc(x.desc)}</p>`:''}<p class="small faint">${tr('st.n.'+x.kind,{n:x.n||0,m:x.mins||0})}${x.g?' · '+tr('st.gN',{n:x.g}):''}${x.on===false?' · '+tr('mk.hidden'):''}</p>
     ${prog}<div class="st-foot">${btn}</div></article>`;
 }
 function stFilter(sets){
@@ -3298,14 +3444,14 @@ function vSet(){
 // the word set runs in a sandboxed frame: it can't touch Lexora, it can only send back its height and scores
 function vWordSet(s){
   const n=(s.words||[]).length;
-  return `<div class="page-head"><div><span class="label">${tr('st.k.words')}${s.level?' · '+esc(s.level):''}</span><h1>${esc(s.title)}</h1><p>${tr('st.wP',{n})}</p></div>
+  return `<div class="page-head"><div><span class="label">${tr('st.k.words')}${s.level?' · '+esc(s.level):''}</span><h1>${esc(s.title)}</h1><p>${tr('st.wP',{n})}${(s.grammar||[]).length?' '+tr('st.wPg',{n:s.grammar.length}):''}</p></div>
     <button class="btn" data-act="st-dl" data-id="${esc(s.id)}">${I.down} ${tr('st.dlHtml')}</button></div>
     <iframe class="wp-frame" id="wp-frame" data-id="${esc(s.id)}" sandbox="allow-scripts" title="${esc(s.title)}" srcdoc="${esc(wordsPage(s,true))}"></iframe>`;
 }
 window.addEventListener('message', e=>{
   const f=$('#wp-frame'), m=e.data; if(!f || e.source!==f.contentWindow || !m || m.lexora==null || m.id!==f.dataset.id) return;
   if(m.lexora==='h') f.style.height=Math.min(6000,Math.max(420,+m.h||0)+8)+'px';
-  if(m.lexora==='score' && ['quiz','test','match','spell'].includes(m.act) && S.mode==='student'){
+  if(m.lexora==='score' && ['quiz','test','match','spell','gquiz','order'].includes(m.act) && S.mode==='student'){
     const k=m.id+':'+m.act, sc=Math.max(0,Math.round(+m.s||0)), n=Math.max(1,Math.round(+m.n||1));
     pmSaveScores(x=>{ const p=x.study[k]||{}; x.study[k]={best:Math.max(+p.best||0,Math.min(sc,n)), last:Math.min(sc,n), n, tries:(+p.tries||0)+1, at:nowTs()}; });
   }
@@ -3401,42 +3547,76 @@ const busyNow = () => (S.view.name==='set' && S.test && S.test.start && !S.test.
 
 /* teacher: set editor */
 function openSetEdit(id, uid){
-  if(!id){ const lvl=S.profiles[uid]?.level||'B1'; S.ste={id:newId(), uid, isNew:true, meta:{kind:'words', title:'', level:lvl, desc:'', on:true}, text:'', copies:[]}; go('setEdit'); return; }
+  if(!id){ const lvl=S.profiles[uid]?.level||'B1'; S.ste={id:newId(), uid, isNew:true, meta:{kind:'words', title:'', level:lvl, desc:'', on:true}, text:'', grammar:[], fixes:[], notes:'', mode:'lesson', copies:[]}; go('setEdit'); return; }
   const m=(S.stIdx[uid]?.sets||[]).find(x=>x.id===id); if(!m) return;
   const fill = d => { S.ste={id, uid, isNew:false, meta:{kind:m.kind, title:m.title, level:m.level||'B1', desc:m.desc||'', mins:+m.mins||15, on:m.on!==false},
-    text: m.kind==='words'?wordLinesText(d?.words):m.kind==='cards'?cardsText(d?.cards):qsText(d?.qs), copies:[]}; go('setEdit'); };
+    text: m.kind==='words'?wordLinesText(d?.words):m.kind==='cards'?cardsText(d?.cards):qsText(d?.qs), grammar:clone(d?.grammar||[]), fixes:[], notes:'', mode:'words', copies:[]}; go('setEdit'); };
   const x=S.stSets[id]; if(x?.st==='ok') return fill(x.d);
   S.db.doc('study/'+id).get().then(s=>fill(s.exists?s.data():{})).catch(e=>dbErr(e,'premium'));
 }
 function steRead(){ const E=S.ste; if(!E || !$('#ste-title')) return; E.meta.title=$('#ste-title').value.trim(); E.meta.level=$('#ste-level').value;
-  E.meta.on=$('#ste-on').checked; E.copies=[...document.querySelectorAll('.ste-cp:checked')].map(x=>x.value); E.text=$('#ste-text').value; }
+  E.meta.on=$('#ste-on').checked; E.copies=[...document.querySelectorAll('.ste-cp:checked')].map(x=>x.value);
+  if($('#ste-text')) E.text=$('#ste-text').value; if($('#ste-notes')) E.notes=$('#ste-notes').value; }
 const steCount = () => { const E=S.ste, el=$('#ste-count'); if(!E||!el) return; const ws=parseWordLines($('#ste-text')?.value??E.text), miss=ws.filter(x=>!x.m).length;
   el.textContent=tr('st.e.wordsN',{n:ws.length})+(miss?' · '+tr('st.e.noMeaning',{n:miss}):''); el.classList.toggle('bad',miss>0); };
+// what the AI corrected in the teacher's notes or words: only the teacher sees this, the student gets the corrected version
+function steFixes(E){
+  if(!(E.fixes||[]).length) return '';
+  return `<div class="card ste-fixes section" style="margin-top:0"><div class="row" style="justify-content:space-between;gap:10px"><h3 style="margin:0">✏️ ${tr('st.fixH',{n:E.fixes.length})}</h3><button class="btn ghost sm" data-act="ste-fix-x">${tr('close')}</button></div>
+    <p class="small muted">${tr('st.fixP')}</p><ol class="ste-fixl">${E.fixes.map(f=>`<li>${f.was?`<s>${esc(f.was)}</s> `:''}${f.w?`→ <b>${esc(f.w)}</b>`:''}${f.fix?`<div class="small muted">${esc(f.fix)}</div>`:''}</li>`).join('')}</ol></div>`;
+}
+function steGrammar(E){
+  const g=E.grammar||[]; if(!g.length) return '';
+  return `<div class="field"><span>${tr('st.gH')}</span><div class="list">${g.map((x,i)=>`<div class="ste-g"><div style="min-width:0"><b>${esc(x.t)}</b><div class="small muted">${tr('st.gLine',{q:(x.qs||[]).length+(x.gaps||[]).length,o:(x.order||[]).length})}</div>${x.rule?`<div class="small faint ste-g-rule">${esc(x.rule)}</div>`:''}</div>
+    <button class="btn ghost sm" data-act="ste-g-del" data-i="${i}" title="${esc(tr('delete'))}" style="color:var(--pen)">${I.trash}</button></div>`).join('')}</div></div>`;
+}
 function vSetEdit(){
   const E=S.ste; if(!E) return ''; const m=E.meta, nm=S.profiles[E.uid]?.name||S.passes[E.uid]?.name||'?', others=stStudents().filter(r=>r.uid!==E.uid && r.until>Date.now());
-  const ex=`look after = to take care of | She looks after her little brother. | g'amxo'rlik qilmoq\nreliable = that you can trust | My old phone is slow but reliable. | ishonchli\nborrow = to take something and give it back later | Can I borrow your pen? | qarzga olmoq`;
+  const ex=`look after = to take care of | She looks after her little brother. | g'amxo'rlik qilmoq\nreliable – ishonchli\nborrow – qarzga olmoq`;
+  const lesson=E.mode==='lesson', nG=(E.grammar||[]).length;
+  const notesEx=`home town – tug'ilgan shahar\nbutcher's – qassobxona\nTurn right at the school\n\n#Years\n1998 – nineteen ninety-eight\n2001 – two thousand and one\n\n#was/were born\nI was born in 2004 in Fergana`;
+  const head=`<div class="lg-2"><label class="field"><span>${tr('bk.title')}</span><input class="inp" id="ste-title" maxlength="80" value="${esc(m.title)}" placeholder="${tr('st.wTitlePh')}"></label>
+      <label class="field"><span>${tr('st.level')}</span><select class="inp" id="ste-level">${LEVELS.map(l=>`<option ${m.level===l?'selected':''}>${l}</option>`).join('')}</select></label></div>`;
+  const foot=`<label class="row" style="gap:8px"><input type="checkbox" id="ste-on" ${m.on!==false?'checked':''}> <span>${tr('st.showStu',{name:esc(nm.split(' ')[0])})}</span></label>
+    ${E.isNew && others.length?`<div class="field"><span>${tr('st.alsoFor')} <span class="faint">${tr('optional')}</span></span><div class="row">${others.map(r=>`<label class="row" style="gap:6px"><input type="checkbox" class="ste-cp" value="${esc(r.uid)}" ${E.copies.includes(r.uid)?'checked':''}> ${esc(r.name)}</label>`).join('')}</div></div>`:''}`;
+  const tabs=`<div class="seg" style="margin-bottom:16px"><button data-act="ste-mode" data-m="lesson" aria-pressed="${lesson}">📝 ${tr('st.mLesson')}</button><button data-act="ste-mode" data-m="words" aria-pressed="${!lesson}">${tr('st.mWords')} <span class="cnt-s num">${parseWordLines(E.text).length}${nG?' + '+nG:''}</span></button></div>`;
+  const body = lesson
+    ? `<div class="ste-grid"><div class="card ste-form">${head}
+        <label class="field"><span>${tr('st.lNotes')}</span><textarea class="inp mono" id="ste-notes" rows="16" placeholder="${esc(notesEx)}">${esc(E.notes||'')}</textarea><span class="small faint">${tr('st.lNotesHint')}</span></label>${foot}
+      </div><div class="ste-side">
+        <div class="card"><h3>${I.spark} ${tr('st.lAiH')}</h3><ol class="em-steps small"><li>${tr('st.lAi1')}</li><li>${tr('st.lAi2')}</li><li>${tr('st.lAi3')}</li></ol>
+          <button class="btn" data-act="ste-l-ai">${I.copy} ${tr('nw.aiCopy')}</button>
+          <label class="field"><span>${tr('nw.aiPaste')}</span><textarea class="inp mono" id="ste-l-in" rows="5" placeholder='{"title": …, "words":[ … ], "grammar":[ … ], "fixes":[ … ]}'></textarea></label>
+          <button class="btn pen" data-act="ste-l-in">${tr('st.lBuild')}</button></div>
+        <div class="card"><h3>${tr('st.wGets')}</h3><p class="small muted">${tr('st.lGetsP')}</p></div>
+      </div></div>`
+    : `<div class="ste-grid"><div class="card ste-form">${head}
+        <label class="field"><span>${tr('st.e.words')}</span><textarea class="inp mono" id="ste-text" rows="14" placeholder="${esc(ex)}">${esc(E.text)}</textarea><span class="small faint" id="ste-count"></span></label>
+        ${steGrammar(E)}${foot}
+      </div><div class="ste-side">
+        <div class="card"><h3>${I.spark} ${tr('st.wAiH')}</h3><ol class="em-steps small"><li>${tr('st.wAi1')}</li><li>${tr('st.wAi2')}</li><li>${tr('st.wAi3')}</li></ol>
+          <button class="btn" data-act="ste-ai">${I.copy} ${tr('nw.aiCopy')}</button>
+          <label class="field"><span>${tr('nw.aiPaste')}</span><textarea class="inp mono" id="ste-ai-in" rows="4" placeholder='{"words":[ … ]}'></textarea></label>
+          <button class="btn pen" data-act="ste-ai-in">${tr('st.wAiFill')}</button></div>
+        <div class="card"><h3>${tr('st.howH')}</h3><p class="small muted">${tr('st.wHow')}</p><pre>${esc(ex)}</pre></div>
+        <div class="card"><h3>${tr('st.wGets')}</h3><p class="small muted">${tr('st.wGetsP')}</p></div>
+      </div></div>`;
   return `<div class="pm-top"><button class="btn ghost sm" data-act="ste-back">${I.back} ${tr('st.name')}</button></div>
-  <div class="page-head"><div><span class="label row" style="gap:8px">${avatar(nm,E.uid)} ${tr('st.forWho',{name:esc(nm)})}</span><h1>${E.isNew?tr('st.newSet'):esc(m.title||tr('untitled'))}</h1><p>${tr('st.weP')}</p></div><button class="btn primary" data-act="ste-save">${tr('save')}</button></div>
-  <div class="ste-grid"><div class="card ste-form">
-    <div class="lg-2"><label class="field"><span>${tr('bk.title')}</span><input class="inp" id="ste-title" maxlength="80" value="${esc(m.title)}" placeholder="${tr('st.wTitlePh')}"></label>
-      <label class="field"><span>${tr('st.level')}</span><select class="inp" id="ste-level">${LEVELS.map(l=>`<option ${m.level===l?'selected':''}>${l}</option>`).join('')}</select></label></div>
-    <label class="field"><span>${tr('st.e.words')}</span><textarea class="inp mono" id="ste-text" rows="14" placeholder="${esc(ex)}">${esc(E.text)}</textarea><span class="small faint" id="ste-count"></span></label>
-    <label class="row" style="gap:8px"><input type="checkbox" id="ste-on" ${m.on!==false?'checked':''}> <span>${tr('st.showStu',{name:esc(nm.split(' ')[0])})}</span></label>
-    ${E.isNew && others.length?`<div class="field"><span>${tr('st.alsoFor')} <span class="faint">${tr('optional')}</span></span><div class="row">${others.map(r=>`<label class="row" style="gap:6px"><input type="checkbox" class="ste-cp" value="${esc(r.uid)}" ${E.copies.includes(r.uid)?'checked':''}> ${esc(r.name)}</label>`).join('')}</div></div>`:''}
-  </div><div class="ste-side">
-    <div class="card"><h3>${I.spark} ${tr('st.wAiH')}</h3><ol class="em-steps small"><li>${tr('st.wAi1')}</li><li>${tr('st.wAi2')}</li><li>${tr('st.wAi3')}</li></ol>
-      <button class="btn" data-act="ste-ai">${I.copy} ${tr('nw.aiCopy')}</button>
-      <label class="field"><span>${tr('nw.aiPaste')}</span><textarea class="inp mono" id="ste-ai-in" rows="4" placeholder='{"words":[ … ]}'></textarea></label>
-      <button class="btn pen" data-act="ste-ai-in">${tr('st.wAiFill')}</button></div>
-    <div class="card"><h3>${tr('st.howH')}</h3><p class="small muted">${tr('st.wHow')}</p><pre>${esc(ex)}</pre></div>
-    <div class="card"><h3>${tr('st.wGets')}</h3><p class="small muted">${tr('st.wGetsP')}</p></div>
-  </div></div>
+  <div class="page-head"><div><span class="label row" style="gap:8px">${avatar(nm,E.uid)} ${tr('st.forWho',{name:esc(nm)})}</span><h1>${E.isNew?tr('st.newSet'):esc(m.title||tr('untitled'))}</h1><p>${lesson?tr('st.lP'):tr('st.weP')}</p></div>
+    <div class="row"><button class="btn" data-act="ste-prev">👁 ${tr('st.preview')}</button><button class="btn primary" data-act="ste-save">${tr('save')}</button></div></div>
+  ${steFixes(E)}${tabs}${body}
   ${E.isNew?'':`<div class="row" style="margin-top:20px"><button class="btn ghost del-btn" data-act="ste-del">${I.trash} <span>${tr('st.del')}</span></button></div>`}`;
 }
+function openSetPreview(){
+  steRead(); const E=S.ste; if(!E) return; const words=parseWordLines(E.text).filter(x=>x.m);
+  if(!words.length && !(E.grammar||[]).length){ toast(tr('st.e.none')); return; }
+  showDlg(`<div>${dlgHead(tr('st.preview'), esc(E.meta.title||tr('untitled')))}<div class="dlg-body"><iframe class="wp-frame" sandbox="allow-scripts" style="height:70vh" srcdoc="${esc(wordsPage({id:'preview', title:E.meta.title||tr('untitled'), level:E.meta.level, words, grammar:E.grammar||[]},false))}"></iframe></div></div>`, {type:'stprev'});
+}
 
-async function stWriteSet(uid, id, m, words){
-  const doc={id, uid, kind:'words', title:m.title, level:m.level, at:nowTs(), words};
-  const meta={id, kind:'words', title:m.title, level:m.level, desc:'', n:words.length, mins:0, on:m.on!==false};
+async function stWriteSet(uid, id, m, words, grammar){
+  grammar=grammar||[];
+  const doc={id, uid, kind:'words', title:m.title, level:m.level, at:nowTs(), words, ...(grammar.length?{grammar}:{})};
+  const meta={id, kind:'words', title:m.title, level:m.level, desc:'', n:words.length, g:grammar.length, mins:0, on:m.on!==false};
   await S.db.doc('study/'+id).set(doc); S.stSets[id]={st:'ok', d:doc};
   const idx=clone(S.stIdx[uid])||{sets:[]}; idx.sets=(idx.sets||[]); const i=idx.sets.findIndex(x=>x.id===id); i>=0?idx.sets[i]=meta:idx.sets.push(meta);
   await S.db.doc('studyIndex/'+uid).set(idx); S.stIdx[uid]=idx;
@@ -3444,13 +3624,14 @@ async function stWriteSet(uid, id, m, words){
 async function steSave(){
   steRead(); const E=S.ste, m=E.meta;
   if(!m.title){ toast(tr('bk.needTitle')); return; }
-  const words=parseWordLines(E.text); if(!words.length){ toast(tr('st.e.none')); return; }
-  if(words.some(x=>!x.m)){ toast(tr('st.e.needM')); return; }
+  const words=parseWordLines(E.text), grammar=E.grammar||[];
+  if(!words.length && !grammar.length){ toast(E.mode==='lesson'&&(E.notes||'').trim()?tr('st.lFirst'):tr('st.e.none')); return; }
+  if(words.some(x=>!x.m)){ toast(tr('st.e.needM')); if(E.mode!=='words'){ E.mode='words'; renderMain(); after.setEdit&&after.setEdit(); } return; }
   try{
-    await stWriteSet(E.uid, E.id, m, words);
-    for(const u of (E.isNew?E.copies:[])) await stWriteSet(u, newId(), m, clone(words));
+    await stWriteSet(E.uid, E.id, m, words, grammar);
+    for(const u of (E.isNew?E.copies:[])) await stWriteSet(u, newId(), m, clone(words), clone(grammar));
   }catch(e){ dbErr(e,'premium'); return; }
-  const isNew=E.isNew, uid=E.uid; toast(tr('st.e.saved',{n:words.length}));
+  const isNew=E.isNew, uid=E.uid; toast(grammar.length?tr('st.e.savedG',{n:words.length,g:grammar.length}):tr('st.e.saved',{n:words.length}));
   if(isNew && hasPassNow(uid,'study')) notify('order',[uid,...E.copies],()=>({subject:tr('st.emNew',{t:m.title}), kicker:tr('st.name'), lines:[tr('st.emNewL')]}));
   S.ste=null; go('study');
 }
@@ -4334,6 +4515,87 @@ const teamList = (all) => Object.entries(S.team||{}).filter(([,t])=>all || t.vis
   .sort((a,b)=>(b.stats?.score||0)-(a.stats?.score||0) || (a.order||0)-(b.order||0) || (a.name||'').localeCompare(b.name||''));
 const tName = tid => S.team?.[tid]?.name || (tid===MAIN_TID ? (S.me?.name||tr('teacher')) : tr('c.noTeacher'));
 
+/* ---------- course prices: Lexora sets a range, each teacher picks a price inside it ----------
+   site/pricing (public, owner writes): {def:{group,ind}, langs:{English:{group,ind}}, exp:[[fromYears,lo,hi]], stu:[[fromStudents,plusPct]]}
+   The range = base price of the language and format × the experience factor; more students raise the top of the range.
+   teachers/{tid}.prices: {English:{group, ind}} — the teacher's choice, always shown clamped to the range. Prices are per month. */
+const PRICING_DEF = {def:{group:350000, ind:700000}, langs:{}, exp:[[0,0.8,1],[3,0.9,1.15],[5,1,1.3],[8,1.1,1.5]], stu:[[10,5],[25,10],[50,20]]};
+const PFORMATS = ['group','ind'];
+const r1000 = v => Math.round((+v||0)/1000)*1000;
+function pricing(){ const p=S.pricing||{};
+  return {def:{...PRICING_DEF.def, ...(p.def||{})}, langs:p.langs||{}, exp:(Array.isArray(p.exp)&&p.exp.length?p.exp:PRICING_DEF.exp).slice().sort((a,b)=>a[0]-b[0]), stu:(Array.isArray(p.stu)?p.stu:PRICING_DEF.stu).slice().sort((a,b)=>a[0]-b[0])}; }
+function priceRange(lang, fmt, years, students){
+  const P=pricing(), base=+P.langs[lang]?.[fmt] || +P.def[fmt] || 0;
+  const e=P.exp.filter(x=>(+years||0)>=x[0]).pop() || P.exp[0], bonus=P.stu.filter(x=>(+students||0)>=x[0]).reduce((a,x)=>Math.max(a,+x[1]||0),0);
+  const lo=r1000(base*e[1]), hi=Math.max(lo, r1000(base*e[2]*(1+bonus/100)));
+  return {base, lo, hi, bonus, f:e};
+}
+function teacherPrice(t, lang, fmt){
+  const r=priceRange(lang, fmt, t?.years, t?.stats?.students), v=+t?.prices?.[lang]?.[fmt]||0;
+  return {...r, own:v, v: v ? Math.min(r.hi, Math.max(r.lo, v)) : 0, out: !!v && (v<r.lo || v>r.hi)};
+}
+const fromPrice = t => { const v=(t?.langs||[]).flatMap(l=>PFORMATS.map(f=>teacherPrice(t,l,f).v)).filter(x=>x>0); return v.length?Math.min(...v):0; };
+const perMonth = v => `${som(v)} <span class="faint">/ ${tr('pc.month')}</span>`;
+// the price list on a teacher's public profile
+function tPriceList(t){
+  const rows=(t?.langs||[]).map(l=>({l, g:teacherPrice(t,l,'group').v, i:teacherPrice(t,l,'ind').v})).filter(r=>r.g||r.i); if(!rows.length) return '';
+  return `<div><span class="label">${tr('pc.listH')}</span><table class="pc-tbl"><thead><tr><th></th><th>${tr('pc.group')}</th><th>${tr('pc.ind')}</th></tr></thead><tbody>
+    ${rows.map(r=>`<tr><th>${esc(r.l)}</th><td class="num">${r.g?perMonth(r.g):'–'}</td><td class="num">${r.i?perMonth(r.i):'–'}</td></tr>`).join('')}</tbody></table></div>`;
+}
+// a teacher sets their own prices (My profile)
+function priceEditor(tid){
+  const t=S.team?.[tid]; if(!t) return '';
+  const langs=t.langs||[], st=S.role==='staff'?(t.stats||{}):teacherStats(tid), tt={...t, stats:{...(t.stats||{}), students:st.students}};
+  return `<form id="tp-form" class="card section" style="padding:20px" novalidate><h2 style="margin:0">${tr('pc.myH')}</h2><p class="muted small" style="margin-top:4px">${tr('pc.myP',{y:+t.years||0, n:+st.students||0})}</p>
+    ${langs.length?`<div class="pc-ed">${langs.map(l=>PFORMATS.map(f=>{ const r=teacherPrice(tt,l,f);
+      return `<label class="field"><span><b>${esc(l)}</b> · ${tr('pc.'+f)}</span><input class="inp num tp-in" type="number" step="1000" min="${r.lo}" max="${r.hi}" data-l="${esc(l)}" data-f="${f}" value="${r.own||''}" placeholder="${r.lo}">
+        <span class="small faint">${tr('pc.allowed',{lo:som(r.lo), hi:som(r.hi)})}${r.bonus?' · '+tr('pc.bonus',{p:r.bonus}):''}</span>${r.out?`<span class="small" style="color:var(--pen)">${tr('pc.outNow')}</span>`:''}</label>`; }).join('')).join('')}</div>
+      <p class="lg-err" id="tp-err" role="alert"></p><button class="btn primary">${tr('save')}</button>`:`<p class="faint small">${tr('pc.noLangs')}</p>`}
+    <details class="small muted" style="margin-top:12px"><summary>${tr('pc.howH')}</summary>${pcHow()}</details></form>`;
+}
+function pcHow(){ const P=pricing();
+  return `<ul class="pc-how"><li>${tr('pc.how1')}</li><li>${tr('pc.how2')} ${P.exp.map((e,i)=>`${e[0]}${P.exp[i+1]?'–'+(P.exp[i+1][0]-1):'+'} ${tr('pc.yrs')}: ×${e[1]}–×${e[2]}`).join(' · ')}</li>
+    <li>${tr('pc.how3')} ${P.stu.map(x=>`${x[0]}+ → +${x[1]}%`).join(' · ')||'–'}</li><li>${tr('pc.how4')}</li></ul>`;
+}
+after.me2 = () => { const f=$('#tp-form'); if(!f) return; f.addEventListener('submit', async e=>{ e.preventDefault();
+  const tid=myTid(), t=S.team[tid], prices={}; let bad='';
+  const st=S.role==='staff'?(t.stats||{}):teacherStats(tid), tt={...t, stats:{...(t.stats||{}), students:st.students}};
+  document.querySelectorAll('.tp-in').forEach(inp=>{ const v=Math.round(+inp.value||0); if(!v) return; const r=teacherPrice(tt, inp.dataset.l, inp.dataset.f);
+    if(v<r.lo || v>r.hi){ bad=tr('pc.bad',{l:inp.dataset.l, f:tr('pc.'+inp.dataset.f), lo:som(r.lo), hi:som(r.hi)}); return; }
+    (prices[inp.dataset.l]=prices[inp.dataset.l]||{})[inp.dataset.f]=v; });
+  if(bad){ $('#tp-err').textContent=bad; return; }
+  try{ await S.db.doc('teachers/'+tid).update({prices}); toast(tr('c.saved')); }catch(err){ $('#tp-err').textContent=lgErrText(err); } }); };
+// the owner: the rules every range comes from, and what each teacher chose
+function pricingSection(){
+  const P=pricing(), team=teamList(true), langs=[...new Set(['English', ...team.flatMap(t=>t.langs||[]), ...Object.keys(P.langs)])];
+  const rows=team.flatMap(t=>{ const st=teacherStats(t.tid), tt={...t, stats:{...(t.stats||{}), students:st.students}}; return (t.langs||[]).map(l=>({t, l, g:teacherPrice(tt,l,'group'), i:teacherPrice(tt,l,'ind')})); });
+  const cell = r => `${r.own?perMonth(r.own):`<span class="faint">${tr('pc.notSet')}</span>`}<div class="small faint">${money(r.lo)} – ${money(r.hi)}</div>${r.out?`<div class="small" style="color:var(--pen)">${tr('pc.out')}</div>`:''}`;
+  return `<div class="section card promo-ed"><h2>${tr('pc.h')}</h2><p class="muted small">${tr('pc.p')}</p>
+    <form id="pc-form" novalidate>
+      <h3 style="margin-top:14px">${tr('pc.baseH')}</h3><table class="pc-tbl ed"><thead><tr><th>${tr('pc.lang')}</th><th>${tr('pc.group')}</th><th>${tr('pc.ind')}</th></tr></thead><tbody>
+        <tr><th>${tr('pc.default')}</th><td><input class="inp num" type="number" step="1000" min="0" id="pc-dg" value="${P.def.group}"></td><td><input class="inp num" type="number" step="1000" min="0" id="pc-di" value="${P.def.ind}"></td></tr>
+        ${langs.map(l=>`<tr><th>${esc(l)}</th>${PFORMATS.map(f=>`<td><input class="inp num pc-l" type="number" step="1000" min="0" data-l="${esc(l)}" data-f="${f}" value="${+P.langs[l]?.[f]||''}" placeholder="${P.def[f]}"></td>`).join('')}</tr>`).join('')}</tbody></table>
+      <div class="grid2" style="gap:16px;margin-top:14px"><div><h3>${tr('pc.expH')}</h3><table class="pc-tbl ed"><thead><tr><th>${tr('pc.fromYears')}</th><th>${tr('pc.lo')}</th><th>${tr('pc.hi')}</th></tr></thead><tbody>
+          ${P.exp.map((e,i)=>`<tr><td><input class="inp num pc-e" data-i="${i}" data-k="0" type="number" min="0" max="60" value="${e[0]}"></td><td><input class="inp num pc-e" data-i="${i}" data-k="1" type="number" step="0.05" min="0.1" max="5" value="${e[1]}"></td><td><input class="inp num pc-e" data-i="${i}" data-k="2" type="number" step="0.05" min="0.1" max="5" value="${e[2]}"></td></tr>`).join('')}</tbody></table></div>
+        <div><h3>${tr('pc.stuH')}</h3><table class="pc-tbl ed"><thead><tr><th>${tr('pc.fromStu')}</th><th>${tr('pc.plus')}</th></tr></thead><tbody>
+          ${[0,1,2].map(i=>{ const x=P.stu[i]||['','']; return `<tr><td><input class="inp num pc-s" data-i="${i}" data-k="0" type="number" min="1" max="10000" value="${x[0]}"></td><td><input class="inp num pc-s" data-i="${i}" data-k="1" type="number" min="0" max="200" value="${x[1]}"></td></tr>`; }).join('')}</tbody></table></div></div>
+      <p class="lg-err" id="pc-err" role="alert"></p><button class="btn primary" style="margin-top:6px">${tr('save')}</button></form>
+    <h3 style="margin-top:20px">${tr('pc.chosenH')}</h3>${rows.length?`<div style="overflow-x:auto"><table class="pc-tbl"><thead><tr><th>${tr('c.teamH')}</th><th>${tr('pc.lang')}</th><th>${tr('pc.group')}</th><th>${tr('pc.ind')}</th></tr></thead><tbody>
+      ${rows.map(r=>`<tr><th>${esc(r.t.name||'')}<div class="small faint">${tr('pc.who',{y:+r.t.years||0, n:+teacherStats(r.t.tid).students||0})}</div></th><td>${esc(r.l)}</td><td class="num">${cell(r.g)}</td><td class="num">${cell(r.i)}</td></tr>`).join('')}</tbody></table></div>`:`<p class="faint small">${tr('c.teamEmptyH')}</p>`}
+    <details class="small muted" style="margin-top:12px"><summary>${tr('pc.howH')}</summary>${pcHow()}</details></div>`;
+}
+function wirePricing(){ const f=$('#pc-form'); if(!f) return; f.addEventListener('submit', async e=>{ e.preventDefault();
+  const num = (v,a,b) => Math.max(a, Math.min(b, +v||0));
+  const d={def:{group:r1000(num($('#pc-dg').value,0,1e8)), ind:r1000(num($('#pc-di').value,0,1e8))}, langs:{}, exp:[], stu:[]};
+  document.querySelectorAll('.pc-l').forEach(i=>{ const v=r1000(num(i.value,0,1e8)); if(v) (d.langs[i.dataset.l]=d.langs[i.dataset.l]||{})[i.dataset.f]=v; });
+  const ex={}; document.querySelectorAll('.pc-e').forEach(i=>{ (ex[i.dataset.i]=ex[i.dataset.i]||[])[+i.dataset.k]=+i.value; });
+  for(const r of Object.values(ex)){ const y=Math.round(num(r[0],0,60)), lo=num(r[1],0.1,5), hi=num(r[2],0.1,5); if(lo>hi){ $('#pc-err').textContent=tr('pc.loHi'); return; } d.exp.push([y, Math.round(lo*100)/100, Math.round(hi*100)/100]); }
+  const su={}; document.querySelectorAll('.pc-s').forEach(i=>{ (su[i.dataset.i]=su[i.dataset.i]||[])[+i.dataset.k]=i.value; });
+  for(const r of Object.values(su)) if(r[0]!=='' && +r[0]>0) d.stu.push([Math.round(num(r[0],1,1e4)), Math.round(num(r[1],0,200))]);
+  if(!d.exp.some(x=>x[0]===0)) d.exp.push([0, d.exp[0]?.[1]||1, d.exp[0]?.[2]||1]);
+  d.exp.sort((a,b)=>a[0]-b[0]); d.stu.sort((a,b)=>a[0]-b[0]);
+  try{ await S.db.doc('site/pricing').set(d); S.pricing=d; toast(tr('c.saved')); renderMain(); }catch(err){ dbErr(err,'svc'); } }); }
+
 /* ---------- levels: computed on the owner's page (only it sees every student) and published to the profile ---------- */
 function teacherStats(tid){
   const sids=Object.keys(S.profiles).filter(sid=>tidOf(S.profiles[sid])===tid), monthAgo=Date.now()-30*864e5;
@@ -4371,9 +4633,10 @@ function startCentre(role){
   S.myLessons=null; S.myTPriv=null; S._tprivKey=null; S._tprivUn=null;
   const quiet=()=>{};
   const teamFrom = q => { const o={}; q.docs.forEach(d=>{ if(d.exists) o[d.id]=d.data(); }); S.team=o; S.teamLoaded=true; };
-  S.promo=null; S._w={}; S.unsubs.push(stopWatches);
+  S.promo=null; S.pricing=null; S._w={}; S.unsubs.push(stopWatches);
   if(role==='guest'){
     S.unsubs.push(S.db.doc('site/promo').onSnapshot(x=>{ S.promo=x.exists?x.data():null; if(S.view.name==='landing') renderMain(); }, quiet));
+    S.unsubs.push(S.db.doc('site/pricing').onSnapshot(x=>{ S.pricing=x.exists?x.data():null; if(S.view.name==='landing') renderMain(); }, quiet));
     S.unsubs.push(S.db.collection('teachers').where('visible',true).onSnapshot(q=>{ teamFrom(q); if(S.view.name==='landing') renderMain(); }, ()=>{ S.teamLoaded=true; if(S.view.name==='landing') renderMain(); }));
     return;
   }
@@ -4381,6 +4644,7 @@ function startCentre(role){
   const col = (path, key, after) => S.unsubs.push(S.db.collection(path).onSnapshot(q=>{ const o={}; q.docs.forEach(d=>{ if(d.exists) o[d.id]=d.data(); }); S[key]=o; after&&after(); refreshAny(); }, quiet));
   const one = (path, key, def, after) => S.unsubs.push(S.db.doc(path).onSnapshot(s=>{ S[key]=s.exists?s.data():def; after&&after(); refreshAny(); }, ()=>{ S[key]=def; }));
   const where1 = (path, f, v, key) => S.unsubs.push(S.db.collection(path).where(f,v).onSnapshot(q=>{ const o={}; q.docs.forEach(d=>{ if(d.exists) o[d.id]=d.data(); }); S[key]=o; refreshAny(); }, quiet));
+  one('site/pricing','pricing',null);
   if(role==='owner'){
     col('leads','leads'); col('staffReq','sreq'); col('teacherPriv','tpriv'); col('applications','apps');
     col('enroll','enrolls'); col('enrollStatus','enrollSt'); col('roster','rosters'); col('live','lives'); col('torders','torders'); one('site/promo','promo',{});
@@ -4454,6 +4718,7 @@ function vLanding(){
       <span class="tchips">${(t.langs||[]).map(l=>`<span class="lchip">${esc(l)}</span>`).join('')}${t.levels?`<span class="lchip ghost">${esc(t.levels)}</span>`:''}</span>
       ${t.bio?`<span class="small tcard-bio">${esc(t.bio.slice(0,150))}${t.bio.length>150?'…':''}</span>`:''}
       <span class="tkv"><span><b class="num">${+st.students||0}</b>${tr('c.kStudents')}</span><span><b class="num">${st.gain>0?'+'+st.gain:'–'}</b>${tr('c.kGain')}</span><span><b class="num">${+t.years||'–'}</b>${tr('c.kYears')}</span>${t.lessonLen?`<span><b class="num">${t.lessonLen}</b>${tr('c.kMin')}</span>`:''}</span>
+      ${fromPrice(t)?`<span class="tcard-price">${tr('pc.from',{p:som(fromPrice(t))})} <span class="faint">/ ${tr('pc.month')}</span></span>`:''}
       <span class="tcard-go">${tr('c.viewProfile')} →</span></button>`; };
   const loading = !S.teamLoaded;
   return `<section class="lp-hero"><div class="lp-hero-in">
@@ -4487,6 +4752,7 @@ function openTeacherProfile(tid){
       <div class="tkv big"><span><b class="num">${+st.students||0}</b>${tr('c.kStudents')}</span><span><b class="num">${st.gain>0?'+'+st.gain:'–'}</b>${tr('c.kGain')}</span><span><b class="num">${st.band!=null?fmtBand(st.band):'–'}</b>${tr('c.kBand')}</span><span><b class="num">${+t.years||'–'}</b>${tr('c.kYears')}</span>${t.lessonLen?`<span><b class="num">${lenText(t.lessonLen)}</b>${tr('c.kLen')}</span>`:''}</div>
       ${t.bio?`<div><span class="label">${tr('c.bio')}</span><p style="margin-top:6px;white-space:pre-line">${esc(t.bio)}</p></div>`:''}
       ${(t.achievements||[]).length?`<div><span class="label">${tr('c.ach')}</span><ul class="tach">${t.achievements.map(a=>`<li>${esc(a)}</li>`).join('')}</ul></div>`:''}
+      ${tPriceList(t)}
       ${tsvcList(t, tid)}
       <p class="small faint">${tr('c.lvNote',{level:L.name})}</p>
     </div>
@@ -4631,7 +4897,7 @@ function vTeam(){
   return `<div class="page-head"><div><h1>${tr('c.teamH')}</h1><p>${tr('c.teamP')}</p></div><button class="btn primary" data-act="c-tedit">+ ${tr('c.addTeacher')}</button></div>${centreRulesNote()}
     ${hasMain?'':`<div class="notice info" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"><span>${tr('c.mainFirst')}</span><button class="btn sm primary" data-act="c-tedit" data-tid="${MAIN_TID}">${tr('c.mainBtn')}</button></div>`}
     ${list.length?`<div class="tlist">${list.map(row).join('')}</div>`:`<div class="empty"><h3>${tr('c.teamEmptyH')}</h3><p>${tr('c.teamEmptyP')}</p></div>`}
-    ${appsSection()}${enrollSection()}${tordersSection(false)}
+    ${appsSection()}${enrollSection()}${pricingSection()}${tordersSection(false)}
     <div class="section"><h2>${tr('c.leadsH')}</h2>${leads.length?`<div class="list">${leads.map(l=>`<div class="req ${l.st?'ok':'wait'}">${avatar(l.name,l.id)}<div style="min-width:0"><b>${esc(l.name)}</b> <span class="faint">·</span> <span class="num">${esc(l.contact)}</span>
         <div class="small muted">${[l.lang, l.level==='beginner'?tr('c.beginner'):l.level, l.tid?tr('c.forT',{name:esc(tName(l.tid))}):tr('c.anyTeacher')].filter(Boolean).map(x=>x).join(' · ')} · ${ago(l.at)}</div>${l.msg?`<div class="small req-note">“${esc(l.msg)}”</div>`:''}</div>
         <div class="req-act">${l.st?`<span class="pill bk-ok">${tr('c.contacted')}</span><button class="btn ghost sm" data-act="c-lead-del" data-id="${esc(l.id)}" style="color:var(--pen)">${tr('delete')}</button>`:`<button class="btn sm primary" data-act="c-lead-done" data-id="${esc(l.id)}">${tr('c.markContacted')}</button>`}</div></div>`).join('')}</div>`:`<p class="faint">${tr('c.noLeads')}</p>`}</div>
@@ -4670,10 +4936,11 @@ function vMe(){
     <div class="card section tme-lv" style="margin-top:0"><div>${levelBadge(st)}<div class="tprog lg"><i style="width:${L.pct}%"></i></div>
       <p class="small muted">${L.next!=null?tr('c.meNext',{n:L.toNext, level:tLevel(L.next).name}):tr('c.meTop')}</p></div>
       <div class="tkv"><span><b class="num">${+st.students||0}</b>${tr('c.kStudents')}</span><span><b class="num">${+st.reviews||0}</b>${tr('c.kMarked')}</span><span><b class="num">${st.gain>0?'+'+st.gain:'–'}</b>${tr('c.kGain')}</span><span><b class="num">${+st.score||0}</b>${tr('c.kPts')}</span></div></div>
+    ${priceEditor(tid)}
     ${svcEditor(tid)}
     <form id="me-form" class="card section" style="padding:20px" novalidate>${teacherFields(t,{tid, meet:S.myTPriv?.meet||''})}<button class="btn primary" style="margin-top:14px">${tr('save')}</button></form>`;
 }
-after.me = () => { wireTeacherFields(); const f=$('#me-form'); if(!f) return; f.addEventListener('submit', async e=>{
+after.me = () => { wireTeacherFields(); after.me2(); const f=$('#me-form'); if(!f) return; f.addEventListener('submit', async e=>{
   e.preventDefault(); const r=readTeacherFields(); if(r.err){ $('#tf-err').textContent=r.err; return; }
   const tid=myTid(); try{ await S.db.doc('teachers/'+tid).update(r.d); await S.db.doc('teacherPriv/'+tid).set({meet:r.meet}); toast(tr('c.saved')); }catch(err){ $('#tf-err').textContent=lgErrText(err); } }); };
 function vCentre(){
@@ -4924,7 +5191,7 @@ function enrollSection(){
       <h3 style="margin-top:14px">${tr('c.promoWho',{n:+p.min||2})}</h3>${qual.length?`<div class="tchips" style="margin-top:8px">${qual.map(uid=>`<span class="lchip ghost">${esc(S.profiles[uid]?.name||'')} · ${coursesOf(uid)}</span>`).join('')}</div>`:`<p class="faint small">${tr('c.promoNobody')}</p>`}
       <p class="small faint" style="margin-top:8px">${tr('c.promoPay')}</p></div>`;
 }
-after.team = () => { const f=$('#pr-form'); if(!f) return; f.addEventListener('submit', async e=>{ e.preventDefault();
+after.team = () => { wirePricing(); const f=$('#pr-form'); if(!f) return; f.addEventListener('submit', async e=>{ e.preventDefault();
   const d={on:$('#pr-on').checked, pct:Math.max(1,Math.min(90,Math.round(+$('#pr-pct').value||0))), min:Math.max(2,Math.min(10,Math.round(+$('#pr-min').value||2))), until:$('#pr-until').value||'', note:$('#pr-note').value.trim()};
   try{ await S.db.doc('site/promo').set(d); toast(tr('c.saved')); }catch(err){ dbErr(err,'svc'); } }); };
 async function setEnroll(uid, tid, st){
@@ -5313,11 +5580,11 @@ function openLibEdit(id){
 /* ---------- example data for the demo ---------- */
 function seedCentre(db){
   const day = n => { const d=new Date(); d.setDate(d.getDate()+n); return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate()); };
-  db.m.set('teachers/main', {name:'Samandar Y. (example)', headline:'English for journals, exams and economics', langs:['English','Uzbek','Russian'], levels:'A2 – C1, IELTS', years:4, visible:true, order:1,
+  db.m.set('teachers/main', {prices:{English:{group:380000, ind:720000}}, name:'Samandar Y. (example)', headline:'English for journals, exams and economics', langs:['English','Uzbek','Russian'], levels:'A2 – C1, IELTS', years:4, visible:true, order:1,
     bio:'I teach English through daily writing: my students keep a journal and I mark every entry, so we always know what to fix next.', achievements:['IELTS 8.0','Founder of a university business club','60+ students taught'], stats:{students:0,active:0,reviews:0,gain:0,band:null,score:0}});
-  db.m.set('teachers/t-dilnoza', {lessonLen:60, services:[{id:'s1', title:'Speaking club', desc:'Saturdays, 6 people, 90 minutes of Russian conversation.', price:30000},{id:'s3', title:'Essay checking', desc:'One essay with full corrections in 2 days.', price:20000}], name:'Dilnoza R. (example)', headline:'Russian and English for teenagers', langs:['Russian','English'], levels:'A1 – B2', years:6, visible:true, order:2,
+  db.m.set('teachers/t-dilnoza', {prices:{Russian:{group:350000, ind:700000}, English:{group:340000}}, lessonLen:60, services:[{id:'s1', title:'Speaking club', desc:'Saturdays, 6 people, 90 minutes of Russian conversation.', price:30000},{id:'s3', title:'Essay checking', desc:'One essay with full corrections in 2 days.', price:20000}], name:'Dilnoza R. (example)', headline:'Russian and English for teenagers', langs:['Russian','English'], levels:'A1 – B2', years:6, visible:true, order:2,
     bio:'Patient lessons with a lot of speaking. I prepare school students for exams and olympiads.', achievements:['CELTA','Two city olympiad winners'], stats:{students:1,active:1,reviews:1,gain:0,band:6,score:11}});
-  db.m.set('teachers/t-jin', {services:[{id:'s2', title:'TOPIK mock test', desc:'Full test with a written report.', price:80000}], name:'Jin-woo P. (example)', headline:'Korean from zero to TOPIK II', langs:['Korean'], levels:'TOPIK I – II', years:3, visible:true, order:3,
+  db.m.set('teachers/t-jin', {prices:{Korean:{group:300000, ind:650000}}, services:[{id:'s2', title:'TOPIK mock test', desc:'Full test with a written report.', price:80000}], name:'Jin-woo P. (example)', headline:'Korean from zero to TOPIK II', langs:['Korean'], levels:'TOPIK I – II', years:3, visible:true, order:3,
     bio:'Native speaker. Grammar made simple, lots of K-drama listening practice.', achievements:['TOPIK 6','Korean Education Centre volunteer'], stats:{students:0,active:0,reviews:0,gain:0,band:null,score:0}});
   db.m.set('teacherPriv/main', {meet:'https://meet.google.com/abc-defg-hij'}); db.m.set('teacherPriv/t-dilnoza', {meet:'https://meet.google.com/xyz-abcd-efg'});
   db.m.set('staff/dilnoza@example.com', {tid:'t-dilnoza', name:'Dilnoza R. (example)'});
@@ -5706,11 +5973,23 @@ document.addEventListener('click', async ev => {
     case 'ste-back': { if(S.ste?.dirty && !b.dataset.armed){ b.dataset.armed='1'; b.innerHTML=`${I.back} ${tr('nw.e.leave')}`; break; } S.ste=null; go('study'); break; }
     case 'pr-del': openPmRemove(b.dataset.uid, b.dataset.k); break;
     case 'st-dl': downloadSet(b.dataset.id); break;
-    case 'ste-ai-in': { steRead(); const mine=parseWordLines(S.ste.text).map(x=>x.w); if(!mine.length){ toast(tr('st.wFirst')); break; }
+    case 'ste-ai-in': { steRead(); const mine=parseWordLines(S.ste.text); if(!mine.length){ toast(tr('st.wFirst')); break; }
       const res=wordsFromAi($('#ste-ai-in').value, mine); if(!res){ toast(tr('nw.aiBad')); break; }
-      const old=new Map(parseWordLines(S.ste.text).map(x=>[wNorm(x.w),x])), merged=res.map(x=>{ const o=old.get(wNorm(x.w))||{}; return {w:x.w, m:o.m||x.m, ex:o.ex||x.ex, uz:o.uz||x.uz}; });
-      S.ste.text=wordLinesText(merged); S.ste.dirty=true; renderMain(); after.setEdit(); const miss=merged.filter(x=>!x.m).length; toast(miss?tr('st.e.noMeaning',{n:miss}):tr('st.wFilled',{n:merged.length})); break; }
-    case 'ste-ai': { steRead(); const ws=parseWordLines(S.ste.text).map(x=>x.w); if(!ws.length){ toast(tr('st.wFirst')); break; } const t=wordsPrompt(ws, S.ste.meta.level); try{ await navigator.clipboard.writeText(t); toast(tr('st.aiCopied')); }catch(e){ const i=$('#ste-ai-in'); i.value=t; i.select(); toast(tr('t.selected')); } break; }
+      S.ste.text=wordLinesText(res.words); S.ste.fixes=res.fixes; S.ste.dirty=true; renderMain(); after.setEdit(); window.scrollTo({top:0});
+      const miss=res.words.filter(x=>!x.m).length; toast(miss?tr('st.e.noMeaning',{n:miss}):res.fixes.length?tr('st.wFilledFix',{n:res.words.length,f:res.fixes.length}):tr('st.wFilled',{n:res.words.length})); break; }
+    case 'ste-ai': { steRead(); const ws=parseWordLines(S.ste.text); if(!ws.length){ toast(tr('st.wFirst')); break; } const t=wordsPrompt(ws, S.ste.meta.level); try{ await navigator.clipboard.writeText(t); toast(tr('st.aiCopied')); }catch(e){ const i=$('#ste-ai-in'); i.value=t; i.select(); toast(tr('t.selected')); } break; }
+    case 'ste-mode': steRead(); S.ste.mode=b.dataset.m==='lesson'?'lesson':'words'; renderMain(); after.setEdit&&after.setEdit(); break;
+    case 'ste-l-ai': { steRead(); const n=(S.ste.notes||'').trim(); if(!n){ toast(tr('st.lNeed')); break; } const t=lessonPrompt(n, S.ste.meta.level); try{ await navigator.clipboard.writeText(t); toast(tr('st.aiCopied')); }catch(e){ const i=$('#ste-l-in'); i.value=t; i.select(); toast(tr('t.selected')); } break; }
+    case 'ste-l-in': { steRead(); const E=S.ste, n=(E.notes||'').trim(); if(!n){ toast(tr('st.lNeed')); break; }
+      const res=lessonFromAi($('#ste-l-in').value, n); if(!res){ toast(tr('nw.aiBad')); break; }
+      const have=parseWordLines(E.text), keys=new Set(have.map(x=>wNorm(x.w)));
+      E.text=wordLinesText([...have, ...res.words.filter(x=>!keys.has(wNorm(x.w)))]);
+      const gk=new Set((E.grammar||[]).map(g=>wNorm(g.t))); E.grammar=[...(E.grammar||[]), ...res.grammar.filter(g=>!gk.has(wNorm(g.t)))].slice(0,8);
+      if(!E.meta.title && res.title) E.meta.title=res.title; E.fixes=res.fixes; E.mode='words'; E.dirty=true; renderMain(); after.setEdit&&after.setEdit(); window.scrollTo({top:0});
+      toast(tr('st.lBuilt',{n:res.words.length, g:res.grammar.length, f:res.fixes.length})+(res.dropped?' '+tr('st.lDropped',{n:res.dropped}):'')); break; }
+    case 'ste-g-del': { steRead(); if(!armDel(b)) break; S.ste.grammar.splice(+b.dataset.i,1); S.ste.dirty=true; renderMain(); after.setEdit&&after.setEdit(); break; }
+    case 'ste-fix-x': S.ste.fixes=[]; renderMain(); after.setEdit&&after.setEdit(); break;
+    case 'ste-prev': openSetPreview(); break;
     case 'ste-del': { if(!armDel(b)) break; const {id,uid}=S.ste, idx=clone(S.stIdx[uid])||{sets:[]}; idx.sets=(idx.sets||[]).filter(x=>x.id!==id);
       try{ await S.db.doc('study/'+id).delete(); await S.db.doc('studyIndex/'+uid).set(idx); S.stIdx[uid]=idx; toast(tr('bd.deleted')); S.ste=null; go('study'); }catch(e){ dbErr(e,'premium'); } break; }
     case 'bk-cancel': { if(b.classList.contains('del-btn') && !armDel(b)) break; const next=clone(S.myBook)||{items:[]}; next.items=(next.items||[]).filter(x=>x.id!==b.dataset.id); try{ await S.db.doc('bookings/'+S.uid).set(next); toast(b.classList.contains('del-btn')?tr('bd.deleted'):tr('bk.cancelled')); }catch(e){ dbErr(e,'book'); } break; }

@@ -223,13 +223,15 @@ service cloud.firestore {
 
     // ---------- Teaching centre ----------
     // Public teacher profiles. Guests see the ones marked visible; signed-in users see all.
-    // A staff teacher may edit their own profile text, never their level, stats or visibility.
+    // A staff teacher may edit their own profile text and course prices, never their level, stats or visibility.
+    // (Price ranges come from site/pricing; the app always shows a price clamped to its range.)
     match /teachers/{tid} {
       allow read: if resource.data.visible == true || signedIn();
       allow write: if isTeacher();
       allow update: if isStaff() && staffTid() == tid
         && request.resource.data.diff(resource.data).affectedKeys()
-             .hasOnly(['name', 'photo', 'headline', 'langs', 'levels', 'years', 'bio', 'achievements', 'lessonLen', 'services', 'lastSeen']);
+             .hasOnly(['name', 'photo', 'headline', 'langs', 'levels', 'years', 'bio', 'achievements', 'lessonLen', 'services', 'lastSeen', 'prices'])
+        && request.resource.data.get('prices', {}) is map && request.resource.data.get('prices', {}).size() <= 20;
     }
     // A teacher's own Google Meet link: the owner, that teacher and that teacher's students.
     match /teacherPriv/{tid} {

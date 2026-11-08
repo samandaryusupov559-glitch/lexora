@@ -60,6 +60,7 @@ await t('staff writes review doc', setDoc(doc(DIL,'feedback/sam/reviews/e1'),{st
 await t('staff marks other student', setDoc(doc(DIL,'feedback/old'),{reviews:{}}), false);
 await t('staff reads ledger', getDoc(doc(DIL,'ledger/main')), false);
 await t('staff edits own profile text', updateDoc(doc(DIL,'teachers/t-dil'),{headline:'Hi', lastSeen:1}), true);
+await t('staff sets own course prices', updateDoc(doc(DIL,'teachers/t-dil'),{prices:{English:{group:350000, ind:700000}}}), true);
 await t('staff raises own level', updateDoc(doc(DIL,'teachers/t-dil'),{stats:{score:999}}), false);
 await t('staff sets own lesson length', updateDoc(doc(DIL,'teachers/t-dil'),{lessonLen:80}), true);
 await t('staff makes self visible/bonus', updateDoc(doc(DIL,'teachers/t-dil'),{bonus:100}), false);
@@ -104,6 +105,8 @@ await t('staff reads own roster', getDoc(doc(DIL,'roster/t-dil')), true);
 await t('staff reads other roster', getDoc(doc(DIL,'roster/main')), false);
 await t('guest reads promo', getDoc(doc(N,'site/promo')), true);
 await t('student writes promo', setDoc(doc(SAM,'site/promo'),{on:true, pct:90}), false);
+await t('guest reads price rules', getDoc(doc(N,'site/pricing')), true);
+await t('staff changes price rules', setDoc(doc(DIL,'site/pricing'),{def:{group:1, ind:1}}), false);
 await t('staff starts own lesson', setDoc(doc(DIL,'live/t-dil'),{on:true, at:1, until:2, url:'https://meet.google.com/x', to:['sam'], label:'Group'}), true);
 await t('staff sends the link to own student', setDoc(doc(DIL,'liveFor/sam'),{'t-dil':{on:true, url:'https://meet.google.com/x'}},{merge:true}), true);
 await t('staff sends the link to another teacher student', setDoc(doc(DIL,'liveFor/old'),{'t-dil':{on:true}},{merge:true}), false);
