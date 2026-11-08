@@ -976,7 +976,7 @@ td.nwc.off{color:var(--ink-3);font-size:18px}
 .pc-tbl{width:100%;border-collapse:collapse;margin-top:8px}.pc-tbl th,.pc-tbl td{padding:8px 10px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}.pc-tbl thead th{font-size:12.5px;color:var(--muted,#5A6585);font-weight:600}
 .pc-tbl.ed td{padding:5px 6px}.pc-tbl.ed .inp{min-width:90px}
 .pc-ed{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px;margin:14px 0 6px} .pc-how{margin:8px 0 0;padding-left:20px;display:grid;gap:4px}
-.tcard-price{font-weight:700;font-size:15px}
+.tcard-price{font-weight:700;font-size:15px} .pc-lrow{padding:4px 0} .pc-lrow>b{display:block;font-size:13px} .pc-lrow+.pc-lrow{border-top:1px dashed var(--line)}
 @media (max-width:700px){.pr-grid{grid-template-columns:1fr}}
 .promo-ed{padding:20px}
 .lv-steps{margin:0 0 4px 18px;display:flex;flex-direction:column;gap:10px}
@@ -4515,85 +4515,94 @@ const teamList = (all) => Object.entries(S.team||{}).filter(([,t])=>all || t.vis
   .sort((a,b)=>(b.stats?.score||0)-(a.stats?.score||0) || (a.order||0)-(b.order||0) || (a.name||'').localeCompare(b.name||''));
 const tName = tid => S.team?.[tid]?.name || (tid===MAIN_TID ? (S.me?.name||tr('teacher')) : tr('c.noTeacher'));
 
-/* ---------- course prices: Lexora sets a range, each teacher picks a price inside it ----------
-   site/pricing (public, owner writes): {def:{group,ind}, langs:{English:{group,ind}}, exp:[[fromYears,lo,hi]], stu:[[fromStudents,plusPct]]}
-   The range = base price of the language and format × the experience factor; more students raise the top of the range.
-   teachers/{tid}.prices: {English:{group, ind}} — the teacher's choice, always shown clamped to the range. Prices are per month. */
-const PRICING_DEF = {def:{group:350000, ind:700000}, langs:{}, exp:[[0,0.8,1],[3,0.9,1.15],[5,1,1.3],[8,1.1,1.5]], stu:[[10,5],[25,10],[50,20]]};
+/* ---------- course prices (business plan, Table 1): Lexora sets a range for each teacher level and lesson format,
+   each teacher chooses a price inside it. Prices are per month (12 lessons).
+   site/pricing (public, owner writes): {lv:{junior:{group:[lo,hi], ind:[lo,hi]}, teacher:{…}, senior:{…}}, langs:{Korean:110} (% of the range), auto:{teacher:{y,n}, senior:{y,n}}}
+   Level: the owner can place a teacher (teachers/{tid}.plevel); otherwise it follows experience and students:
+   Teacher from `teacher.y` years OR `teacher.n` students, Senior from `senior.y` years AND `senior.n` students.
+   teachers/{tid}.prices: {English:{group, ind}} — the teacher's choice, always shown clamped to the range. */
+const PLEVELS = ['junior','teacher','senior'];
 const PFORMATS = ['group','ind'];
+const PRICING_DEF = {lv:{junior:{group:[250000,350000], ind:[500000,650000]}, teacher:{group:[350000,450000], ind:[650000,800000]}, senior:{group:[450000,600000], ind:[800000,1000000]}},
+  langs:{}, auto:{teacher:{y:3, n:10}, senior:{y:6, n:25}}};
 const r1000 = v => Math.round((+v||0)/1000)*1000;
-function pricing(){ const p=S.pricing||{};
-  return {def:{...PRICING_DEF.def, ...(p.def||{})}, langs:p.langs||{}, exp:(Array.isArray(p.exp)&&p.exp.length?p.exp:PRICING_DEF.exp).slice().sort((a,b)=>a[0]-b[0]), stu:(Array.isArray(p.stu)?p.stu:PRICING_DEF.stu).slice().sort((a,b)=>a[0]-b[0])}; }
-function priceRange(lang, fmt, years, students){
-  const P=pricing(), base=+P.langs[lang]?.[fmt] || +P.def[fmt] || 0;
-  const e=P.exp.filter(x=>(+years||0)>=x[0]).pop() || P.exp[0], bonus=P.stu.filter(x=>(+students||0)>=x[0]).reduce((a,x)=>Math.max(a,+x[1]||0),0);
-  const lo=r1000(base*e[1]), hi=Math.max(lo, r1000(base*e[2]*(1+bonus/100)));
-  return {base, lo, hi, bonus, f:e};
+function pricing(){ const p=S.pricing||{}, lv={};
+  for(const l of PLEVELS){ lv[l]={}; for(const f of PFORMATS){ const x=p.lv?.[l]?.[f]; lv[l][f]=Array.isArray(x)&&x.length===2&&+x[0]>0&&+x[1]>=+x[0] ? [+x[0],+x[1]] : PRICING_DEF.lv[l][f]; } }
+  return {lv, langs:p.langs||{}, auto:{teacher:{...PRICING_DEF.auto.teacher, ...(p.auto?.teacher||{})}, senior:{...PRICING_DEF.auto.senior, ...(p.auto?.senior||{})}}}; }
+function autoLevel(years, students){ const A=pricing().auto, y=+years||0, n=+students||0;
+  if(y>=A.senior.y && n>=A.senior.n) return 'senior'; if(y>=A.teacher.y || n>=A.teacher.n) return 'teacher'; return 'junior'; }
+const tPLevel = t => PLEVELS.includes(t?.plevel) ? t.plevel : autoLevel(t?.years, t?.stats?.students);
+function priceRange(lang, fmt, level){
+  const P=pricing(), [lo0,hi0]=P.lv[PLEVELS.includes(level)?level:'junior'][fmt], pct=+P.langs[lang]||100;
+  return {lo:r1000(lo0*pct/100), hi:r1000(hi0*pct/100), pct, level};
 }
 function teacherPrice(t, lang, fmt){
-  const r=priceRange(lang, fmt, t?.years, t?.stats?.students), v=+t?.prices?.[lang]?.[fmt]||0;
+  const r=priceRange(lang, fmt, tPLevel(t)), v=+t?.prices?.[lang]?.[fmt]||0;
   return {...r, own:v, v: v ? Math.min(r.hi, Math.max(r.lo, v)) : 0, out: !!v && (v<r.lo || v>r.hi)};
 }
 const fromPrice = t => { const v=(t?.langs||[]).flatMap(l=>PFORMATS.map(f=>teacherPrice(t,l,f).v)).filter(x=>x>0); return v.length?Math.min(...v):0; };
 const perMonth = v => `${som(v)} <span class="faint">/ ${tr('pc.month')}</span>`;
-// the price list on a teacher's public profile
+const plName = l => tr('pc.lv.'+l);
+// a teacher as the pricing sees them: live student count on the owner's page
+const pTeacher = (t, tid) => ({...t, stats:{...(t?.stats||{}), students:(S.role==='staff'?(t?.stats?.students):teacherStats(tid).students)||0}});
 function tPriceList(t){
   const rows=(t?.langs||[]).map(l=>({l, g:teacherPrice(t,l,'group').v, i:teacherPrice(t,l,'ind').v})).filter(r=>r.g||r.i); if(!rows.length) return '';
   return `<div><span class="label">${tr('pc.listH')}</span><table class="pc-tbl"><thead><tr><th></th><th>${tr('pc.group')}</th><th>${tr('pc.ind')}</th></tr></thead><tbody>
-    ${rows.map(r=>`<tr><th>${esc(r.l)}</th><td class="num">${r.g?perMonth(r.g):'–'}</td><td class="num">${r.i?perMonth(r.i):'–'}</td></tr>`).join('')}</tbody></table></div>`;
+    ${rows.map(r=>`<tr><th>${esc(r.l)}</th><td class="num">${r.g?perMonth(r.g):'–'}</td><td class="num">${r.i?perMonth(r.i):'–'}</td></tr>`).join('')}</tbody></table><p class="small faint">${tr('pc.per12')}</p></div>`;
 }
-// a teacher sets their own prices (My profile)
 function priceEditor(tid){
   const t=S.team?.[tid]; if(!t) return '';
-  const langs=t.langs||[], st=S.role==='staff'?(t.stats||{}):teacherStats(tid), tt={...t, stats:{...(t.stats||{}), students:st.students}};
-  return `<form id="tp-form" class="card section" style="padding:20px" novalidate><h2 style="margin:0">${tr('pc.myH')}</h2><p class="muted small" style="margin-top:4px">${tr('pc.myP',{y:+t.years||0, n:+st.students||0})}</p>
+  const tt=pTeacher(t,tid), lv=tPLevel(tt), langs=t.langs||[], A=pricing().auto;
+  const next = lv==='junior' ? tr('pc.toTeacher',{y:A.teacher.y, n:A.teacher.n}) : lv==='teacher' ? tr('pc.toSenior',{y:A.senior.y, n:A.senior.n}) : '';
+  return `<form id="tp-form" class="card section" style="padding:20px" novalidate><h2 style="margin:0">${tr('pc.myH')}</h2>
+    <p class="muted small" style="margin-top:4px">${tr('pc.myP',{lv:`<b>${plName(lv)}</b>`, y:+t.years||0, n:+tt.stats.students||0})} ${PLEVELS.includes(t.plevel)?tr('pc.placed'):next}</p>
     ${langs.length?`<div class="pc-ed">${langs.map(l=>PFORMATS.map(f=>{ const r=teacherPrice(tt,l,f);
       return `<label class="field"><span><b>${esc(l)}</b> · ${tr('pc.'+f)}</span><input class="inp num tp-in" type="number" step="1000" min="${r.lo}" max="${r.hi}" data-l="${esc(l)}" data-f="${f}" value="${r.own||''}" placeholder="${r.lo}">
-        <span class="small faint">${tr('pc.allowed',{lo:som(r.lo), hi:som(r.hi)})}${r.bonus?' · '+tr('pc.bonus',{p:r.bonus}):''}</span>${r.out?`<span class="small" style="color:var(--pen)">${tr('pc.outNow')}</span>`:''}</label>`; }).join('')).join('')}</div>
+        <span class="small faint">${tr('pc.allowed',{lo:som(r.lo), hi:som(r.hi)})}</span>${r.out?`<span class="small" style="color:var(--pen)">${tr('pc.outNow')}</span>`:''}</label>`; }).join('')).join('')}</div>
       <p class="lg-err" id="tp-err" role="alert"></p><button class="btn primary">${tr('save')}</button>`:`<p class="faint small">${tr('pc.noLangs')}</p>`}
     <details class="small muted" style="margin-top:12px"><summary>${tr('pc.howH')}</summary>${pcHow()}</details></form>`;
 }
-function pcHow(){ const P=pricing();
-  return `<ul class="pc-how"><li>${tr('pc.how1')}</li><li>${tr('pc.how2')} ${P.exp.map((e,i)=>`${e[0]}${P.exp[i+1]?'–'+(P.exp[i+1][0]-1):'+'} ${tr('pc.yrs')}: ×${e[1]}–×${e[2]}`).join(' · ')}</li>
-    <li>${tr('pc.how3')} ${P.stu.map(x=>`${x[0]}+ → +${x[1]}%`).join(' · ')||'–'}</li><li>${tr('pc.how4')}</li></ul>`;
+function pcHow(){ const P=pricing(), A=P.auto, L=Object.entries(P.langs).filter(([,v])=>+v&&+v!==100);
+  return `<table class="pc-tbl"><thead><tr><th>${tr('pc.level')}</th><th>${tr('pc.group')}</th><th>${tr('pc.ind')}</th></tr></thead><tbody>${PLEVELS.map(l=>`<tr><th>${plName(l)}</th>${PFORMATS.map(f=>`<td class="num">${money(P.lv[l][f][0])} – ${money(P.lv[l][f][1])}</td>`).join('')}</tr>`).join('')}</tbody></table>
+    <ul class="pc-how"><li>${tr('pc.how1',{ty:A.teacher.y, tn:A.teacher.n, sy:A.senior.y, sn:A.senior.n})}</li><li>${tr('pc.how2')}${L.length?' '+L.map(([l,v])=>`${esc(l)} ${v}%`).join(' · '):''}</li><li>${tr('pc.how4')}</li></ul>`;
 }
 after.me2 = () => { const f=$('#tp-form'); if(!f) return; f.addEventListener('submit', async e=>{ e.preventDefault();
-  const tid=myTid(), t=S.team[tid], prices={}; let bad='';
-  const st=S.role==='staff'?(t.stats||{}):teacherStats(tid), tt={...t, stats:{...(t.stats||{}), students:st.students}};
+  const tid=myTid(), tt=pTeacher(S.team[tid],tid), prices={}; let bad='';
   document.querySelectorAll('.tp-in').forEach(inp=>{ const v=Math.round(+inp.value||0); if(!v) return; const r=teacherPrice(tt, inp.dataset.l, inp.dataset.f);
     if(v<r.lo || v>r.hi){ bad=tr('pc.bad',{l:inp.dataset.l, f:tr('pc.'+inp.dataset.f), lo:som(r.lo), hi:som(r.hi)}); return; }
     (prices[inp.dataset.l]=prices[inp.dataset.l]||{})[inp.dataset.f]=v; });
   if(bad){ $('#tp-err').textContent=bad; return; }
   try{ await S.db.doc('teachers/'+tid).update({prices}); toast(tr('c.saved')); }catch(err){ $('#tp-err').textContent=lgErrText(err); } }); };
-// the owner: the rules every range comes from, and what each teacher chose
+// the owner: the ranges, the level rules, and each teacher's level and chosen prices
 function pricingSection(){
   const P=pricing(), team=teamList(true), langs=[...new Set(['English', ...team.flatMap(t=>t.langs||[]), ...Object.keys(P.langs)])];
-  const rows=team.flatMap(t=>{ const st=teacherStats(t.tid), tt={...t, stats:{...(t.stats||{}), students:st.students}}; return (t.langs||[]).map(l=>({t, l, g:teacherPrice(tt,l,'group'), i:teacherPrice(tt,l,'ind')})); });
   const cell = r => `${r.own?perMonth(r.own):`<span class="faint">${tr('pc.notSet')}</span>`}<div class="small faint">${money(r.lo)} – ${money(r.hi)}</div>${r.out?`<div class="small" style="color:var(--pen)">${tr('pc.out')}</div>`:''}`;
+  const rows=team.map(t=>{ const tt=pTeacher(t,t.tid), auto=autoLevel(tt.years, tt.stats.students);
+    return `<tr><th>${esc(t.name||'')}<div class="small faint">${tr('pc.who',{y:+t.years||0, n:+tt.stats.students||0})}</div>
+      <select class="inp pc-lvsel" data-tid="${esc(t.tid)}" style="margin-top:6px;max-width:240px;width:100%"><option value="">${tr('pc.autoLv',{lv:plName(auto)})}</option>${PLEVELS.map(l=>`<option value="${l}" ${t.plevel===l?'selected':''}>${plName(l)}</option>`).join('')}</select></th>
+      <td>${(t.langs||[]).map(l=>`<div class="pc-lrow"><b>${esc(l)}</b>${cell(teacherPrice(tt,l,'group'))}</div>`).join('')||'–'}</td>
+      <td>${(t.langs||[]).map(l=>`<div class="pc-lrow"><b>${esc(l)}</b>${cell(teacherPrice(tt,l,'ind'))}</div>`).join('')||'–'}</td></tr>`; });
   return `<div class="section card promo-ed"><h2>${tr('pc.h')}</h2><p class="muted small">${tr('pc.p')}</p>
     <form id="pc-form" novalidate>
-      <h3 style="margin-top:14px">${tr('pc.baseH')}</h3><table class="pc-tbl ed"><thead><tr><th>${tr('pc.lang')}</th><th>${tr('pc.group')}</th><th>${tr('pc.ind')}</th></tr></thead><tbody>
-        <tr><th>${tr('pc.default')}</th><td><input class="inp num" type="number" step="1000" min="0" id="pc-dg" value="${P.def.group}"></td><td><input class="inp num" type="number" step="1000" min="0" id="pc-di" value="${P.def.ind}"></td></tr>
-        ${langs.map(l=>`<tr><th>${esc(l)}</th>${PFORMATS.map(f=>`<td><input class="inp num pc-l" type="number" step="1000" min="0" data-l="${esc(l)}" data-f="${f}" value="${+P.langs[l]?.[f]||''}" placeholder="${P.def[f]}"></td>`).join('')}</tr>`).join('')}</tbody></table>
-      <div class="grid2" style="gap:16px;margin-top:14px"><div><h3>${tr('pc.expH')}</h3><table class="pc-tbl ed"><thead><tr><th>${tr('pc.fromYears')}</th><th>${tr('pc.lo')}</th><th>${tr('pc.hi')}</th></tr></thead><tbody>
-          ${P.exp.map((e,i)=>`<tr><td><input class="inp num pc-e" data-i="${i}" data-k="0" type="number" min="0" max="60" value="${e[0]}"></td><td><input class="inp num pc-e" data-i="${i}" data-k="1" type="number" step="0.05" min="0.1" max="5" value="${e[1]}"></td><td><input class="inp num pc-e" data-i="${i}" data-k="2" type="number" step="0.05" min="0.1" max="5" value="${e[2]}"></td></tr>`).join('')}</tbody></table></div>
-        <div><h3>${tr('pc.stuH')}</h3><table class="pc-tbl ed"><thead><tr><th>${tr('pc.fromStu')}</th><th>${tr('pc.plus')}</th></tr></thead><tbody>
-          ${[0,1,2].map(i=>{ const x=P.stu[i]||['','']; return `<tr><td><input class="inp num pc-s" data-i="${i}" data-k="0" type="number" min="1" max="10000" value="${x[0]}"></td><td><input class="inp num pc-s" data-i="${i}" data-k="1" type="number" min="0" max="200" value="${x[1]}"></td></tr>`; }).join('')}</tbody></table></div></div>
+      <h3 style="margin-top:14px">${tr('pc.rangesH')}</h3><div style="overflow-x:auto"><table class="pc-tbl ed"><thead><tr><th>${tr('pc.level')}</th><th colspan="2">${tr('pc.group')}</th><th colspan="2">${tr('pc.ind')}</th></tr></thead><tbody>
+        ${PLEVELS.map(l=>`<tr><th>${plName(l)}</th>${PFORMATS.map(f=>[0,1].map(k=>`<td><input class="inp num pc-r" type="number" step="1000" min="0" data-l="${l}" data-f="${f}" data-k="${k}" value="${P.lv[l][f][k]}" aria-label="${plName(l)} ${tr('pc.'+f)} ${k?tr('pc.max'):tr('pc.min')}"></td>`).join('')).join('')}</tr>`).join('')}</tbody></table></div>
+      <div class="grid2" style="gap:16px;margin-top:14px"><div><h3>${tr('pc.autoH')}</h3><p class="small muted">${tr('pc.autoP')}</p><table class="pc-tbl ed"><thead><tr><th></th><th>${tr('pc.years')}</th><th>${tr('pc.students')}</th></tr></thead><tbody>
+          <tr><th>${plName('teacher')}</th><td><input class="inp num" id="pc-ty" type="number" min="0" max="60" value="${P.auto.teacher.y}"></td><td><input class="inp num" id="pc-tn" type="number" min="0" max="10000" value="${P.auto.teacher.n}"></td></tr>
+          <tr><th>${plName('senior')}</th><td><input class="inp num" id="pc-sy" type="number" min="0" max="60" value="${P.auto.senior.y}"></td><td><input class="inp num" id="pc-sn" type="number" min="0" max="10000" value="${P.auto.senior.n}"></td></tr></tbody></table></div>
+        <div><h3>${tr('pc.langH')}</h3><p class="small muted">${tr('pc.langP')}</p><table class="pc-tbl ed"><tbody>
+          ${langs.map(l=>`<tr><th>${esc(l)}</th><td><input class="inp num pc-lang" type="number" min="50" max="300" step="5" data-l="${esc(l)}" value="${+P.langs[l]||100}"></td><td class="small faint">%</td></tr>`).join('')}</tbody></table></div></div>
       <p class="lg-err" id="pc-err" role="alert"></p><button class="btn primary" style="margin-top:6px">${tr('save')}</button></form>
-    <h3 style="margin-top:20px">${tr('pc.chosenH')}</h3>${rows.length?`<div style="overflow-x:auto"><table class="pc-tbl"><thead><tr><th>${tr('c.teamH')}</th><th>${tr('pc.lang')}</th><th>${tr('pc.group')}</th><th>${tr('pc.ind')}</th></tr></thead><tbody>
-      ${rows.map(r=>`<tr><th>${esc(r.t.name||'')}<div class="small faint">${tr('pc.who',{y:+r.t.years||0, n:+teacherStats(r.t.tid).students||0})}</div></th><td>${esc(r.l)}</td><td class="num">${cell(r.g)}</td><td class="num">${cell(r.i)}</td></tr>`).join('')}</tbody></table></div>`:`<p class="faint small">${tr('c.teamEmptyH')}</p>`}
-    <details class="small muted" style="margin-top:12px"><summary>${tr('pc.howH')}</summary>${pcHow()}</details></div>`;
+    <h3 style="margin-top:20px">${tr('pc.chosenH')}</h3>${rows.length?`<div style="overflow-x:auto"><table class="pc-tbl"><thead><tr><th>${tr('c.teamH')}</th><th>${tr('pc.group')}</th><th>${tr('pc.ind')}</th></tr></thead><tbody>${rows.join('')}</tbody></table></div>`:`<p class="faint small">${tr('c.teamEmptyH')}</p>`}</div>`;
 }
-function wirePricing(){ const f=$('#pc-form'); if(!f) return; f.addEventListener('submit', async e=>{ e.preventDefault();
-  const num = (v,a,b) => Math.max(a, Math.min(b, +v||0));
-  const d={def:{group:r1000(num($('#pc-dg').value,0,1e8)), ind:r1000(num($('#pc-di').value,0,1e8))}, langs:{}, exp:[], stu:[]};
-  document.querySelectorAll('.pc-l').forEach(i=>{ const v=r1000(num(i.value,0,1e8)); if(v) (d.langs[i.dataset.l]=d.langs[i.dataset.l]||{})[i.dataset.f]=v; });
-  const ex={}; document.querySelectorAll('.pc-e').forEach(i=>{ (ex[i.dataset.i]=ex[i.dataset.i]||[])[+i.dataset.k]=+i.value; });
-  for(const r of Object.values(ex)){ const y=Math.round(num(r[0],0,60)), lo=num(r[1],0.1,5), hi=num(r[2],0.1,5); if(lo>hi){ $('#pc-err').textContent=tr('pc.loHi'); return; } d.exp.push([y, Math.round(lo*100)/100, Math.round(hi*100)/100]); }
-  const su={}; document.querySelectorAll('.pc-s').forEach(i=>{ (su[i.dataset.i]=su[i.dataset.i]||[])[+i.dataset.k]=i.value; });
-  for(const r of Object.values(su)) if(r[0]!=='' && +r[0]>0) d.stu.push([Math.round(num(r[0],1,1e4)), Math.round(num(r[1],0,200))]);
-  if(!d.exp.some(x=>x[0]===0)) d.exp.push([0, d.exp[0]?.[1]||1, d.exp[0]?.[2]||1]);
-  d.exp.sort((a,b)=>a[0]-b[0]); d.stu.sort((a,b)=>a[0]-b[0]);
+function wirePricing(){
+  document.querySelectorAll('.pc-lvsel').forEach(sel=>sel.addEventListener('change', async ()=>{
+    try{ await S.db.doc('teachers/'+sel.dataset.tid).update({plevel:sel.value||null}); toast(tr('c.saved')); }catch(err){ dbErr(err,'svc'); } }));
+  const f=$('#pc-form'); if(!f) return; f.addEventListener('submit', async e=>{ e.preventDefault();
+  const num = (v,a,b) => Math.max(a, Math.min(b, +v||0)), d={lv:{}, langs:{}, auto:{}};
+  for(const l of PLEVELS){ d.lv[l]={}; for(const f2 of PFORMATS){ const g=k=>r1000(num($(`.pc-r[data-l="${l}"][data-f="${f2}"][data-k="${k}"]`).value,0,1e8)), lo=g(0), hi=g(1);
+    if(!lo || hi<lo){ $('#pc-err').textContent=tr('pc.loHi',{lv:plName(l), f:tr('pc.'+f2)}); return; } d.lv[l][f2]=[lo,hi]; } }
+  document.querySelectorAll('.pc-lang').forEach(i=>{ const v=Math.round(num(i.value,50,300)); if(v!==100) d.langs[i.dataset.l]=v; });
+  d.auto={teacher:{y:Math.round(num($('#pc-ty').value,0,60)), n:Math.round(num($('#pc-tn').value,0,1e4))}, senior:{y:Math.round(num($('#pc-sy').value,0,60)), n:Math.round(num($('#pc-sn').value,0,1e4))}};
   try{ await S.db.doc('site/pricing').set(d); S.pricing=d; toast(tr('c.saved')); renderMain(); }catch(err){ dbErr(err,'svc'); } }); }
 
 /* ---------- levels: computed on the owner's page (only it sees every student) and published to the profile ---------- */
@@ -5582,9 +5591,9 @@ function seedCentre(db){
   const day = n => { const d=new Date(); d.setDate(d.getDate()+n); return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate()); };
   db.m.set('teachers/main', {prices:{English:{group:380000, ind:720000}}, name:'Samandar Y. (example)', headline:'English for journals, exams and economics', langs:['English','Uzbek','Russian'], levels:'A2 – C1, IELTS', years:4, visible:true, order:1,
     bio:'I teach English through daily writing: my students keep a journal and I mark every entry, so we always know what to fix next.', achievements:['IELTS 8.0','Founder of a university business club','60+ students taught'], stats:{students:0,active:0,reviews:0,gain:0,band:null,score:0}});
-  db.m.set('teachers/t-dilnoza', {prices:{Russian:{group:350000, ind:700000}, English:{group:340000}}, lessonLen:60, services:[{id:'s1', title:'Speaking club', desc:'Saturdays, 6 people, 90 minutes of Russian conversation.', price:30000},{id:'s3', title:'Essay checking', desc:'One essay with full corrections in 2 days.', price:20000}], name:'Dilnoza R. (example)', headline:'Russian and English for teenagers', langs:['Russian','English'], levels:'A1 – B2', years:6, visible:true, order:2,
+  db.m.set('teachers/t-dilnoza', {prices:{Russian:{group:400000, ind:750000}, English:{group:380000}}, lessonLen:60, services:[{id:'s1', title:'Speaking club', desc:'Saturdays, 6 people, 90 minutes of Russian conversation.', price:30000},{id:'s3', title:'Essay checking', desc:'One essay with full corrections in 2 days.', price:20000}], name:'Dilnoza R. (example)', headline:'Russian and English for teenagers', langs:['Russian','English'], levels:'A1 – B2', years:6, visible:true, order:2,
     bio:'Patient lessons with a lot of speaking. I prepare school students for exams and olympiads.', achievements:['CELTA','Two city olympiad winners'], stats:{students:1,active:1,reviews:1,gain:0,band:6,score:11}});
-  db.m.set('teachers/t-jin', {prices:{Korean:{group:300000, ind:650000}}, services:[{id:'s2', title:'TOPIK mock test', desc:'Full test with a written report.', price:80000}], name:'Jin-woo P. (example)', headline:'Korean from zero to TOPIK II', langs:['Korean'], levels:'TOPIK I – II', years:3, visible:true, order:3,
+  db.m.set('teachers/t-jin', {prices:{Korean:{group:360000, ind:680000}}, services:[{id:'s2', title:'TOPIK mock test', desc:'Full test with a written report.', price:80000}], name:'Jin-woo P. (example)', headline:'Korean from zero to TOPIK II', langs:['Korean'], levels:'TOPIK I – II', years:3, visible:true, order:3,
     bio:'Native speaker. Grammar made simple, lots of K-drama listening practice.', achievements:['TOPIK 6','Korean Education Centre volunteer'], stats:{students:0,active:0,reviews:0,gain:0,band:null,score:0}});
   db.m.set('teacherPriv/main', {meet:'https://meet.google.com/abc-defg-hij'}); db.m.set('teacherPriv/t-dilnoza', {meet:'https://meet.google.com/xyz-abcd-efg'});
   db.m.set('staff/dilnoza@example.com', {tid:'t-dilnoza', name:'Dilnoza R. (example)'});

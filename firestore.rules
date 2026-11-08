@@ -224,7 +224,7 @@ service cloud.firestore {
     // ---------- Teaching centre ----------
     // Public teacher profiles. Guests see the ones marked visible; signed-in users see all.
     // A staff teacher may edit their own profile text and course prices, never their level, stats or visibility.
-    // (Price ranges come from site/pricing; the app always shows a price clamped to its range.)
+    // Price ranges come from site/pricing by teacher level; only the owner sets a teacher's level (plevel).
     match /teachers/{tid} {
       allow read: if resource.data.visible == true || signedIn();
       allow write: if isTeacher();
