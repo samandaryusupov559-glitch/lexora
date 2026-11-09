@@ -1341,7 +1341,7 @@ const S = {
 };
 const EDIT_VIEWS = new Set(['review','write','prompt','bank','setup','login','newsEdit','setEdit','me','verify','club','chat']);
 function teardown(){ S.unsubs.forEach(u=>{try{u()}catch(e){}}); S.unsubs=[]; closePop(); closeDlg(); }
-function refresh(){ clubSync(); libSync(); enrollLangsSoon(); renderTop(); renderNav(); if(!EDIT_VIEWS.has(S.view.name) && !busyNow()) renderMain(); drawChat(); if(S.mode==='teacher' && S.role!=='staff'){ ratingScheduleSync(); centreScheduleSync(); asgSoon(); } }
+function refresh(){ clubSync(); libSync(); enrollLangsSoon(); if(S.leaves && Object.keys(S.leaves).length) setTimeout(finishLeaves, 1500); if(S.role==='owner') joinSync(); renderTop(); renderNav(); if(!EDIT_VIEWS.has(S.view.name) && !busyNow()) renderMain(); drawChat(); if(S.mode==='teacher' && S.role!=='staff'){ ratingScheduleSync(); centreScheduleSync(); asgSoon(); } }
 function go(name, extra={}){ closePop(); S.view={name,...extra}; renderNav(); renderMain(); window.scrollTo({top:0}); }
 
 /* ---------------- boot ---------------- */
@@ -1367,7 +1367,15 @@ class FireCol{
 }
 
 /* ---------------- boot + sign-in ---------------- */
+// an invite link from the centre: #join=<teacher id>.<request id> — the person signs up straight to that teacher
+function readJoin(){
+  const m=location.hash.match(/^#join=([\w-]+)(?:\.([\w-]+))?/); if(!m) return false;
+  LS.set('want-teacher', m[1]); if(m[2]) LS.set('join-lead', m[2]); else LS.del('join-lead');
+  history.replaceState(null, '', location.pathname+location.search); return true;
+}
+const joinUrl = (tid, leadId) => siteUrl()+'#join='+tid+(leadId?'.'+leadId:'');
 async function boot(){
+  S.joinAsk = readJoin();
   let cfg=null;
   try{ cfg = await import('./config.js'); }catch(e){}
   const fc = cfg && cfg.firebaseConfig;
@@ -1379,7 +1387,7 @@ async function boot(){
     import(`https://www.gstatic.com/firebasejs/${FB_VER}/firebase-firestore.js`)]); }
   catch(e){ toast(tr('fb.load')); S.setupMissing=true; startDemo('teacher'); return; }
   const app = fa.initializeApp(fc);
-  S.auth = au.getAuth(app); S.au = au;
+  S.auth = au.getAuth(app); S.au = au; try{ S.auth.languageCode = LANG; }catch(e){}
   S.realDb = new FireDB(fs.initializeFirestore(app,{ignoreUndefinedProperties:true, experimentalForceLongPolling:true}), fs);
   S.teacherEmail = String(cfg.TEACHER_EMAIL).trim().toLowerCase();
   if(au.isSignInWithEmailLink(S.auth, location.href)){
@@ -1411,8 +1419,8 @@ async function completeSignIn(email){
 }
 function showLogin(){
   teardown(); S.demo=false; S.user=null; S.realOwner=false; S.mode='guest'; S.role='guest'; S.db=S.realDb;
-  S.view = S.pendingLink ? {name:'login', step:'confirm', email: LS.get('signin-email','')||LS.get('last-email','')||''} : {name:'landing'};
-  startCentre('guest');
+  S.view = S.pendingLink ? {name:'login', step:'confirm', email: LS.get('signin-email','')||LS.get('last-email','')||''} : S.joinAsk ? {name:'login', step:'signup', email:''} : {name:'landing'};
+  S.joinAsk=false; startCentre('guest');
   renderTop(); renderNav(); renderMain();
 }
 function startSignedIn(user){
@@ -1693,13 +1701,14 @@ function vStudent(){
   const lgs = S.lg.students.find(x=>x.journalId===sid), lgL = lgs ? lgCalc(lgs, curYM()) : null;
   return `<button class="btn ghost sm" data-act="go" data-v="students">${I.back} ${tr('nav.students')}</button>
     <div class="page-head" style="margin-top:10px"><div class="row">${avatar(p.name,sid)}<div><h1>${esc(p.name)}</h1><p>${tr('stu.meta',{l:esc(p.level||'–'), d:p.joinedAt? dloc(new Date(p.joinedAt),{day:'numeric',month:'long'}):'–'})}</p></div></div>
-    ${lgs?`<button class="btn sm" data-act="lg-open" data-id="${esc(lgs.id)}">${I.coin} <span class="pill lg-${lgL.status}">${tr('lg.st.'+lgL.status)}</span>${lgL.left>0?`<span class="num">${tr('lg.left')} ${money(lgL.left)}</span>`:''}</button>`:''}</div>
+    <span class="row" style="gap:6px;flex-wrap:wrap"><button class="btn sm pen" data-act="c-dm-new" data-uid="${esc(sid)}">${I.chat} ${tr('dm.write')}</button>${lgs?`<button class="btn sm" data-act="lg-open" data-id="${esc(lgs.id)}">${I.coin} <span class="pill lg-${lgL.status}">${tr('lg.st.'+lgL.status)}</span>${lgL.left>0?`<span class="num">${tr('lg.left')} ${money(lgL.left)}</span>`:''}</button>`:''}</span></div>
     <div class="stats"><div class="stat"><b>${st.entries}</b><span>${tr('k.entries')}</span></div><div class="stat"><b>${st.words.toLocaleString()}</b><span>${tr('k.words')}</span></div><div class="stat"><b>${fmtBand(st.latest)}</b><span>${tr('k.latest')}</span></div><div class="stat"><b>${st.waiting}</b><span>${tr('k.waiting')}</span></div></div>
     <div class="grid2 section"><div class="card"><h3>${tr('stu.trend')}</h3>${bandChart(st.pts)}</div><div class="card"><h3>${tr('stu.recur')}</h3>${errorBars(st.errs)}</div></div>
     ${S.role==='staff'?'':teacherPick(sid)}${S.role==='staff'?'':planEditor(sid)}
     <div class="section"><h2>${tr('stu.entries')}</h2><div class="list">${entries.map(e=>entryCard(e)).join('') || `<p class="faint">${tr('stu.noEntries')}</p>`}</div></div>
     <div class="section"><h2>${tr('stu.given',{name:esc((p.name||'').split(' ')[0])})}</h2>${vocab.length?`<div class="vocab">${vocab.map(v=>`<div class="v"><span><b>${esc(v.w)}</b> <span class="muted small">— ${esc(v.m)}</span>${v.ex?`<br><span class="small faint">${esc(v.ex)}</span>`:''}</span></div>`).join('')}</div>`:`<p class="small faint">${tr('stu.addWords')}</p>`}</div>
-    ${S.role==='staff'?'':`<div class="section danger-zone"><h2>${tr('del.zoneH')}</h2><p class="muted small" style="margin:-6px 0 12px">${tr('del.zoneP')}</p><button class="btn ghost del-big" data-act="stu-del" data-sid="${esc(sid)}">${I.trash} ${tr('del.stu')}</button></div>`}`;
+    ${S.role==='staff' ? (tidOf(p)===S.staffTid?`<div class="section danger-zone"><h2>${tr('lv.tH')}</h2><p class="muted small" style="margin:-6px 0 12px">${tr('lv.tP')}</p><button class="btn ghost del-big" data-act="stu-remove" data-sid="${esc(sid)}">${I.trash} ${tr('lv.tBtn')}</button></div>`:'')
+      : `<div class="section danger-zone"><h2>${tr('del.zoneH')}</h2><p class="muted small" style="margin:-6px 0 12px">${tr('del.zoneP')}</p><button class="btn ghost del-big" data-act="stu-del" data-sid="${esc(sid)}">${I.trash} ${tr('del.stu')}</button></div>`}`;
 }
 
 /* ---------------- teacher: delete a student and everything of theirs ---------------- */
@@ -1720,7 +1729,17 @@ function openDelStudent(sid){
     catch(e2){ $('#sd-err').textContent=lgErrText(e2); btn.disabled=false; btn.innerHTML=`${I.trash} ${tr('del.stu')}`; delete btn.dataset.armed; }
   });
 }
-async function deleteStudent(sid, lgs){
+// the centre side of a student: extra lessons, Meet links, chats and group places (owner only)
+async function unlinkStudent(sid){
+  const db=S.db, quiet=async f=>{ try{ await f(); }catch(e){} };
+  await quiet(()=>db.doc('enroll/'+sid).delete()); await quiet(()=>db.doc('enrollStatus/'+sid).delete());
+  await quiet(()=>db.doc('lessons/'+sid).delete()); await quiet(()=>db.doc('liveFor/'+sid).delete());
+  for(const [tid,ro] of Object.entries(S.rosters||{})) if(ro?.students?.[sid]){ const n=clone(ro); delete n.students[sid]; await quiet(()=>db.doc('roster/'+tid).set(n)); }
+  await quiet(async()=>{ for(const g of (await db.collection('groups').get()).docs){ const d=g.data()||{}; if((d.list||[]).some(x=>(x.members||[]).includes(sid)))
+    await db.doc('groups/'+g.id).set({...d, list:d.list.map(x=>({...x, members:(x.members||[]).filter(u=>u!==sid)}))}); } });
+  for(const id of Object.keys(S.dms||{}).filter(id=>id.split('_')[0]===sid)) await quiet(async()=>{ for(const m of (await db.collection('dm/'+id+'/msgs').get()).docs) await db.doc('dm/'+id+'/msgs/'+m.id).delete(); await db.doc('dm/'+id).delete(); });
+}
+async function deleteStudent(sid, lgs, keepJournal){
   const db=S.db;
   for(const sub of [`journals/${sid}/entries`, `feedback/${sid}/reviews`]){ const q=await db.collection(sub).get(); for(const d of q.docs) await db.doc(sub+'/'+d.id).delete(); }
   for(const d of (await db.collection('newsDays').where('uid',sid).get()).docs) await db.doc('newsDays/'+d.id).delete();
@@ -1728,9 +1747,42 @@ async function deleteStudent(sid, lgs){
   for(const col of ['plans','bookings','bookingStatus','payClaims','payClaimStatus','orders','orderStatus','contacts','balances','feedback','passes','passOrders','passScores','studyIndex']) await db.doc(col+'/'+sid).delete();
   if(lgs){ for(const pay of S.lg.payments.filter(x=>x.studentId===lgs.id)) await db.doc('ledger/main/payments/'+pay.id).delete(); await db.doc('ledger/main/students/'+lgs.id).delete(); }
   else { const l=S.lg.students.find(x=>x.journalId===sid); if(l){ const {id, ...rest}=l; await db.doc('ledger/main/students/'+id).set({...rest, journalId:''}); } }
+  await unlinkStudent(sid);
   // the journal itself goes last, so a half-finished delete can simply be repeated
-  await db.doc('journals/'+sid).delete();
+  if(!keepJournal) await db.doc('journals/'+sid).delete();
+  try{ await db.doc('leaves/'+sid).delete(); }catch(e){}
   const r=clone(S.rating); if(r?.bonus && sid in r.bonus){ delete r.bonus[sid]; S.rating=r; }
+}
+
+/* ---------------- starting over: a student leaves, or their teacher removes them ----------------
+   Both delete the journal (so the student starts again by choosing a teacher) and leave a note in leaves/{uid};
+   the owner's page then deletes everything else of that student. */
+async function wipeOwn(sid, by){
+  const db=S.db, quiet=async f=>{ try{ await f(); }catch(e){} };
+  await db.doc('leaves/'+sid).set({at:Date.now(), by, name:(by==='s'?S.myProfile?.name:S.profiles?.[sid]?.name)||''});
+  for(const d of (await db.collection('journals/'+sid+'/entries').get()).docs) await db.doc('journals/'+sid+'/entries/'+d.id).delete();
+  if(by!=='s'){ await quiet(async()=>{ for(const d of (await db.collection('feedback/'+sid+'/reviews').get()).docs) await db.doc('feedback/'+sid+'/reviews/'+d.id).delete(); await db.doc('feedback/'+sid).delete(); });
+    await quiet(async()=>{ const g=S.myGroups; if(g && (g.list||[]).some(x=>(x.members||[]).includes(sid))) await db.doc('groups/'+S.staffTid).set({...g, list:g.list.map(x=>({...x, members:(x.members||[]).filter(u=>u!==sid)}))}); }); }
+  else await quiet(()=>db.doc('enroll/'+sid).set({name:'', items:[]}));
+  await db.doc('journals/'+sid).delete();
+}
+// owner: finish what students and teachers started
+let joinBusy=false;
+async function joinSync(){
+  if(S.role!=='owner' || joinBusy || !S.leads || !S.loaded?.p) return; joinBusy=true;
+  try{ for(const [sid,p] of Object.entries(S.profiles)){ const l=p.lead && S.leads[p.lead]; if(l && (l.st!=='joined' || l.uid!==sid)) await S.db.doc('leads/'+p.lead).update({st:'joined', uid:sid}); } }catch(e){} finally{ joinBusy=false; }
+}
+let leavesBusy=false;
+async function finishLeaves(){
+  if(S.role!=='owner' || leavesBusy || !S.loaded?.p || !S.loaded?.f || !S.lg?.loaded?.st) return;
+  const todo=Object.entries(S.leaves||{}); if(!todo.length) return; leavesBusy=true;
+  try{ for(const [sid,l] of todo){ const j=S.profiles[sid];
+    await deleteStudent(sid, null, !!(j && (j.joinedAt||0) > (l.at||0)));   // they already started again: keep the new journal
+  } }catch(e){} finally{ leavesBusy=false; }
+}
+function openLeave(){
+  showDlg(`<div>${dlgHead(tr('lv.k'), tr('lv.h'))}<div class="dlg-body"><p>${tr('lv.p')}</p><ul class="del-list small muted"><li>${tr('lv.l1')}</li><li>${tr('lv.l2')}</li><li>${tr('lv.l3')}</li></ul><p class="lg-err" id="lv-err"></p></div>
+    <div class="dlg-foot"><button type="button" class="btn ghost" data-act="dlg-close">${tr('cancel')}</button><button type="button" class="btn danger" data-act="me-leave">${I.trash} ${tr('lv.btn')}</button></div></div>`, {type:'leave'});
 }
 
 /* ---------------- teacher: insights ---------------- */
@@ -3103,7 +3155,7 @@ async function nwMailSync(){
     const c=S.contacts[uid]; if(!c || c.off || !c.email) continue; const lang=DICT[c.lang]?c.lang:'en';
     const m=withLang(lang, ()=>({subject:tr('nw.emSubj',{name:P.name, day:cap(dloc(parseDate(d),{weekday:'long'}))}), kicker:P.name, title:tr('nw.emT'),
       lines:[(doc.stories||[]).map(s=>'• '+s.h).join('\n'), tr('nw.emL')]}));
-    items.push({id:nwId(uid,d), date:d, at:doc.releaseAt, to:[c.email], subject:m.subject, html:withLang(lang,()=>mailHtml(lang,m)), text:m.subject+'\n\n'+m.lines.join('\n\n')+'\n\n'+siteUrl(), from:trL(lang,'em.from',{name:S.me?.name||tr('teacher')})});
+    items.push({id:nwId(uid,d), date:d, at:doc.releaseAt, to:[c.email], subject:m.subject, html:withLang(lang,()=>mailHtml(lang,m)), text:withLang(lang,()=>mailText(lang,m)), from:trL(lang,'em.from',{name:S.me?.name||tr('teacher')})});
   }
   const body={action:'news', from:today, items:items.slice(0,150)}, h=JSON.stringify(body); if(h===nwMailHash) return;
   const r=await mailPost(body); if(r.ok) nwMailHash=h;
@@ -3912,11 +3964,11 @@ async function notify(ev, who, build){
   for(const lang of langs){
     const m=withLang(lang, ()=>build(lang)), list=byLang[lang];
     for(let i=0;i<list.length;i+=50){
-      const part=list.slice(i,i+50), r=await mailPost({to:part, bcc:part, subject:m.subject, html:withLang(lang,()=>mailHtml(lang,m)), text:m.text||m.subject, from:trL(lang,'em.from',{name:S.me?.name||tr('teacher')})});
-      if(r.ok){ sent+=part.length; if(!(r.v>=2)) S.mailOld=true; } else fail=r.error||'error';
+      const part=list.slice(i,i+50), r=await mailPost({to:part, bcc:part, subject:m.subject, html:withLang(lang,()=>mailHtml(lang,m)), text:m.text||withLang(lang,()=>mailText(lang,m)), from:trL(lang,'em.from',{name:S.me?.name||tr('teacher')})});
+      if(r.ok){ sent+=part.length; if(!(r.v>=2)) S.mailOld=true; if(r.left!=null) S.mailLeft=+r.left; } else fail=r.error||'error';
     }
   }
-  toast(fail ? tr('em.fail') : S.mailOld ? tr('em.oldScript') : tr('em.sent',{n:sent}));
+  toast(fail ? tr('em.fail') : S.mailOld ? tr('em.oldScript') : tr('em.sent',{n:sent}) + (S.mailLeft!=null && S.mailLeft<20 ? ' '+tr('em.lowQ',{n:S.mailLeft}) : ''), S.mailLeft!=null && S.mailLeft<20 ? 9000 : undefined);
   if(S.mailOld && S.mail.v!==1){ try{ await S.db.doc('private/mail').set({url:S.mail.url, secret:S.mail.secret, on:S.mail.on||{}, v:1}); }catch(e){} }
 }
 // never wait for the Google script forever: give up after 40 s and say why
@@ -3928,6 +3980,9 @@ async function mailPost(body){
     try{ return JSON.parse(txt); }catch(e){ return {ok:false, error: /authoriz|ruxsat|Sign in|accounts\.google/i.test(txt) ? 'auth' : 'notjson'}; }
   }catch(e){ return {ok:false, error: e&&e.name==='AbortError' ? 'timeout' : String(e&&e.message||e)}; }
   finally{ clearTimeout(t); }
+}
+function mailText(lang, m){
+  return [m.title||m.subject, ...(m.lines||[]).filter(Boolean), (m.btn||trL(lang,'em.btn'))+': '+(m.href||siteUrl()), '—', trL(lang,'em.foot')].join('\n\n');
 }
 function mailHtml(lang, m){
   const p = t => `<p style="margin:0 0 14px;font-size:16px;line-height:1.55;color:#121A33">${esc(t).replace(/\n/g,'<br>')}</p>`;
@@ -3950,6 +4005,8 @@ function mailCard(){
     ${ready&&!S.mailOld&&(+M.v||0)<6?`<div class="notice" style="margin-top:12px;display:flex;gap:10px;align-items:center;flex-wrap:wrap"><span>${tr('em.newV',{v:6})}</span><button class="btn sm pen" data-act="em-setup">${tr('em.update')}</button></div>`:''}
     ${ready?`<details class="em-who"><summary>${tr('em.whoH')}</summary><ul>${Object.entries(S.profiles).map(([uid,p])=>{ const c=S.contacts[uid]; return `<li><b>${esc(p.name||'?')}</b> <span class="small ${c?.email&&!c.off?'muted':'faint'}">${c?.email ? esc(c.email)+(c.off?' · '+tr('em.off'):'') : tr('em.noEmail')}</span></li>`; }).join('')}</ul></details>`:''}
     ${ready?`<div class="em-ev">${MAIL_EVENTS.map(ev=>`<label class="row" style="gap:8px"><input type="checkbox" data-act="em-ev" data-ev="${ev}" ${M.on[ev]!==false?'checked':''}> <span>${tr('em.ev.'+ev)}</span></label>`).join('')}</div>
+      <details class="em-who"><summary>${tr('em.spamH')}</summary><ul class="small muted"><li>${tr('em.spam1')}</li><li>${tr('em.spam2')}</li><li>${tr('em.spam3')}</li><li>${tr('em.spam4')}</li></ul></details>
+      ${S.mailLeft!=null?`<p class="small ${S.mailLeft<20?'':'muted'}" style="margin-top:8px${S.mailLeft<20?';color:var(--pen)':''}">${tr('em.left',{n:S.mailLeft})}</p>`:''}
       <div class="row" style="margin-top:14px"><button class="btn primary sm" data-act="em-test">${tr('em.test')}</button><button class="btn ghost sm" data-act="em-setup">${tr('em.change')}</button></div>`
     :`<button class="btn primary" data-act="em-setup">${tr('em.start')}</button>`}
   </div></div>`;
@@ -3974,7 +4031,7 @@ function openMailSetup(){
     if(!/^https:\/\/script\.google\.com\/macros\/s\/[\w-]+\/exec$/.test(url)){ err.textContent=tr('em.badUrl'); err.scrollIntoView({block:'nearest'}); return; }
     const btn=$('#em-save'); btn.disabled=true; err.textContent=tr('em.checking'); err.scrollIntoView({block:'nearest'});
     const prev={...S.mail}; S.mail={...S.mail, url, secret};
-    const r = S.demo ? {ok:true} : await mailPost({test:true});
+    const r = S.demo ? {ok:true} : await mailPost({test:true}); if(r.left!=null) S.mailLeft=+r.left;
     if(!r.ok){ S.mail=prev; btn.disabled=false; setTimeout(()=>err.scrollIntoView({block:'nearest'}),0); err.textContent = r.error==='wrong secret' ? tr('em.badSecret') : r.error==='timeout' ? tr('em.timeout') : r.error==='auth' ? tr('em.needAuth') : tr('em.noReach')+(r.error&&r.error!=='notjson'?' ('+esc(r.error)+')':''); return; }
     try{ await Promise.race([S.db.doc('private/mail').set({url, secret, on:S.mail.on||{}, v:S.demo?3:(r.v>=2?r.v:1)}), new Promise((_,no)=>setTimeout(()=>no({code:'save-timeout'}),20000))]);
       publishUpload(url, secret).catch(()=>{}); closeDlg(); toast(tr('em.saved')); refresh(); }
@@ -3984,13 +4041,14 @@ function openMailSetup(){
 async function mailTest(){
   if(S.demo){ toast(tr('em.demo',{n:1})); return; }
   const me=[S.me?.email].filter(Boolean), r=await mailPost({to:me, bcc:me, subject:tr('em.testSubj'), html:mailHtml(LANG,{subject:tr('em.testSubj'), lines:[tr('em.testBody')]}), text:tr('em.testBody'), from:'Lexora'});
-  toast(r.ok ? tr('em.testOk',{email:S.me?.email||''}) : tr('em.fail'));
+  if(r.left!=null) S.mailLeft=+r.left;
+  toast(r.ok ? tr('em.testOk',{email:S.me?.email||''})+(r.left!=null?' '+tr('em.left',{n:r.left}):'') : tr('em.fail'), 8000);
 }
 
 /* student: a small switch on the home page */
 function mailPref(){
   if(S.myContact===undefined) return '';
-  return `<label class="row em-pref small muted"><input type="checkbox" data-act="em-me" ${S.myContact?.off?'':'checked'}> ${tr('em.me',{email:esc(S.me?.email||'')}).replace(' ()','')}</label>`;
+  return `<label class="row em-pref small muted"><input type="checkbox" data-act="em-me" ${S.myContact?.off?'':'checked'}> ${tr('em.me',{email:esc(S.me?.email||'')}).replace(' ()','')}</label>${S.myContact?.off?'':`<p class="small faint em-pref" style="margin-top:2px">${tr('em.stuSpam',{from:esc(S.teacherEmail||'')})}</p>`}`;
 }
 
 /* ---------------- noticeboard, learn, plans, extra lessons ---------------- */
@@ -4703,7 +4761,7 @@ function startCentre(role){
   const where1 = (path, f, v, key) => S.unsubs.push(S.db.collection(path).where(f,v).onSnapshot(q=>{ const o={}; q.docs.forEach(d=>{ if(d.exists) o[d.id]=d.data(); }); S[key]=o; refreshAny(); }, quiet));
   one('site/pricing','pricing',null);
   if(role==='owner'){
-    col('leads','leads', asgSoon); col('dm','dms'); col('gchat','gchats', asgSoon); one('centre/assign','asgCfg',{}, asgSoon); col('staffReq','sreq'); col('teacherPriv','tpriv'); col('applications','apps');
+    col('leads','leads', asgSoon); col('leaves','leaves', ()=>setTimeout(finishLeaves, 1500)); col('dm','dms'); col('gchat','gchats', asgSoon); one('centre/assign','asgCfg',{}, asgSoon); col('staffReq','sreq'); col('teacherPriv','tpriv'); col('applications','apps');
     col('enroll','enrolls'); col('enrollStatus','enrollSt'); col('roster','rosters'); col('live','lives'); col('torders','torders'); one('site/promo','promo',{});
     one('groups/'+MAIN_TID,'myGroups',null); startClub(); col('library','lib'); one('centre/upload','upCfg',null);
     col('staff','staffEmails', ()=>{ S.staffMap={}; for(const [em,x] of Object.entries(S.staffEmails||{})) if(x?.tid) S.staffMap[x.tid]=em; });
@@ -4855,6 +4913,7 @@ function openTrial(tid){
     if(!name){ $('#tr-err').textContent=tr('c.needName'); return; } if(contact.length<3){ $('#tr-err').textContent=tr('c.needContact'); return; }
     const lv=$('#tr-level').value, d={name, contact, lang:$('#tr-lang').value, level: lv==='0'?'beginner':lv, tid:$('#tr-tid').value, msg:$('#tr-msg').value.trim(), at:Date.now(), fmt:fmtNow(), quote:drawQ().plain.slice(0,80)};
     const btn=$('#tr-go'); btn.disabled=true;
+    if(d.tid) LS.set('want-teacher', d.tid);
     try{ await S.db.collection('leads').doc().set(d);
       $('#tr-form').innerHTML=`${dlgHead(tr('c.trialK'), tr('c.thanksH'))}<div class="dlg-body"><p>${tr('c.thanksP',{name:esc(name.split(' ')[0])})}</p></div><div class="dlg-foot"><button type="button" class="btn primary" data-act="dlg-close">${tr('app.ok')}</button></div>`;
     }catch(err){ btn.disabled=false; $('#tr-err').textContent=tr('c.sendFail'); }
@@ -4977,9 +5036,9 @@ function vTeam(){
     ${hasMain?'':`<div class="notice info" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"><span>${tr('c.mainFirst')}</span><button class="btn sm primary" data-act="c-tedit" data-tid="${MAIN_TID}">${tr('c.mainBtn')}</button></div>`}
     ${list.length?`<div class="tlist">${list.map(row).join('')}</div>`:`<div class="empty"><h3>${tr('c.teamEmptyH')}</h3><p>${tr('c.teamEmptyP')}</p></div>`}
     ${appsSection()}${enrollSection()}${pricingSection()}${tordersSection(false)}
-    <div class="section"><div class="row" style="justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap"><h2 style="margin:0">${tr('c.leadsH')}</h2>${asgBar()}</div><p class="small muted" style="margin:6px 0 12px">${tr('c.asgP')}</p>${leads.length?`<div class="list">${leads.map(l=>`<div class="req ${l.st?'ok':'wait'}">${avatar(l.name,l.id)}<div style="min-width:0"><b>${esc(l.name)}</b> <span class="faint">·</span> <span class="num">${esc(l.contact)}</span>
+    <div class="section"><div class="row" style="justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap"><h2 style="margin:0">${tr('c.leadsH')}</h2>${asgBar()}</div><p class="small muted" style="margin:6px 0 12px">${tr('c.asgP')} ${tr('c.joinP')}</p>${leads.length?`<div class="list">${leads.map(l=>`<div class="req ${l.st?'ok':'wait'}">${avatar(l.name,l.id)}<div style="min-width:0"><b>${esc(l.name)}</b> <span class="faint">·</span> <span class="num">${contactHtml(l.contact)}</span>
         <div class="small muted">${[l.lang, l.level==='beginner'?tr('c.beginner'):l.level, l.fmt?tr('pc.'+l.fmt):'', l.quote||'', l.tid?tr('c.forT',{name:esc(tName(l.tid))}):tr('c.anyTeacher')].filter(Boolean).map(x=>x).join(' · ')} · ${ago(l.at)}</div>${l.msg?`<div class="small req-note">“${esc(l.msg)}”</div>`:''}<div style="margin-top:8px">${asgPicker('lead', l.id, l)}</div></div>
-        <div class="req-act">${l.st?`<span class="pill bk-ok">${tr('c.contacted')}</span><button class="btn ghost sm" data-act="c-lead-del" data-id="${esc(l.id)}" style="color:var(--pen)">${tr('delete')}</button>`:`<button class="btn sm primary" data-act="c-lead-done" data-id="${esc(l.id)}">${tr('c.markContacted')}</button>`}</div></div>`).join('')}</div>`:`<p class="faint">${tr('c.noLeads')}</p>`}</div>
+        <div class="req-act">${l.st==='joined'?`<span class="pill bk-ok">${tr('c.joined')}</span>`:l.tid?`<button class="btn sm" data-act="c-join-copy" data-tid="${esc(l.tid)}" data-id="${esc(l.id)}">${I.copy} ${tr('c.joinLink')}</button>`:''}${l.st?`${l.st==='joined'?'':`<span class="pill bk-ok">${tr('c.contacted')}</span>`}<button class="btn ghost sm" data-act="c-lead-del" data-id="${esc(l.id)}" style="color:var(--pen)">${tr('delete')}</button>`:`<button class="btn sm primary" data-act="c-lead-done" data-id="${esc(l.id)}">${tr('c.markContacted')}</button>`}</div></div>`).join('')}</div>`:`<p class="faint">${tr('c.noLeads')}</p>`}</div>
     <div class="section"><h2>${tr('c.actH')}</h2>${act.length?`<div class="tact">${act.map(e=>`<div class="tact-row"><span class="tact-dot ${e.kind==='entry'?'in':''}"></span><span>${e.kind==='entry'
         ? tr('c.actEntry',{s:esc(e.name||''), t:esc(e.title), teacher:esc(tName(e.tid))})
         : tr(e.st==='revise'?'c.actRevise':'c.actReview',{teacher:`<b>${esc(tName(e.tid))}</b>`, s:esc(e.name||''), t:esc(e.title), band:e.band!=null?fmtBand(e.band):'–'})}</span><span class="small faint">${ago(e.at)}</span></div>`).join('')}</div>`:`<p class="faint">${tr('c.noAct')}</p>`}</div>
@@ -5031,7 +5090,7 @@ function vCentre(){
       return `<div class="req ${s}"><div style="min-width:0"><b>${esc(o?.title||r.title||'–')}</b><div class="small muted">${ago(r.at)}</div>${r.note?`<div class="small req-note">“${esc(r.note)}”</div>`:''}</div><div class="req-act"><span class="pill bk-${s}">${tr('bk.st.'+s)}</span></div></div>`; }).join('')}</div></div>`:''}
     ${tordersSection(true)}
     ${Object.keys(S.myRoster?.students||{}).length?`<div class="section"><h2>${tr('c.myExtra')}</h2><div class="tchips">${Object.entries(S.myRoster.students).map(([uid,x])=>`<span class="lchip ghost">${esc(x.name||'')}${x.lang?' · '+esc(x.lang):''}</span>`).join('')}</div></div>`:''}
-    <div class="section"><h2>${tr('c.myLeads')}</h2>${leads.length?`<div class="list">${leads.map(l=>`<div class="req ${l.st?'ok':'wait'}">${avatar(l.name,l.id)}<div style="min-width:0"><b>${esc(l.name)}</b> · <span class="num">${esc(l.contact)}</span><div class="small muted">${[l.lang, l.level==='beginner'?tr('c.beginner'):l.level, l.fmt?tr('pc.'+l.fmt):'', l.quote||''].filter(Boolean).join(' · ')} · ${ago(l.at)}</div>${l.msg?`<div class="small req-note">“${esc(l.msg)}”</div>`:''}</div></div>`).join('')}</div>`:`<p class="faint">${tr('c.noLeads')}</p>`}</div>`;
+    <div class="section"><h2>${tr('c.myLeads')}</h2><p class="small muted" style="margin:-6px 0 12px">${tr('c.joinP')}</p>${leads.length?`<div class="list">${leads.map(l=>`<div class="req ${l.st?'ok':'wait'}">${avatar(l.name,l.id)}<div style="min-width:0"><b>${esc(l.name)}</b> · <span class="num">${contactHtml(l.contact)}</span><div class="small muted">${[l.lang, l.level==='beginner'?tr('c.beginner'):l.level, l.fmt?tr('pc.'+l.fmt):'', l.quote||''].filter(Boolean).join(' · ')} · ${ago(l.at)}</div>${l.msg?`<div class="small req-note">“${esc(l.msg)}”</div>`:''}</div><div class="req-act">${l.st==='joined'?`<span class="pill bk-ok">${tr('c.joined')}</span>`:`<button class="btn sm" data-act="c-join-copy" data-tid="${esc(l.tid)}" data-id="${esc(l.id)}">${I.copy} ${tr('c.joinLink')}</button>`}</div></div>`).join('')}</div>`:`<p class="faint">${tr('c.noLeads')}</p>`}</div>`;
 }
 function openOfferAsk(offerId){
   const o=(S.offers?.items||[]).find(x=>x.id===offerId); if(!o) return;
@@ -5047,7 +5106,8 @@ function openOfferAsk(offerId){
 function teacherSelect(id, cur){
   const list=teamList(false); if(cur && S.team[cur] && !list.some(t=>t.tid===cur)) list.push({tid:cur,...S.team[cur]});
   if(!list.length) return '';
-  return `<select class="inp" id="${id}">${list.map(t=>`<option value="${esc(t.tid)}" ${t.tid===(cur||MAIN_TID)?'selected':''}>${esc(t.name||'')}${(t.langs||[]).length?' · '+esc(t.langs.join(', ')):''}</option>`).join('')}</select>`;
+  if(id==='setup-teacher'){ const want=LS.get('want-teacher',''); if(!cur && list.some(t=>t.tid===want)) cur=want; }
+  return `<select class="inp" id="${id}">${id==='setup-teacher'?`<option value="" ${cur?'':'selected'}>${tr('su.pickT')}</option>`:''}${list.map(t=>`<option value="${esc(t.tid)}" ${t.tid===(id==='setup-teacher'?cur:(cur||MAIN_TID))?'selected':''}>${esc(t.name||'')}${(t.langs||[]).length?' · '+esc(t.langs.join(', ')):''}</option>`).join('')}</select>`;
 }
 function myTeacherCard(){
   if(S.mode!=='student') return '';
@@ -5254,7 +5314,8 @@ function vStuTeachers(){
   return `<div class="page-head"><div><h1>${tr('c.stuTH')}</h1><p>${tr('c.stuTP')}</p></div></div>${promoBanner('student')}
     <div class="section" style="margin-top:0"><h2>${tr('c.myTeachers')}</h2><div class="stack" style="gap:10px">${mineCards||`<p class="faint">–</p>`}</div></div>
     ${myOrdersSection()}
-    <div class="section"><h2>${tr('c.otherTeachers')}</h2>${others.length?`<div class="tgrid">${others.map(card).join('')}</div>`:`<p class="faint">${tr('c.noOthers')}</p>`}</div>`;
+    <div class="section"><h2>${tr('c.otherTeachers')}</h2>${others.length?`<div class="tgrid">${others.map(card).join('')}</div>`:`<p class="faint">${tr('c.noOthers')}</p>`}</div>
+    ${S.myProfile?`<div class="section danger-zone"><h2>${tr('lv.h')}</h2><p class="muted small" style="margin:-6px 0 12px">${tr('lv.sP')}</p><button class="btn ghost del-big" data-act="c-leave">${I.trash} ${tr('lv.btn')}</button></div>`:''}`;
 }
 function openEnroll(tid){
   const t=S.team[tid]; if(!t) return;
@@ -5335,7 +5396,7 @@ function chatCur(){
   if(S.view.name!=='chat') return null;
   if(S.mode==='student'){ const tid=S.view.tid; return tid ? {kind:'dm', id:S.uid+'_'+tid, doc:S.myDms?.[tid]||null, side:'s', tid} : null; }
   const k=S.view.k==='g'?'g':'dm', id=S.view.id; if(!id) return null;
-  return {kind:k, id, doc:(k==='g'?S.gchats:S.dms)?.[id]||null, side:'t'};
+  return {kind:k, id, doc:(k==='g'?S.gchats:S.dms)?.[id]||null, side:'t', uid:S.view.uid};
 }
 function chatWatch(path){
   if(S._chPath===path) return; chatUnwatch(); if(!path) return;
@@ -5373,8 +5434,10 @@ async function chatSend(text){
     await S.db.doc(base+c.id).set({uid:S.uid, tid:c.tid, name:(S.myProfile?.name||'').slice(0,80), ...last, lastBy:'s', rs:now}, {merge:true});
     await S.db.collection(base+c.id+'/msgs').doc().set({uid:S.uid, name:chatMyName(), text, at:now, by:'s'});
   } else {
+    if(c.kind==='dm' && !c.doc && c.uid){ const tid=c.id.slice(c.uid.length+1);
+      await S.db.doc(base+c.id).set({uid:c.uid, tid, name:(S.profiles?.[c.uid]?.name||'').slice(0,80), ...last, lastBy:'t', rt:now}); }
     await S.db.collection(base+c.id+'/msgs').doc().set({uid:S.uid, name:chatMyName(), text, at:now, by:'t'});
-    await S.db.doc(base+c.id).update({...last, lastBy:'t', rt:now});
+    if(c.doc || c.kind!=='dm' || !c.uid) await S.db.doc(base+c.id).update({...last, lastBy:'t', rt:now});
   }
 }
 function wireChatForm(){
@@ -5416,7 +5479,7 @@ function chatListT(){
     <h3 class="ch-sec">${tr('dm.guests')}</h3>${gs.length?rows(gs):`<p class="faint small ch-none">${tr('dm.noG')}</p>`}`;
 }
 function chatHeadT(){
-  const v=S.view, c=(v.k==='g'?S.gchats:S.dms)?.[v.id]; if(!c) return '';
+  const v=S.view; let c=(v.k==='g'?S.gchats:S.dms)?.[v.id]; if(!c && v.k==='dm' && v.uid) c={uid:v.uid, tid:v.id.slice(v.uid.length+1), name:S.profiles?.[v.uid]?.name||''}; if(!c) return '';
   if(v.k!=='g'){ const nm=c.name||S.profiles?.[c.uid]?.name||'–'; return `${avatar(nm,c.uid)}<div style="min-width:0"><b>${esc(nm)}</b><div class="small muted">${tr('dm.withT',{name:esc(tName(c.tid))})}</div></div>`; }
   return `${avatar(c.name||'?',v.id)}<div style="min-width:0"><b>${esc(c.name||'–')}</b> <span class="pill">${tr('dm.guestTag')}</span>
     <div class="small muted">${contactHtml(c.contact)}${c.lang?' · '+esc(c.lang):''}${c.tid?' · '+tr('c.forT',{name:esc(tName(c.tid))}):''}</div></div>${S.role==='owner'?asgPicker('g',v.id,c):''}`;
@@ -5425,12 +5488,13 @@ function vChatT(){
   const v=S.view, head=`<div class="page-head"><div><h1>${tr('dm.h')}</h1><p>${tr('dm.pT')}</p></div></div>`;
   if(!v.id){ const {dms,gs}=chatThreadsT(), all=[...dms,...gs].sort(byLast), first=all.find(c=>unreadFor(c,'t'))||all[0]; if(first){ v.k=first.k; v.id=first.id; } }
   const c=chatCur();
-  return head+`<div class="club chat"><div class="card ch-list" id="ch-list">${chatListT()}</div>${c&&c.doc?chatPane(chatHeadT()):`<div class="club-chat card"><p class="faint chat-pick">${tr('dm.pick')}</p></div>`}</div>`;
+  return head+`<div class="club chat"><div class="card ch-list" id="ch-list">${chatListT()}</div>${c&&(c.doc||(c.kind==='dm'&&S.view.uid))?chatPane(chatHeadT()):`<div class="club-chat card"><p class="faint chat-pick">${tr('dm.pick')}</p></div>`}</div>`;
 }
 const vChat = () => S.mode==='student' ? vChatS() : vChatT();
 after.chat = () => {
   const c=chatCur(); S._chSide = S.mode==='student'?'s':'t';
-  chatWatch(c && $('#ch-msgs') ? (c.kind==='g'?'gchat/':'dm/')+c.id+'/msgs' : null); drawChatMsgs(); wireChatForm();
+  // a teacher's chat that does not exist yet has nothing to read until the first message
+  chatWatch(c && $('#ch-msgs') && (c.doc || S.role!=='staff') ? (c.kind==='g'?'gchat/':'dm/')+c.id+'/msgs' : null); drawChatMsgs(); wireChatForm();
   if(c && $('#ch-text') && !matchMedia('(hover:none)').matches) $('#ch-text').focus();
 };
 // live data changed: redraw the list and header, never the half-typed message
@@ -5439,6 +5503,7 @@ function drawChat(){
   const l=$('#ch-list'); if(l) l.innerHTML = S.mode==='student' ? chatListS() : chatListT();
   const h=$('#ch-head'); if(h && !(h.contains(document.activeElement) && document.activeElement.tagName==='SELECT')) h.innerHTML = S.mode==='student' ? chatHeadS() : chatHeadT();
   if(S.mode==='teacher' && !h && chatCur()?.doc) renderMain();   // the chosen chat just arrived
+  const cc=chatCur(); if(h && cc?.doc && !S._chPath){ chatWatch((cc.kind==='g'?'gchat/':'dm/')+cc.id+'/msgs'); drawChatMsgs(); }
   chatMarkRead();
 }
 
@@ -5469,7 +5534,7 @@ function openGuestChat(tid){
     const id=secretId(), now=Date.now(), d={name:name.slice(0,80), contact:contact.slice(0,120), lang:$('#gs-lang').value.slice(0,40), tid:$('#gs-tid').value, at:now, lastAt:now, lastBy:'g', lastText:chatClip(text)};
     const btn=$('#gs-go'); btn.disabled=true;
     try{ await S.db.doc('gchat/'+id).set(d); await S.db.collection('gchat/'+id+'/msgs').doc().set({name:d.name, text:text.slice(0,1000), at:now, by:'g'});
-      LS.set('gchat-id', id); S.gchat=d; guestChatWatch(); showGuestChat();
+      LS.set('gchat-id', id); if(d.tid) LS.set('want-teacher', d.tid); S.gchat=d; guestChatWatch(); showGuestChat();
     }catch(e2){ btn.disabled=false; err.textContent=tr('c.sendFail'); }
   });
 }
@@ -6193,7 +6258,7 @@ document.addEventListener('click', async ev => {
     case 'bank-add': { const v=$('#bank-new').value.trim(); if(!v) break; S.prefs=S.prefs||{bank:DEFAULT_BANK.slice()}; S.prefs.bank.unshift(v); await savePrefs(); renderMain(); break; }
     case 'bank-del': S.prefs=S.prefs||{bank:DEFAULT_BANK.slice()}; S.prefs.bank.splice(+b.dataset.i,1); await savePrefs(); renderMain(); break;
     // student
-    case 'setup-save': { const name=$('#setup-name').value.trim(); if(!name){ toast(tr('su.typeName')); break; } const prof={name,level:$('#setup-level').value,joinedAt:Date.now(),updatedAt:Date.now(),index:{}}; const tch=$('#setup-teacher')?.value; if(tch) prof.teacher=tch; b.disabled=true; try{ await S.db.doc(`journals/${S.uid}`).set(prof); }catch(e){ b.disabled=false; dbErr(e,'journal'); } break; }
+    case 'setup-save': { const name=$('#setup-name').value.trim(); if(!name){ toast(tr('su.typeName')); break; } const prof={name,level:$('#setup-level').value,joinedAt:Date.now(),updatedAt:Date.now(),index:{}}; const tch=$('#setup-teacher')?.value; if($('#setup-teacher') && !tch){ toast(tr('su.needT')); break; } prof.teacher=tch||MAIN_TID; const jl=LS.get('join-lead',''); if(jl && prof.teacher===LS.get('want-teacher','')) prof.lead=jl; b.disabled=true; try{ await S.db.doc(`journals/${S.uid}`).set(prof); LS.del('join-lead'); LS.del('want-teacher'); }catch(e){ b.disabled=false; dbErr(e,'journal'); } break; }
     case 'new-entry': startEdit({prompt:!!b.dataset.prompt}); break;
     case 'mood': S.edit.mood = S.edit.mood===b.dataset.k? null : b.dataset.k; document.querySelectorAll('.mood').forEach(m=>m.setAttribute('aria-pressed', m.dataset.k===S.edit.mood)); if(!S.edit.eid&&!S.edit.revisionOf) LS.set(draftKey(),S.edit); break;
     case 'submit-entry': submitEntry(); break;
@@ -6279,6 +6344,10 @@ document.addEventListener('click', async ev => {
     case 'bk-del': { if(!armDel(b)) break; try{ await dropItem('bookings','bookingStatus',S.bookings,S.bstat,b.dataset.uid,b.dataset.id); toast(tr('bd.deleted')); }catch(e){ dbErr(e,'svc'); } break; }
     case 'ord-del': { if(!armDel(b)) break; try{ await dropItem('orders','orderStatus',S.orders,S.ostat,b.dataset.uid,b.dataset.id); toast(tr('bd.deleted')); }catch(e){ dbErr(e,'market'); } break; }
     case 'stu-del': openDelStudent(b.dataset.sid); break;
+    case 'stu-remove': { if(!b.dataset.armed){ b.dataset.armed='1'; b.innerHTML=`${I.trash} ${tr('del.sure')}`; break; } b.disabled=true;
+      const sid=b.dataset.sid; try{ await wipeOwn(sid,'t'); toast(tr('lv.tDone')); go('students'); }catch(e){ b.disabled=false; dbErr(e,'journal'); } break; }
+    case 'me-leave': { if(!b.dataset.armed){ b.dataset.armed='1'; b.innerHTML=`${I.trash} ${tr('del.sure')}`; break; } b.disabled=true;
+      try{ await wipeOwn(S.uid,'s'); closeDlg(); toast(tr('lv.done')); }catch(e){ b.disabled=false; $('#lv-err').textContent=lgErrText(e); } break; }
     case 'ask-open': openAsk(b.dataset.id); break;
     case 'rt-on': saveRating(n=>{ n.on=b.checked; }); break;
     case 'rt-bonus': { const uid=b.dataset.uid, d=+b.dataset.n; saveRating(n=>{ const v=(+n.bonus[uid]||0)+d; if(v) n.bonus[uid]=v; else delete n.bonus[uid]; }); break; }
@@ -6388,6 +6457,11 @@ document.addEventListener('click', async ev => {
     case 'c-tprof': openTeacherProfile(b.dataset.tid); break;
     case 'c-trial': openTrial(b.dataset.tid||''); break;
     case 'c-gchat': openGuestChat(b.dataset.tid||''); break;
+    case 'c-dm-new': { const uid=b.dataset.uid, p=S.profiles?.[uid]; if(!p) break;
+      const tid = S.role==='staff' ? S.staffTid : tidOf(p);   // the owner writes in the chat of the student's own teacher
+      go('chat',{k:'dm', id:uid+'_'+tid, uid}); break; }
+    case 'c-leave': openLeave(); break;
+    case 'c-join-copy': { const u=joinUrl(b.dataset.tid, b.dataset.id); try{ await navigator.clipboard.writeText(u); toast(tr('c.joinCopied',{name:esc(tName(b.dataset.tid))}), 7000); }catch(e){ prompt(tr('c.joinLink'), u); } break; }
     case 'c-ch-open': S.mode==='student' ? go('chat',{tid:b.dataset.tid}) : go('chat',{k:b.dataset.k, id:b.dataset.id}); break;
     case 'c-ch-del': { const c=chatCur(); if(c) try{ await S.db.doc((c.kind==='g'?'gchat/':'dm/')+c.id+'/msgs/'+b.dataset.id).delete(); }catch(e){ dbErr(e,'svc'); } break; }
     case 'c-asg': { const sel=document.querySelector('[data-asg-sel="'+CSS.escape(b.dataset.id)+'"]'); b.disabled=true;
@@ -6446,7 +6520,7 @@ function setLang(l){
   if(!DICT[l] || l===LANG) return;
   if(S.view.name==='login'){ const em=$('#login-email'); if(em) S.view.email=em.value; }
   const sn=$('#setup-name'); if(sn && S.me) S.me.name=sn.value;
-  LANG=l; LS.set('lang',l); document.documentElement.lang=l; syncContact();
+  LANG=l; LS.set('lang',l); document.documentElement.lang=l; syncContact(); try{ if(S.auth) S.auth.languageCode=l; }catch(e){}
   const reopen = S.dlg; closeDlg();
   closePop(); renderTop(); renderNav(); renderMain();
   if(reopen?.type==='st') openLgStudent(reopen.id);
