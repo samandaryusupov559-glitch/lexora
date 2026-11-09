@@ -307,26 +307,46 @@ service cloud.firestore {
     match /groups/{tid} {
       allow read, write: if isTeacher() || (isStaff() && staffTid() == tid);
     }
-    // Daily speaking club: everyone signed in reads and writes messages; teachers moderate.
-    match /club/{day} {
-      allow read: if signedIn();
-      allow write: if isTeacher() || isStaff();
-      match /msgs/{id} {
-        allow read: if signedIn();
-        allow create: if signedIn() && request.resource.data.uid == request.auth.uid
+    // ---------- languages ----------
+    // A teacher's languages come from teachers/{tid}.langs; a teacher without languages counts as an English teacher.
+    function tDoc(t) { return /databases/$(database)/documents/teachers/$(t); }
+    function teachesLang(t, l) {
+      return (exists(tDoc(t)) && get(tDoc(t)).data.get('langs', []).hasAny([l]))
+        || (l == 'English' && (!exists(tDoc(t)) || get(tDoc(t)).data.get('langs', []).size() == 0));
+    }
+    // A student studies a language with their journal teacher, or in extra lessons the owner confirmed (enrollStatus.langs).
+    function studiesLang(l) {
+      return signedIn()
+        && ((exists(/databases/$(database)/documents/journals/$(request.auth.uid))
+              && teachesLang(get(/databases/$(database)/documents/journals/$(request.auth.uid)).data.get('teacher', 'main'), l))
+            || (exists(/databases/$(database)/documents/enrollStatus/$(request.auth.uid))
+              && get(/databases/$(database)/documents/enrollStatus/$(request.auth.uid)).data.get('langs', []).hasAny([l])));
+    }
+    function staffLang(l) { return isStaff() && teachesLang(staffTid(), l); }
+    function inLang(l) { return isTeacher() || staffLang(l) || studiesLang(l); }
+    // Speaking clubs, one per language and day: club/{lang}_{day}. Only people who teach or study that language take part;
+    // the owner sees every club.
+    function clubLang(id) { return id.split('_')[0]; }
+    match /club/{id} {
+      allow read: if inLang(clubLang(id));
+      allow write: if isTeacher() || staffLang(clubLang(id));
+      match /msgs/{m} {
+        allow read: if inLang(clubLang(id));
+        allow create: if inLang(clubLang(id)) && request.resource.data.uid == request.auth.uid
           && request.resource.data.keys().hasOnly(['uid', 'name', 'text', 'at', 'mod'])
           && request.resource.data.text is string && request.resource.data.text.size() > 0 && request.resource.data.text.size() <= 500
           && request.resource.data.name is string && request.resource.data.name.size() <= 80
           && request.resource.data.at is int
-          && (request.resource.data.get('mod', false) == false || isTeacher() || isStaff());
-        allow delete: if isTeacher() || isStaff() || (signedIn() && resource.data.uid == request.auth.uid);
+          && (request.resource.data.get('mod', false) == false || isTeacher() || staffLang(clubLang(id)));
+        allow delete: if isTeacher() || staffLang(clubLang(id)) || (signedIn() && resource.data.uid == request.auth.uid);
       }
     }
-    // Library: links to books, audio and videos. Everyone signed in reads; teachers add, and edit only their own.
+    // Library: links to books, audio and videos, by language. People read the languages they teach or study
+    // (they ask for one language at a time); teachers add in their own languages and edit only their own items.
     match /library/{id} {
-      allow read: if signedIn();
-      allow create: if isTeacher() || (isStaff() && request.resource.data.by == staffTid());
-      allow update: if isTeacher() || (isStaff() && resource.data.by == staffTid() && request.resource.data.by == staffTid());
+      allow read: if inLang(resource.data.lang);
+      allow create: if isTeacher() || (staffLang(request.resource.data.lang) && request.resource.data.by == staffTid());
+      allow update: if isTeacher() || (isStaff() && resource.data.by == staffTid() && request.resource.data.by == staffTid() && staffLang(request.resource.data.lang));
       allow delete: if isTeacher() || (isStaff() && resource.data.by == staffTid());
     }
     // Orders for a teacher's own services. The student creates one; that teacher or the owner answers.

@@ -1336,7 +1336,7 @@ const S = {
 };
 const EDIT_VIEWS = new Set(['review','write','prompt','bank','setup','login','newsEdit','setEdit','me','verify','club','chat']);
 function teardown(){ S.unsubs.forEach(u=>{try{u()}catch(e){}}); S.unsubs=[]; closePop(); closeDlg(); }
-function refresh(){ renderTop(); renderNav(); if(!EDIT_VIEWS.has(S.view.name) && !busyNow()) renderMain(); drawChat(); if(S.mode==='teacher' && S.role!=='staff'){ ratingScheduleSync(); centreScheduleSync(); asgSoon(); } }
+function refresh(){ clubSync(); libSync(); enrollLangsSoon(); renderTop(); renderNav(); if(!EDIT_VIEWS.has(S.view.name) && !busyNow()) renderMain(); drawChat(); if(S.mode==='teacher' && S.role!=='staff'){ ratingScheduleSync(); centreScheduleSync(); asgSoon(); } }
 function go(name, extra={}){ closePop(); S.view={name,...extra}; renderNav(); renderMain(); window.scrollTo({top:0}); }
 
 /* ---------------- boot ---------------- */
@@ -1471,6 +1471,7 @@ function startStudent(){
   refresh(); renderMain();
 }
 function refreshStudent(){
+  clubSync(); libSync();
   renderTop(); renderNav();
   if(S.view.name==='setup' && S.myProfile===null && $('#setup-name')) return;
   if((!EDIT_VIEWS.has(S.view.name) && !busyNow()) || (S.view.name==='setup')) renderMain();
@@ -4525,6 +4526,20 @@ const myTid = () => S.role==='staff' ? S.staffTid : MAIN_TID;
 const tidOf = p => (p && p.teacher) || MAIN_TID;
 const prefsPath = () => S.role==='staff' ? 'teacher/prefs-'+S.staffTid : 'teacher/prefs';
 const CLANGS = ['English','Russian','Uzbek','Korean','German','Turkish','Arabic','French','Chinese','Spanish','Japanese','Italian'];
+// languages the centre teaches: each has its own speaking club and library shelf
+const CLUB_LANGS = ['English','Russian','German','Turkish','Korean','Chinese','Japanese','Spanish'];
+const langName = l => { const k='lng.'+l, v=tr(k); return v===k ? l : v; };
+const langOpts = (list, cur) => list.map(l=>`<option value="${esc(l)}" ${l===cur?'selected':''}>${esc(langName(l))}</option>`).join('');
+// a teacher without languages counts as an English teacher (same as firestore.rules)
+const tLangsOf = tid => { const l=(S.team?.[tid]?.langs||[]).filter(Boolean); return l.length ? l : ['English']; };
+// the languages this person teaches or studies: they take part in those clubs and see those library shelves
+function myLangs(){
+  if(S.mode==='teacher' && S.role!=='staff') return [...new Set([...CLUB_LANGS, ...Object.values(S.team||{}).flatMap(t=>t.langs||[])])];
+  if(S.role==='staff') return tLangsOf(S.staffTid);
+  if(S.mode==='student') return S.myProfile ? [...new Set([...tLangsOf(tidOf(S.myProfile)), ...(S.myEnrollSt?.langs||[])])] : [];
+  return [];
+}
+const langsReady = () => S.role==='owner' || (S.teamLoaded && (S.mode!=='student' || S.myProfile!==undefined));
 const TLEVEL_STEPS = [0, 60, 150, 300, 500];
 const TPTS = {student:10, entry:1, gain:20};
 const round1 = v => Math.round(v*10)/10;
@@ -4693,12 +4708,12 @@ function startCentre(role){
     const t=S.staffTid;
     where1('dm','tid',t,'dms'); where1('gchat','tid',t,'gchats');
     one('centre/offers','offers',{items:[]}); one('staffReq/'+t,'mySreq',null); one('teacherPriv/'+t,'myTPriv',null);
-    one('roster/'+t,'myRoster',null); one('live/'+t,'myLive',null); where1('torders','tid',t,'torders'); one('groups/'+t,'myGroups',null); startClub(); col('library','lib'); one('centre/upload','upCfg',null);
+    one('roster/'+t,'myRoster',null); one('live/'+t,'myLive',null); where1('torders','tid',t,'torders'); one('groups/'+t,'myGroups',null); startClub(); startLib(); one('centre/upload','upCfg',null);
     S.unsubs.push(S.db.collection('leads').where('tid',t).onSnapshot(q=>{ const o={}; q.docs.forEach(d=>{ if(d.exists) o[d.id]=d.data(); }); S.leads=o; refreshAny(); }, quiet));
   }
   if(role==='student'){
     one('lessons/'+S.uid,'myLessons',null); one('site/promo','promo',null);
-    one('liveFor/'+S.uid,'myLiveFor',null); startClub(); S.unsubs.push(S.db.collection('library').onSnapshot(q=>{ const o={}; q.docs.forEach(d=>{ if(d.exists) o[d.id]=d.data(); }); S.lib=o; refreshAny(); }, quiet));
+    one('liveFor/'+S.uid,'myLiveFor',null); startClub(); startLib();
     one('enroll/'+S.uid,'myEnroll',null); one('enrollStatus/'+S.uid,'myEnrollSt',null, studentWatches); where1('torders','uid',S.uid,'myTorders');
     // the chosen teacher's Meet link follows the journal (it can only be read once the journal exists)
     S.unsubs.push(S.db.doc('journals/'+S.uid).onSnapshot(s=>{
@@ -4797,13 +4812,13 @@ function openTeacherProfile(tid){
     <div class="dlg-foot"><button type="button" class="btn ghost" data-act="dlg-close">${tr('close')}</button>${S.mode==='guest'?`<button type="button" class="btn" data-act="c-gchat" data-tid="${esc(tid)}">${tr('dm.guestBtn')}</button><button type="button" class="btn pen" data-act="c-trial" data-tid="${esc(tid)}">${tr('c.trialWith',{name:esc((t.name||'').split(' ')[0])})}</button>`:''}</div></div>`, {type:'tprof', id:tid});
 }
 function openTrial(tid){
-  const all=teamList(false), langs=[...new Set([...all.flatMap(t=>t.langs||[]), 'English'])];
+  const all=teamList(false), langs=[...new Set([...CLUB_LANGS, ...all.flatMap(t=>t.langs||[])])];
   const pre = tid && S.team[tid] ? (S.team[tid].langs||[])[0] : '';
   showDlg(`<form id="tr-form" novalidate>${dlgHead(tr('c.trialK'), tr('c.trialH'))}
     <div class="dlg-body"><p class="muted">${tr('c.trialP')}</p>
       <label class="field"><span>${tr('c.fName')}</span><input class="inp" id="tr-name" maxlength="80" autocomplete="name" required></label>
       <label class="field"><span>${tr('c.fContact')}</span><input class="inp" id="tr-contact" maxlength="120" placeholder="+998 90 123 45 67 / @telegram" required></label>
-      <div class="grid2" style="gap:12px"><label class="field"><span>${tr('c.fLang')}</span><select class="inp" id="tr-lang">${langs.map(l=>`<option ${l===pre?'selected':''}>${esc(l)}</option>`).join('')}</select></label>
+      <div class="grid2" style="gap:12px"><label class="field"><span>${tr('c.fLang')}</span><select class="inp" id="tr-lang">${langOpts(langs, pre)}</select></label>
         <label class="field"><span>${tr('c.fLevel')}</span><select class="inp" id="tr-level"><option value="">${tr('c.notSure')}</option><option value="0">${tr('c.beginner')}</option>${LEVELS.map(l=>`<option>${l}</option>`).join('')}</select></label></div>
       <label class="field"><span>${tr('c.fTeacher')}</span><select class="inp" id="tr-tid"><option value="">${tr('c.anyTeacher')}</option>${all.map(t=>`<option value="${esc(t.tid)}" ${t.tid===tid?'selected':''}>${esc(t.name||'')}</option>`).join('')}</select></label>
       <label class="field"><span>${tr('c.fMsg')} <span class="faint">${tr('optional')}</span></span><textarea class="inp" id="tr-msg" rows="3" maxlength="500" placeholder="${tr('c.fMsgPh')}"></textarea></label>
@@ -5234,12 +5249,25 @@ function enrollSection(){
 after.team = () => { wirePricing(); const f=$('#pr-form'); if(!f) return; f.addEventListener('submit', async e=>{ e.preventDefault();
   const d={on:$('#pr-on').checked, pct:Math.max(1,Math.min(90,Math.round(+$('#pr-pct').value||0))), min:Math.max(2,Math.min(10,Math.round(+$('#pr-min').value||2))), until:$('#pr-until').value||'', note:$('#pr-note').value.trim()};
   try{ await S.db.doc('site/promo').set(d); toast(tr('c.saved')); }catch(err){ dbErr(err,'svc'); } }); };
+function enrollLangs(uid, st){
+  const out=new Set();
+  for(const tid of okTids(st)){ const l=(S.enrolls?.[uid]?.items||[]).find(i=>i.tid===tid)?.lang || S.rosters?.[tid]?.students?.[uid]?.lang; (l?[l]:tLangsOf(tid)).forEach(x=>out.add(x)); }
+  return [...out].sort();
+}
+// older confirmations have no langs yet: the owner's page fills them in
+let elT=null;
+const enrollLangsSoon = () => { if(S.role!=='owner' || S.demo) return; clearTimeout(elT); elT=setTimeout(enrollLangsSync, 1500); };
+async function enrollLangsSync(){
+  if(S.role!=='owner' || !S.teamLoaded || !S.enrollSt || !S.rosters || !S.enrolls) return;
+  for(const [uid,st] of Object.entries(S.enrollSt)){ const want=enrollLangs(uid,st); if(JSON.stringify(want)===JSON.stringify(st.langs||[])) continue;
+    try{ await S.db.doc('enrollStatus/'+uid).set({langs:want},{merge:true}); }catch(e){ return; } }
+}
 async function setEnroll(uid, tid, st){
   const cur={...(S.enrollSt?.[uid]||{})}, ro=clone(S.rosters?.[tid]||{students:{}}); ro.students=ro.students||{};
   if(st==='off'){ delete cur[tid]; delete ro.students[uid];
     const e=S.enrolls?.[uid]; if(e) await S.db.doc('enroll/'+uid).set({...e, items:(e.items||[]).filter(i=>i.tid!==tid)}); }
   else { cur[tid]=st; if(st==='ok'){ const i=(S.enrolls?.[uid]?.items||[]).find(x=>x.tid===tid); ro.students[uid]={name:S.profiles[uid]?.name||'', lang:i?.lang||'', since:Date.now()}; } else delete ro.students[uid]; }
-  await S.db.doc('enrollStatus/'+uid).set(cur); await S.db.doc('roster/'+tid).set(ro);
+  cur.langs=enrollLangs(uid, cur); await S.db.doc('enrollStatus/'+uid).set(cur); await S.db.doc('roster/'+tid).set(ro);
 }
 
 /* ---------- chats ----------
@@ -5382,13 +5410,13 @@ const guestDot = () => `<span class="chdot" data-gdot ${unreadFor(S.gchat,'g')?'
 function drawGuestDots(){ const on=unreadFor(S.gchat,'g'); document.querySelectorAll('[data-gdot]').forEach(e=>e.hidden=!on); }
 function openGuestChat(tid){
   if(gchatId() && S.gchat!==null) return showGuestChat();
-  const all=teamList(false), langs=[...new Set([...all.flatMap(t=>t.langs||[]), 'English'])];
+  const all=teamList(false), langs=[...new Set([...CLUB_LANGS, ...all.flatMap(t=>t.langs||[])])];
   const pre = tid && S.team[tid] ? (S.team[tid].langs||[])[0] : '';
   showDlg(`<form id="gs-form" novalidate>${dlgHead(tr('dm.guestK'), tr('dm.guestH'))}
     <div class="dlg-body"><p class="muted">${tr('dm.guestP')}</p>
       <div class="grid2" style="gap:12px"><label class="field"><span>${tr('c.fName')}</span><input class="inp" id="gs-name" maxlength="80" autocomplete="name" required></label>
         <label class="field"><span>${tr('c.fContact')}</span><input class="inp" id="gs-contact" maxlength="120" placeholder="+998 90 123 45 67 / @telegram" required></label></div>
-      <div class="grid2" style="gap:12px"><label class="field"><span>${tr('c.fLang')}</span><select class="inp" id="gs-lang">${langs.map(l=>`<option ${l===pre?'selected':''}>${esc(l)}</option>`).join('')}</select></label>
+      <div class="grid2" style="gap:12px"><label class="field"><span>${tr('c.fLang')}</span><select class="inp" id="gs-lang">${langOpts(langs, pre)}</select></label>
         <label class="field"><span>${tr('c.fTeacher')}</span><select class="inp" id="gs-tid"><option value="">${tr('c.anyTeacher')}</option>${all.map(t=>`<option value="${esc(t.tid)}" ${t.tid===tid?'selected':''}>${esc(t.name||'')}</option>`).join('')}</select></label></div>
       <label class="field"><span>${tr('dm.firstMsg')}</span><textarea class="inp" id="gs-msg" rows="3" maxlength="1000" placeholder="${tr('c.fMsgPh')}" required></textarea></label>
       <p class="lg-err" id="gs-err" role="alert"></p></div>
@@ -5648,25 +5676,39 @@ const CLUB_TOPICS = [
  ['Inventions',['What is the most important invention ever?','What would you invent to make life easier?','Is the internet good or bad for people?']],
 ];
 const dayIdx = d => Math.floor(Date.parse(d+'T12:00:00Z')/864e5);
-function clubDef(day){ const [t,qs]=CLUB_TOPICS[dayIdx(day)%CLUB_TOPICS.length]; return {topic:t, qs, lang:'English'}; }
-const clubNow = () => ({...clubDef(S.clubDay||todayStr()), ...(S.club||{})});
-const clubVideoOn = () => isLive(S.club?.video);
+function clubDef(day){ const [t,qs]=CLUB_TOPICS[dayIdx(day)%CLUB_TOPICS.length]; return {topic:t, qs, lang:S.clubLang||'English'}; }
+const clubNow = () => ({...clubDef(S.clubDay||todayStr()), ...(S.club||{}), lang:S.clubLang||'English'});
+const clubVideoOn = () => Object.values(S.clubs||{}).some(c=>isLive(c?.video));
 const isMod = () => S.mode==='teacher';
+const clubPath = () => 'club/'+(S.clubLang||'English')+'_'+(S.clubDay||todayStr());
+function clubStop(){ (S._clubUn||[]).forEach(u=>{ try{ u(); }catch(e){} }); S._clubUn=[]; S._clubKey=null; }
 function startClub(){
-  (S._clubUn||[]).forEach(u=>{ try{ u(); }catch(e){} });
-  if(!S._clubHooked){ S._clubHooked=true; S.unsubs.push(()=>{ (S._clubUn||[]).forEach(u=>{ try{ u(); }catch(e){} }); S._clubUn=[]; S._clubHooked=false; }); }
-  S.clubDay=todayStr(); S.club=null; S.clubMsgs={}; S.clubErr=null;
-  const fail = e => { S.clubErr=(e&&e.code)||'error'; if(S.view.name==='club'){ drawClubMsgs(); } };
-  S._clubUn=[
-    S.db.doc('club/'+S.clubDay).onSnapshot(s=>{ S.club=s.exists?s.data():null; if(S.view.name==='club') drawClubTop(); else refreshAny(); }, fail),
-    S.db.collection('club/'+S.clubDay+'/msgs').onSnapshot(q=>{ const o={}; q.docs.forEach(d=>{ if(d.exists) o[d.id]=d.data(); }); const n=Object.keys(o).length>Object.keys(S.clubMsgs||{}).length; S.clubMsgs=o; S.clubErr=null;
-      if(S.view.name==='club') drawClubMsgs(n); else refreshAny(); }, fail)];
+  clubStop(); S.clubs={}; S.club=null; S.clubMsgs={};
+  if(!S._clubHooked){ S._clubHooked=true; S.unsubs.push(()=>{ clubStop(); S._clubHooked=false; }); }
+  clubSync();
+}
+// (re)start the listeners when the person's languages, the chosen club or the day change
+function clubSync(){
+  if(!S._clubHooked || !S.db || !langsReady()) return;
+  const langs=myLangs(), saved=LS.get('club-lang','');
+  if(!langs.includes(S.clubLang)) S.clubLang = langs.includes(saved) ? saved : (langs[0]||'');
+  const day=todayStr(), key=langs.join(',')+'|'+S.clubLang+'|'+day; if(key===S._clubKey) return;
+  (S._clubUn||[]).forEach(u=>{ try{ u(); }catch(e){} }); S._clubKey=key;
+  S.clubDay=day; S.clubs={}; S.club=null; S.clubMsgs={}; S.clubErr=null;
+  const cur=S.clubLang, fail = e => { S.clubErr=(e&&e.code)||'error'; if(S.view.name==='club') drawClubMsgs(); };
+  S._clubUn = langs.map(l=>S.db.doc('club/'+l+'_'+day).onSnapshot(x=>{ if(x.exists) S.clubs[l]=x.data(); else delete S.clubs[l]; if(l===S.clubLang) S.club=S.clubs[l]||null;
+      if(S.view.name==='club'){ drawClubTop(); drawClubTabs(); } else refreshAny(); }, l===cur?fail:()=>{}));
+  if(cur) S._clubUn.push(S.db.collection(clubPath()+'/msgs').onSnapshot(q=>{ const o={}; q.docs.forEach(d=>{ if(d.exists) o[d.id]=d.data(); }); const n=Object.keys(o).length>Object.keys(S.clubMsgs||{}).length; S.clubMsgs=o; S.clubErr=null;
+      if(S.view.name==='club') drawClubMsgs(n); else refreshAny(); }, fail));
+  if(S.view.name==='club') renderMain();
 }
 // a new day starts a new club (if the page stayed open past midnight)
-const clubDayCheck = () => { if(S.clubDay && S.clubDay!==todayStr()) startClub(); };
+const clubDayCheck = () => { if(S.clubDay && S.clubDay!==todayStr()) clubSync(); };
+const clubTabsHtml = () => { const langs=myLangs(); return langs.length>1 ? langs.map(l=>`<button data-act="c-club-lang" data-l="${esc(l)}" aria-pressed="${l===S.clubLang}">${esc(langName(l))}${isLive(S.clubs?.[l]?.video)?' <span class="livedot"></span>':''}</button>`).join('') : ''; };
+function drawClubTabs(){ const el=$('#club-tabs'); if(el) el.innerHTML=clubTabsHtml(); }
 function clubTopHtml(){
-  const c=clubNow(), v=S.club?.video, on=clubVideoOn();
-  return `<div class="club-topic card"><span class="label">${tr('c.clubToday',{d:fmtDate(S.clubDay,{weekday:'long',day:'numeric',month:'long'})})} · ${esc(c.lang||'')}</span>
+  const c=clubNow(), v=S.club?.video, on=isLive(v);
+  return `<div class="club-topic card"><span class="label">${tr('c.clubToday',{d:fmtDate(S.clubDay,{weekday:'long',day:'numeric',month:'long'})})} · ${esc(langName(c.lang||''))}</span>
       <h2>${esc(c.topic)}</h2><ol>${(c.qs||[]).map(q=>`<li>${esc(q)}</li>`).join('')}</ol>
       ${S.club?.byName?`<p class="small faint">${tr('c.clubBy',{name:esc(S.club.byName)})}</p>`:''}
       ${isMod()?`<button class="btn sm" data-act="c-club-topic">${tr('c.clubEdit')}</button>`:''}</div>
@@ -5683,7 +5725,9 @@ function clubMsgsHtml(){
       ${(isMod()||mine)?`<button class="cdel" data-act="c-club-del" data-id="${esc(m.id)}" title="${tr('delete')}">×</button>`:''}</div><div class="ctext">${esc(m.text)}</div></div></div>`; }).join('');
 }
 function vClub(){
+  if(langsReady() && !myLangs().length) return `<div class="page-head"><div><h1>${tr('c.clubH')}</h1><p>${tr('c.clubP')}</p></div></div><div class="empty"><p>${tr('c.clubNoLang')}</p></div>`;
   return `<div class="page-head"><div><h1>${tr('c.clubH')}</h1><p>${tr('c.clubP')}</p></div></div>
+    <div class="lp-filter" id="club-tabs" role="group" aria-label="${tr('c.fLang')}">${clubTabsHtml()}</div><p class="small muted" style="margin:-4px 0 14px">${tr(S.mode==='student'?'c.clubLangS':'c.clubLangT')}</p>
     <div class="club"><div class="club-side" id="club-top">${clubTopHtml()}</div>
       <div class="club-chat card"><div class="club-msgs" id="club-msgs">${clubMsgsHtml()}</div>
         <form id="club-form" class="club-in" novalidate><textarea class="inp" id="club-text" rows="2" maxlength="500" placeholder="${tr('c.clubPh')}"></textarea><button class="btn pen" aria-label="${tr('c.clubSend')}">${tr('c.clubSend')}</button></form>
@@ -5696,21 +5740,21 @@ after.club = () => { clubDayCheck(); const el=$('#club-msgs'); if(el) el.scrollT
   f.addEventListener('submit', async e=>{ e.preventDefault(); const text=ta.value.trim(); if(!text) return; clubDayCheck();
     const name = S.mode==='student' ? (S.myProfile?.name||tr('student')) : (S.team?.[myTid()]?.name || S.me?.name || tr('teacher'));
     const d={uid:S.uid, name:name.slice(0,80), text:text.slice(0,500), at:Date.now()}; if(isMod()) d.mod=true;
-    ta.value=''; try{ await S.db.collection('club/'+S.clubDay+'/msgs').doc().set(d); }catch(err){ ta.value=text; toast(tr('c.clubSendFail',{code:esc(String(err?.code||err?.message||err))}), 8000); } }); };
+    ta.value=''; try{ await S.db.collection(clubPath()+'/msgs').doc().set(d); }catch(err){ ta.value=text; toast(tr('c.clubSendFail',{code:esc(String(err?.code||err?.message||err))}), 8000); } }); };
 function openClubTopic(){
   const c=clubNow();
   showDlg(`<form id="ct-form" novalidate>${dlgHead(tr('c.clubH'), tr('c.clubEdit'))}<div class="dlg-body">
     <label class="field"><span>${tr('c.clubTopic')}</span><input class="inp" id="ct-t" maxlength="120" value="${esc(c.topic)}"></label>
     <label class="field"><span>${tr('c.clubQs')}</span><textarea class="inp" id="ct-q" rows="4" maxlength="800">${esc((c.qs||[]).join('\n'))}</textarea></label>
-    <label class="field"><span>${tr('c.fLang')}</span><input class="inp" id="ct-l" maxlength="40" value="${esc(c.lang||'English')}"></label><p class="lg-err" id="ct-err"></p></div>
+    <p class="small muted">${tr('c.fLang')}: <b>${esc(langName(c.lang))}</b></p><p class="lg-err" id="ct-err"></p></div>
     <div class="dlg-foot"><button type="button" class="btn ghost" data-act="dlg-close">${tr('cancel')}</button><button class="btn primary">${tr('save')}</button></div></form>`, {type:'clubtopic'});
   $('#ct-form').addEventListener('submit', async e=>{ e.preventDefault(); const topic=$('#ct-t').value.trim(); if(!topic){ $('#ct-err').textContent=tr('c.needTitle'); return; }
-    const d={topic, qs:$('#ct-q').value.split('\n').map(x=>x.trim()).filter(Boolean).slice(0,8), lang:$('#ct-l').value.trim(), by:myTid(), byName:S.team?.[myTid()]?.name||S.me?.name||''};
-    try{ await S.db.doc('club/'+S.clubDay).set(d,{merge:true}); S.club={...(S.club||{}), ...d}; closeDlg(); drawClubTop(); }catch(err){ $('#ct-err').textContent=lgErrText(err); } });
+    const d={topic, qs:$('#ct-q').value.split('\n').map(x=>x.trim()).filter(Boolean).slice(0,8), lang:S.clubLang, by:myTid(), byName:S.team?.[myTid()]?.name||S.me?.name||''};
+    try{ await S.db.doc(clubPath()).set(d,{merge:true}); S.club={...(S.club||{}), ...d}; closeDlg(); drawClubTop(); }catch(err){ $('#ct-err').textContent=lgErrText(err); } });
 }
 async function clubVideo(url){
   const v={on:true, url, at:Date.now(), until:Date.now()+4*3600e3, by:myTid(), byName:S.team?.[myTid()]?.name||S.me?.name||''};
-  await S.db.doc('club/'+S.clubDay).set({video:v},{merge:true}); S.club={...(S.club||{}), video:v}; drawClubTop();
+  await S.db.doc(clubPath()).set({video:v, lang:S.clubLang},{merge:true}); S.club={...(S.club||{}), video:v}; drawClubTop();
 }
 function openClubVideo(){
   const saved=myMeet();
@@ -5732,21 +5776,30 @@ function driveId(u){ const m=String(u||'').match(/drive\.google\.com\/(?:file\/d
 const drivePreview = u => { const id=driveId(u); return id?`https://drive.google.com/file/d/${id}/preview`:null; };
 const driveDownload = u => { const id=driveId(u); return id?`https://drive.google.com/uc?export=download&id=${id}`:u; };
 const ytId = u => (String(u||'').match(/(?:youtube\.com\/(?:watch\?(?:.*&)?v=|shorts\/|embed\/|live\/)|youtu\.be\/)([\w-]{11})/)||[])[1];
+// staff and students read one language at a time (that is what firestore.rules allows); the owner reads everything
+function libStop(){ (S._libUn||[]).forEach(u=>{ try{ u(); }catch(e){} }); S._libUn=[]; S._libKey=null; }
+function startLib(){ libStop(); S.lib={}; S.libBy={}; if(!S._libHooked){ S._libHooked=true; S.unsubs.push(()=>{ libStop(); S._libHooked=false; }); } libSync(); }
+function libSync(){
+  if(!S._libHooked || !S.db || !langsReady()) return;
+  const langs=myLangs(), key=langs.join(','); if(key===S._libKey) return;
+  (S._libUn||[]).forEach(u=>{ try{ u(); }catch(e){} }); S._libKey=key; S.libBy={}; S.lib={};
+  S._libUn = langs.map(l=>S.db.collection('library').where('lang',l).onSnapshot(q=>{ const o={}; q.docs.forEach(d=>{ if(d.exists) o[d.id]=d.data(); }); S.libBy[l]=o; S.lib=Object.assign({}, ...Object.values(S.libBy)); refreshAny(); }, ()=>{}));
+}
 const libIcon = k => k==='audio'?'🎧':k==='video'?'🎬':k==='link'?'🔗':'📘';
 function vLibrary(){
   const items=Object.entries(S.lib||{}).map(([id,x])=>({id,...x}));
-  const langs=[...new Set(items.map(x=>x.lang).filter(Boolean))].sort();
+  const langs = S.role==='owner' ? [...new Set(items.map(x=>x.lang).filter(Boolean))].sort() : myLangs();
   const myLevel=S.mode==='student'?(S.myProfile?.level||''):'';
   const f=S.view; if(f.lang===undefined) f.lang=''; if(f.level===undefined) f.level=LIB_LEVELS.includes(myLevel)?myLevel:''; if(f.kind===undefined) f.kind='';
   const list=items.filter(x=>(!f.lang||x.lang===f.lang)&&(!f.level||x.level===f.level||x.level==='all')&&(!f.kind||x.kind===f.kind)).sort((a,b)=>(a.lang||'').localeCompare(b.lang||'')||LIB_LEVELS.indexOf(a.level)-LIB_LEVELS.indexOf(b.level)||b.at-a.at);
-  const chips=(key,vals,label)=>`<div class="lp-filter" role="group" aria-label="${label}"><button data-act="c-lib-f" data-k="${key}" data-v="" aria-pressed="${!f[key]}">${tr('c.all')}</button>${vals.map(v=>`<button data-act="c-lib-f" data-k="${key}" data-v="${esc(v)}" aria-pressed="${f[key]===v}">${key==='kind'?libIcon(v)+' '+tr('c.lib.'+v):v==='all'?tr('c.libAllLv'):esc(v)}</button>`).join('')}</div>`;
+  const chips=(key,vals,label)=>`<div class="lp-filter" role="group" aria-label="${label}"><button data-act="c-lib-f" data-k="${key}" data-v="" aria-pressed="${!f[key]}">${tr('c.all')}</button>${vals.map(v=>`<button data-act="c-lib-f" data-k="${key}" data-v="${esc(v)}" aria-pressed="${f[key]===v}">${key==='kind'?libIcon(v)+' '+tr('c.lib.'+v):v==='all'?tr('c.libAllLv'):key==='lang'?esc(langName(v)):esc(v)}</button>`).join('')}</div>`;
   const canEdit = x => S.mode==='teacher' && (S.role==='owner' || x.by===S.staffTid);
   return `<div class="page-head"><div><h1>${tr('c.libH')}</h1><p>${tr('c.libP')}</p></div>${S.mode==='teacher'?`<button class="btn primary" data-act="c-lib">+ ${tr('c.libAdd')}</button>`:''}</div>
     ${langs.length>1?chips('lang',langs,tr('c.fLang')):''}${chips('level',LIB_LEVELS.slice(0,6),tr('c.fLevel'))}${chips('kind',LIB_KINDS,tr('c.libKind'))}
-    ${list.length?`<div class="lib-grid">${list.map(x=>{ const pv=drivePreview(x.url)||(ytId(x.url)?`https://www.youtube.com/embed/${ytId(x.url)}`:null);
+    ${langsReady()&&!myLangs().length?`<div class="notice">${tr('c.clubNoLang')}</div>`:''}${list.length?`<div class="lib-grid">${list.map(x=>{ const pv=drivePreview(x.url)||(ytId(x.url)?`https://www.youtube.com/embed/${ytId(x.url)}`:null);
       const yt=ytId(x.url);
       return `<article class="card lib">${yt?`<button class="lib-thumb" data-act="c-lib-open" data-id="${esc(x.id)}" aria-label="${tr('c.libOpen')}"><img src="https://img.youtube.com/vi/${yt}/mqdefault.jpg" alt="" loading="lazy"><span>▶</span></button>`:`<div class="lib-ic">${libIcon(x.kind)}</div>`}<div style="min-width:0;flex:1"><b>${esc(x.title)}</b>
-        <div class="tchips" style="margin:6px 0">${x.lang?`<span class="lchip">${esc(x.lang)}</span>`:''}<span class="lchip ghost">${x.level==='all'?tr('c.libAllLv'):esc(x.level||'')}</span><span class="lchip ghost">${tr('c.lib.'+x.kind)}</span></div>
+        <div class="tchips" style="margin:6px 0">${x.lang?`<span class="lchip">${esc(langName(x.lang))}</span>`:''}<span class="lchip ghost">${x.level==='all'?tr('c.libAllLv'):esc(x.level||'')}</span><span class="lchip ghost">${tr('c.lib.'+x.kind)}</span></div>
         ${x.desc?`<p class="small muted">${esc(x.desc)}</p>`:''}<p class="small faint">${esc(x.byName||'')}${x.byName?' · ':''}${ago(x.at)}</p>
         <div class="row" style="gap:6px;flex-wrap:wrap;margin-top:8px">${pv?`<button class="btn pen sm" data-act="c-lib-open" data-id="${esc(x.id)}">${x.kind==='audio'?'▶ '+tr('c.libListen'):tr('c.libOpen')}</button>`:`<a class="btn pen sm" href="${esc(x.url)}" target="_blank" rel="noopener">${tr('c.libOpen')}</a>`}
           ${driveId(x.url)?`<a class="btn sm" href="${esc(driveDownload(x.url))}" target="_blank" rel="noopener">${I.up} ${tr('c.libDl')}</a>`:''}
@@ -5799,10 +5852,10 @@ async function uploadFile(file, onPct){
 }
 const kindOf = f => /^audio\//.test(f.type)?'audio' : /^video\//.test(f.type)?'video' : 'book';
 function openLibEdit(id){
-  const x=id?S.lib?.[id]||{}:{kind:'book', level:'A1', lang:(S.team?.[myTid()]?.langs||[])[0]||'English'};
-  const langs=[...new Set([...CLANGS, ...Object.values(S.lib||{}).map(y=>y.lang).filter(Boolean)])];
+  const x=id?S.lib?.[id]||{}:{kind:'book', level:'A1', lang:S.view.lang||tLangsOf(myTid())[0]};
+  const langs = S.role==='staff' ? myLangs() : [...new Set([...CLUB_LANGS, ...CLANGS, ...Object.values(S.lib||{}).map(y=>y.lang).filter(Boolean)])];
   showDlg(`<form id="lb-form" novalidate>${dlgHead(tr('c.libH'), id?esc(x.title):tr('c.libAdd'))}<div class="dlg-body">
-    <div class="grid2" style="gap:12px"><label class="field"><span>${tr('c.fLang')}</span><select class="inp" id="lb-lang">${langs.map(l=>`<option ${l===x.lang?'selected':''}>${esc(l)}</option>`).join('')}</select></label>
+    <div class="grid2" style="gap:12px"><label class="field"><span>${tr('c.fLang')}</span><select class="inp" id="lb-lang">${langOpts(langs, x.lang)}</select></label>
       <label class="field"><span>${tr('c.fLevel')}</span><select class="inp" id="lb-level">${LIB_LEVELS.map(l=>`<option value="${l}" ${l===x.level?'selected':''}>${l==='all'?tr('c.libAllLv'):l}</option>`).join('')}</select></label></div>
     <label class="field"><span>${tr('c.libKind')}</span><select class="inp" id="lb-kind">${LIB_KINDS.map(k=>`<option value="${k}" ${k===x.kind?'selected':''}>${libIcon(k)} ${tr('c.lib.'+k)}</option>`).join('')}</select></label>
     <label class="field"><span>${tr('c.oTitle')}</span><input class="inp" id="lb-title" maxlength="120" value="${esc(x.title||'')}" placeholder="${tr('c.libTitlePh')}"></label>
@@ -5846,15 +5899,15 @@ function seedCentre(db){
     bio:'I graduated from UzSWLU and have taught English and German at a private school for five years. My lessons are built around speaking and short daily homework.', achievements:['IELTS 7.5','Goethe-Zertifikat B2'], msg:'I can teach evenings and weekends.', at:Date.now()-2*3600e3});
   db.m.set('site/promo', {on:true, pct:15, min:2, until:'', note:''});
   db.m.set('enroll/ex-aziza', {name:'Aziza (example)', items:[{id:'e1', tid:'t-dilnoza', lang:'Russian', note:'', at:Date.now()-4*864e5},{id:'e2', tid:'t-jin', lang:'Korean', note:'I want to start Korean', at:Date.now()-3600e3}]});
-  db.m.set('enrollStatus/ex-aziza', {'t-dilnoza':'ok'});
+  db.m.set('enrollStatus/ex-aziza', {'t-dilnoza':'ok', langs:['Russian']});
   db.m.set('roster/t-dilnoza', {students:{'ex-aziza':{name:'Aziza (example)', lang:'Russian', since:Date.now()-4*864e5}}});
   db.m.set('live/t-dilnoza', {on:true, at:Date.now()-5*60000, until:Date.now()+6*3600e3, url:'https://meet.google.com/xyz-abcd-efg', to:['ex-aziza'], label:'Russian A2'});
   db.m.set('liveFor/ex-aziza', {'t-dilnoza':{on:true, at:Date.now()-5*60000, until:Date.now()+6*3600e3, url:'https://meet.google.com/xyz-abcd-efg', label:'Russian A2', name:'Dilnoza R. (example)'}});
   db.m.set('groups/main', {list:[{id:'g1', name:'IELTS evening group', members:['ex-aziza','ex-timur']}]});
   const td=day(0);
-  db.m.set('club/'+td+'/msgs/m1', {uid:'ex-timur', name:'Timur (example)', text:'I think a lazy weekend is better. I sleep a lot and watch films!', at:Date.now()-40*60000});
-  db.m.set('club/'+td+'/msgs/m2', {uid:'ex-madina', name:'Madina (example)', text:'For me a busy weekend is better, I like to go to the mountains with my family.', at:Date.now()-32*60000});
-  db.m.set('club/'+td+'/msgs/m3', {uid:'ex-dilnoza', name:'Dilnoza R. (example)', text:'Great ideas! Madina, which mountains do you go to? Timur, what films do you watch?', at:Date.now()-25*60000, mod:true});
+  db.m.set('club/English_'+td+'/msgs/m1', {uid:'ex-timur', name:'Timur (example)', text:'I think a lazy weekend is better. I sleep a lot and watch films!', at:Date.now()-40*60000});
+  db.m.set('club/English_'+td+'/msgs/m2', {uid:'ex-madina', name:'Madina (example)', text:'For me a busy weekend is better, I like to go to the mountains with my family.', at:Date.now()-32*60000});
+  db.m.set('club/English_'+td+'/msgs/m3', {uid:'ex-dilnoza', name:'Dilnoza R. (example)', text:'Great ideas! Madina, which mountains do you go to? Timur, what films do you watch?', at:Date.now()-25*60000, mod:true});
   db.m.set('library/b1', {lang:'English', level:'A1', kind:'book', title:'English File Elementary — Student’s Book', desc:'Units 1–4, PDF', url:'https://drive.google.com/file/d/1AbCdEfGhIjKlMnOpQrStUvWxYz012345/view', by:'main', byName:'Samandar Y. (example)', at:Date.now()-5*864e5});
   db.m.set('library/b2', {lang:'English', level:'B1', kind:'audio', title:'Listening practice — Unit 3', desc:'Audio for pages 24–27', url:'https://drive.google.com/file/d/1ZyXwVuTsRqPoNmLkJiHgFeDcBa987654/view', by:'main', byName:'Samandar Y. (example)', at:Date.now()-2*864e5});
   db.m.set('library/b3', {lang:'Russian', level:'A2', kind:'book', title:'Поехали! 2 — учебник', desc:'', url:'https://drive.google.com/file/d/1QwErTyUiOpAsDfGhJkLzXcVbNm135792/view', by:'t-dilnoza', byName:'Dilnoza R. (example)', at:Date.now()-864e5});
@@ -6325,8 +6378,9 @@ document.addEventListener('click', async ev => {
       try{ await S.db.doc('groups/'+myTid()).set({list}); S.myGroups={list}; renderMain(); }catch(e){ dbErr(e,'svc'); } break; }
     case 'c-club-topic': openClubTopic(); break;
     case 'c-club-video': openClubVideo(); break;
-    case 'c-club-vend': try{ await S.db.doc('club/'+S.clubDay).set({video:{on:false, at:Date.now(), until:0}},{merge:true}); S.club={...(S.club||{}), video:{on:false}}; drawClubTop(); }catch(e){ dbErr(e,'svc'); } break;
-    case 'c-club-del': try{ await S.db.doc('club/'+S.clubDay+'/msgs/'+b.dataset.id).delete(); }catch(e){ dbErr(e,'svc'); } break;
+    case 'c-club-vend': try{ await S.db.doc(clubPath()).set({video:{on:false, at:Date.now(), until:0}},{merge:true}); S.club={...(S.club||{}), video:{on:false}}; drawClubTop(); }catch(e){ dbErr(e,'svc'); } break;
+    case 'c-club-lang': S.clubLang=b.dataset.l; LS.set('club-lang', b.dataset.l); clubSync(); break;
+    case 'c-club-del': try{ await S.db.doc(clubPath()+'/msgs/'+b.dataset.id).delete(); }catch(e){ dbErr(e,'svc'); } break;
     case 'c-lib': openLibEdit(b.dataset.id||null); break;
     case 'c-lib-open': openLibItem(b.dataset.id); break;
     case 'c-lib-f': S.view[b.dataset.k]=b.dataset.v; renderMain(); break;

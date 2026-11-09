@@ -82,7 +82,13 @@ Qoidalar yangilanmaguncha tegishli sahifalarda shu haqda ogohlantirish chiqadi.
 - **Kim ko'radi:** markaz egasi hamma chatni ko'radi. Ustoz o'z o'quvchilarining chatini va o'ziga biriktirilgan mehmon chatlarini ko'radi. O'quvchi faqat o'z chatini ko'radi.
 - **Adolatli taqsimlash:** "Istalgan ustoz" tanlangan sinov so'rovlari va mehmon chatlari **Ustozlar → Sinov darsi so'rovlari** bo'limida taqsimlanadi. So'rov shu tilni o'qitadigan, o'quvchilari va yangi so'rovlari eng kam bo'lgan ko'rinadigan ustozga beriladi. Har birini qo'lda biriktirish, **Hammasini adolatli taqsimlash** tugmasini bosish yoki avtomatik taqsimlashni yoqish mumkin. Avtomatik taqsimlash sizning sahifangiz ochiq turganda ishlaydi. So'rovni faqat markaz egasi biriktiradi, shuning uchun ustozlar uni o'zaro talashmaydi.
 
-Bu bo'limlar ishlashi uchun yangi `firestore.rules` ni Firebase'ga qo'ying (yuqoridagi "Yangilash" bo'limi). Tekshiruvlar: `tests/chat.test.mjs`.
+## Speaking club va kutubxona tillar bo'yicha
+
+- Markaz tillari: ingliz, rus, nemis, turk, koreys, xitoy, yapon, ispan. Har bir tilning o'z speaking clubi va kutubxona javoni bor.
+- O'quvchi faqat o'qiyotgan tillarining clubida qatnashadi va faqat o'sha tillar kitoblarini ko'radi. Bular asosiy ustozining tillari va siz tasdiqlagan qo'shimcha darslar tillari. Ustoz o'zi o'qitadigan tillarning clubini boshqaradi va faqat o'sha tillarda kitob qo'shadi. Markaz egasi hammasini ko'radi.
+- Ustozning tillari uning profilidagi "Tillar" ro'yxatidan olinadi. Tillari belgilanmagan ustoz ingliz tili ustozi hisoblanadi.
+
+Bu bo'limlar ishlashi uchun yangi `firestore.rules` ni Firebase'ga qo'ying (yuqoridagi "Yangilash" bo'limi). Tekshiruvlar: `tests/chat.test.mjs`, `tests/langs.test.mjs`.
 
 ## Foydalanish
 
