@@ -2496,7 +2496,7 @@ function startPremium(role){
   }
 }
 let pmT=null;
-function pmChanged(){ refreshAny(); if(S.mode==='teacher'){ clearTimeout(pmT); pmT=setTimeout(nwMailSync, 2500); } }
+function pmChanged(){ refreshAny(); if(S.mode==='teacher'){ clearTimeout(pmT); pmT=setTimeout(nwMailStop, 2500); } }
 const nwId = (uid,date) => uid+'_'+date;
 // student: their own issue for one day (the server refuses it until it is out, so a refusal just means "not yet")
 function nwWatchDay(date){
@@ -2953,15 +2953,7 @@ function vNewsT(){
       <tbody>${rd.map(r=>`<tr><th><div class="row" style="gap:8px;flex-wrap:nowrap">${avatar(r.name,r.uid)}<div style="min-width:0"><b>${esc(r.name)}</b> ${r.level?`<span class="pill">${esc(r.level)}</span>`:''}<div class="small faint">${r.pend&&r.until<now?tr('pm.st.wait'):tr('st.activeTill',{d:esc(dayMonth(r.until))})}</div></div><button class="btn ghost sm del-btn nw-rm" data-act="pr-del" data-k="news" data-uid="${esc(r.uid)}" title="${esc(tr('pm.removeP'))}">${I.trash} <span>${tr('pm.remove')}</span></button></div></th>${days.map(d=>cell(r,d)).join('')}</tr>`).join('')}</tbody></table></div>`
       :`<div class="empty"><h3>${tr('nw.noReaders')}</h3><p>${tr('nw.noReadersP')}</p></div>`}
     <p class="small faint nw-legend">+ ${tr('nw.st.empty')} · ${hh(P.hour)} ${tr('nw.st.soonL')} · ✓ ${tr('nw.st.out')} · — ${tr('nw.st.hidden')}</p></div>
-    ${nwMailCard()}`;
-}
-
-function nwMailCard(){
-  const M=S.mail||{}, ready=!!(M.url&&M.secret); let body;
-  if(!ready) body=`<p class="muted">${tr('nw.mailOff')}</p><button class="btn sm" data-act="go" data-v="board">${tr('nw.mailSetup')}</button>`;
-  else if((+M.v||0)<3) body=`<p class="muted">${tr('nw.mailOld')}</p><button class="btn sm pen" data-act="em-setup">${tr('em.update')}</button>`;
-  else body=`<label class="row" style="gap:8px"><input type="checkbox" data-act="em-ev" data-ev="news" ${M.on?.news!==false?'checked':''}> <span>${tr('nw.mailOn',{h:hh(pmInfo().news.hour)})}</span></label>`;
-  return `<div class="card section nw-mail"><h3>${I.inbox} ${tr('nw.mailH')}</h3>${body}</div>`;
+    `;
 }
 
 /* teacher: one day's editor */
@@ -3156,21 +3148,12 @@ function openNwAi(){
     closeDlg(); toast(tr('nw.aiDone',{n})+(skipped.length?' '+tr('nw.skipped',{list:skipped.join('; ')}):''), skipped.length?9000:undefined); refresh();
   });
 }
-let nwMailHash='';
-async function nwMailSync(){
+// The newspaper note now comes from the Telegram bot. Once per device, empty the email plan the Google script
+// may still hold, so nobody gets an email for issues that were planned before the switch.
+async function nwMailStop(){
   const M=S.mail||{};
-  if(S.mode!=='teacher' || S.demo || !M.url || !M.secret || (+M.v||0)<3 || !S.pmL?.passes || !S.contactsLoaded || !S.loaded.p) return;
-  const P=pmInfo().news, today=tkToday(), dates=[0,1,2,3].map(i=>dAdd(today,i)), items=[];
-  for(const d of dates){ const w=weekOf(d); nwWatchWeek(w); if(!S.pmL['w'+w]) return; }   // wait until those weeks have loaded
-  if(P.on && M.on?.news!==false) for(const d of dates) for(const [uid,p] of Object.entries(S.passes)){
-    const doc=S.nwDays[nwId(uid,d)]?.d; if(!nwReady(doc) || newsUntil(p)<doc.releaseAt) continue;
-    const c=S.contacts[uid]; if(!c || c.off || !c.email) continue; const lang=DICT[c.lang]?c.lang:'en';
-    const m=withLang(lang, ()=>({subject:tr('nw.emSubj',{name:P.name, day:cap(dloc(parseDate(d),{weekday:'long'}))}), kicker:P.name, title:tr('nw.emT'),
-      lines:[(doc.stories||[]).map(s=>'• '+s.h).join('\n'), tr('nw.emL')]}));
-    items.push({id:nwId(uid,d), date:d, at:doc.releaseAt, to:[c.email], subject:m.subject, html:withLang(lang,()=>mailHtml(lang,m)), text:withLang(lang,()=>mailText(lang,m)), from:trL(lang,'em.from',{name:S.me?.name||tr('teacher')})});
-  }
-  const body={action:'news', from:today, items:items.slice(0,150)}, h=JSON.stringify(body); if(h===nwMailHash) return;
-  const r=await mailPost(body); if(r.ok) nwMailHash=h;
+  if(S.mode!=='teacher' || S.demo || S.role!=='owner' || !M.url || !M.secret || (+M.v||0)<3 || LS.get('news-mail-off',false)) return;
+  const r=await mailPost({action:'news', from:tkToday(), items:[]}); if(r.ok) LS.set('news-mail-off',true);
 }
 /* ================= the practice pack: flashcards, quizzes, tests ================= */
 /* ---------- word sets: the teacher's own lesson words → one standard practice page ----------
@@ -3820,7 +3803,6 @@ seller = a person who sells things | The seller gave me a free melon. | sotuvchi
    contacts/{uid}: {email, lang, off} written by the student (email must be their sign-in email).
    private/mail:   {url, secret, on:{...}} teacher only. url = the teacher's Google Apps Script web app,
                    which checks the secret and sends with GmailApp, BCC to the students. */
-const MAIL_EVENTS = ['ann','post','task','prompt','review','pay','book','order','news','live'];
 const SCRIPT_SRC = secret => `// Lexora email script, version 6: each student gets their own email from your Gmail,
 // readers of the daily newspaper get a note every morning when their paper comes out,
 // booked lessons get a Google Meet link (an event in your Google Calendar),
@@ -3963,25 +3945,21 @@ async function syncContact(){
   const c=S.myContact||{}; if(c.email===want.email && c.lang===want.lang && !!c.off===want.off && S.myContact) return;
   try{ await S.db.doc('contacts/'+S.uid).set(want); }catch(e){}
 }
-const mailOn = ev => !!S.mail.url && !!S.mail.secret && S.mail.on[ev]!==false;
+// Every notification goes to Telegram: the site queues it in tgq/{id} with the text in each language,
+// the bot sends it to each student who has connected Telegram and deletes it.
+// Lesson start and checked entries are not queued: the bot already sends them from liveFor/ and feedback/.
+const TG_LANGS = ['uz','ru','en'];
+function tgText(m){ return [m.title && m.title!==m.subject ? m.subject+'\n'+m.title : m.subject, ...(m.lines||[]).filter(Boolean)].filter(Boolean).join('\n\n'); }
 // who: 'all' or a list of student uids
 async function notify(ev, who, build){
-  if(S.mode!=='teacher' || !mailOn(ev)) return;
-  const uids = who==='all' ? Object.keys(S.profiles) : who;
-  const byLang={};
-  for(const uid of uids){ const c=S.contacts[uid]; if(!c || c.off || !c.email) continue; (byLang[c.lang||'en'] ||= []).push(c.email); }
-  const langs=Object.keys(byLang); if(!langs.length){ toast(tr('em.nobody')); return; }
-  if(S.demo){ toast(tr('em.demo',{n:langs.reduce((a,l)=>a+byLang[l].length,0)})); return; }
-  let sent=0, fail=null;
-  for(const lang of langs){
-    const m=withLang(lang, ()=>build(lang)), list=byLang[lang];
-    for(let i=0;i<list.length;i+=50){
-      const part=list.slice(i,i+50), r=await mailPost({to:part, bcc:part, subject:m.subject, html:withLang(lang,()=>mailHtml(lang,m)), text:m.text||withLang(lang,()=>mailText(lang,m)), from:trL(lang,'em.from',{name:S.me?.name||tr('teacher')})});
-      if(r.ok){ sent+=part.length; if(!(r.v>=2)) S.mailOld=true; if(r.left!=null) S.mailLeft=+r.left; } else fail=r.error||'error';
-    }
+  if(S.mode!=='teacher' || ev==='live' || ev==='review') return;
+  const uids=[...new Set(who==='all' ? Object.keys(S.profiles) : (who||[]))].filter(Boolean);
+  if(!uids.length || S.demo) return;
+  const msg={}, btn={}; let href='';
+  for(const lang of TG_LANGS){ const m=withLang(lang, ()=>build(lang)); msg[lang]=tgText(m).slice(0,3900); btn[lang]=m.btn||trL(lang,'em.btn'); if(m.href) href=m.href; }
+  for(let i=0;i<uids.length;i+=1000){
+    try{ await S.db.collection('tgq').add({ev, uids:uids.slice(i,i+1000), msg, btn, href:href||siteUrl(), by:S.uid, at:Date.now()}); }catch(e){ console.warn('tgq', e); }
   }
-  toast(fail ? tr('em.fail') : S.mailOld ? tr('em.oldScript') : tr('em.sent',{n:sent}) + (S.mailLeft!=null && S.mailLeft<20 ? ' '+tr('em.lowQ',{n:S.mailLeft}) : ''), S.mailLeft!=null && S.mailLeft<20 ? 9000 : undefined);
-  if(S.mailOld && S.mail.v!==1){ try{ await S.db.doc('private/mail').set({url:S.mail.url, secret:S.mail.secret, on:S.mail.on||{}, v:1}); }catch(e){} }
 }
 // never wait for the Google script forever: give up after 40 s and say why
 async function mailPost(body){
@@ -4009,17 +3987,13 @@ function mailHtml(lang, m){
 
 /* teacher: settings card on the Noticeboard */
 function mailCard(){
-  const M=S.mail, ready=!!(M.url&&M.secret), nC=Object.values(S.contacts).filter(c=>c.email&&!c.off).length, nS=Object.keys(S.profiles).length;
+  if(S.role!=='owner') return '';
+  const M=S.mail, ready=!!(M.url&&M.secret);
   return `<div class="section"><h2>${tr('em.h')}</h2>
   <div class="card em-card">
-    <p class="muted">${ready?tr('em.ready',{n:nC,m:nS}):tr('em.p')}</p>
-    ${ready&&S.mailOld?`<div class="notice" style="margin-top:12px">${tr('em.oldH')} <button class="btn sm pen" data-act="em-setup">${tr('em.update')}</button></div>`:''}
-    ${ready&&!S.mailOld&&(+M.v||0)<6?`<div class="notice" style="margin-top:12px;display:flex;gap:10px;align-items:center;flex-wrap:wrap"><span>${tr('em.newV',{v:6})}</span><button class="btn sm pen" data-act="em-setup">${tr('em.update')}</button></div>`:''}
-    ${ready?`<details class="em-who"><summary>${tr('em.whoH')}</summary><ul>${Object.entries(S.profiles).map(([uid,p])=>{ const c=S.contacts[uid]; return `<li><b>${esc(p.name||'?')}</b> <span class="small ${c?.email&&!c.off?'muted':'faint'}">${c?.email ? esc(c.email)+(c.off?' · '+tr('em.off'):'') : tr('em.noEmail')}</span></li>`; }).join('')}</ul></details>`:''}
-    ${ready?`<div class="em-ev">${MAIL_EVENTS.map(ev=>`<label class="row" style="gap:8px"><input type="checkbox" data-act="em-ev" data-ev="${ev}" ${M.on[ev]!==false?'checked':''}> <span>${tr('em.ev.'+ev)}</span></label>`).join('')}</div>
-      <details class="em-who"><summary>${tr('em.spamH')}</summary><ul class="small muted"><li>${tr('em.spam1')}</li><li>${tr('em.spam2')}</li><li>${tr('em.spam3')}</li><li>${tr('em.spam4')}</li></ul></details>
-      ${S.mailLeft!=null?`<p class="small ${S.mailLeft<20?'':'muted'}" style="margin-top:8px${S.mailLeft<20?';color:var(--pen)':''}">${tr('em.left',{n:S.mailLeft})}</p>`:''}
-      <div class="row" style="margin-top:14px"><button class="btn primary sm" data-act="em-test">${tr('em.test')}</button><button class="btn ghost sm" data-act="em-setup">${tr('em.change')}</button></div>`
+    <p class="muted">${ready?tr('em.ready'):tr('em.p')}</p>
+    ${ready&&(S.mailOld||(+M.v||0)<6)?`<div class="notice" style="margin-top:12px;display:flex;gap:10px;align-items:center;flex-wrap:wrap"><span>${S.mailOld?tr('em.oldH'):tr('em.newV',{v:6})}</span><button class="btn sm pen" data-act="em-setup">${tr('em.update')}</button></div>`:''}
+    ${ready?`<div class="row" style="margin-top:14px"><button class="btn ghost sm" data-act="em-setup">${tr('em.change')}</button></div>`
     :`<button class="btn primary" data-act="em-setup">${tr('em.start')}</button>`}
   </div></div>`;
 }
@@ -4050,19 +4024,6 @@ function openMailSetup(){
     catch(e2){ btn.disabled=false; if(e2?.code==='save-timeout'||e2?.code==='resource-exhausted'){ err.textContent=tr('em.fbSlow'); err.scrollIntoView({block:'nearest'}); } else dbErr(e2,'mail'); }
   });
 }
-async function mailTest(){
-  if(S.demo){ toast(tr('em.demo',{n:1})); return; }
-  const me=[S.me?.email].filter(Boolean), r=await mailPost({to:me, bcc:me, subject:tr('em.testSubj'), html:mailHtml(LANG,{subject:tr('em.testSubj'), lines:[tr('em.testBody')]}), text:tr('em.testBody'), from:'Lexora'});
-  if(r.left!=null) S.mailLeft=+r.left;
-  toast(r.ok ? tr('em.testOk',{email:S.me?.email||''})+(r.left!=null?' '+tr('em.left',{n:r.left}):'') : tr('em.fail'), 8000);
-}
-
-/* student: a small switch on the home page */
-function mailPref(){
-  if(S.myContact===undefined) return '';
-  return `<label class="row em-pref small muted"><input type="checkbox" data-act="em-me" ${S.myContact?.off?'':'checked'}> ${tr('em.me',{email:esc(S.me?.email||'')}).replace(' ()','')}</label>${S.myContact?.off?'':`<p class="small faint em-pref" style="margin-top:2px">${tr('em.stuSpam',{from:esc(S.teacherEmail||'')})}</p>`}`;
-}
-
 /* ---------------- noticeboard, learn, plans, extra lessons ---------------- */
 const KINDS = ['tip','vocab','idiom'];
 const SVC_KINDS = ['lesson','reading','movie','other'];
@@ -6113,7 +6074,7 @@ function vHome(){
     <div class="prompt-card"><span class="label">${tr('home.prompt')}</span>${S.prompt?.text?`<q>${esc(S.prompt.text)}</q><button class="btn sm" style="align-self:flex-start;margin-top:auto" data-act="new-entry" data-prompt="1">${tr('home.about')}</button>`:`<p class="muted">${tr('home.noPrompt')}</p>`}</div>
   </div>
   ${liveBanner()}${myTeacherCard()}${payCard()}${pmHome()}${rankCard()}
-  ${homeBoard()}${mailPref()}
+  ${homeBoard()}
   ${fresh.length?`<div class="notice info" style="margin-top:16px;display:flex;gap:8px;align-items:center;flex-wrap:wrap"><span>${tr('home.checked',{n:fresh.length})}</span>${fresh.map(e=>`<button class="btn sm" data-act="open-entry" data-eid="${esc(e.eid)}">${esc(e.title||tr('untitled'))}</button>`).join('')}</div>`:''}
   <div class="stats section" style="margin-top:20px"><div class="stat"><b>${ents.length}</b><span>${tr('k.entries')}</span></div><div class="stat"><b>${words.toLocaleString()}</b><span>${tr('k.words')}</span></div><div class="stat"><b>${streak()}</b><span>${tr('k.streak')}</span></div><div class="stat"><b>${fmtBand(pts.length?pts[pts.length-1].v:null)}</b><span>${tr('k.latest')}</span></div></div>
   ${pts.length?`<div class="card section" style="padding:16px 18px"><h3>${tr('home.trend')}</h3>${bandChart(pts)}</div>`:''}
@@ -6354,9 +6315,6 @@ document.addEventListener('click', async ev => {
     case 'pc-open': openClaim(); break;
     case 'install': doInstall(); break;
     case 'em-setup': openMailSetup(); break;
-    case 'em-test': mailTest(); break;
-    case 'em-ev': { const on={...S.mail.on, [b.dataset.ev]:b.checked}; try{ await S.db.doc('private/mail').set({url:S.mail.url, secret:S.mail.secret, on, v:S.mail.v||0}); }catch(e){ b.checked=!b.checked; dbErr(e,'mail'); } break; }
-    case 'em-me': { const want={email:S.me?.email||'', lang:LANG, off:!b.checked}; try{ await S.db.doc('contacts/'+S.uid).set(want); toast(tr('bk.saved')); }catch(e){ b.checked=!b.checked; dbErr(e,'mail'); } break; }
     case 'mk-new': openMkItem(); break;
     case 'mk-edit': openMkItem(b.dataset.id); break;
     case 'mk-del': if(await saveMarket(n=>{ n.items=n.items.filter(x=>x.id!==b.dataset.id); }, tr('bd.deleted'))) closeDlg(); break;

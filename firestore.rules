@@ -490,6 +490,15 @@ service cloud.firestore {
     match /tg/{uid} {
       allow read, delete: if isMe(uid) || isTeacher();
     }
+    // A notice for students (noticeboard, tasks, payments, bookings, orders): the bot sends it to Telegram and deletes it.
+    // Only teachers write one, signed with their own uid; the bot also checks that a staff teacher writes only to their own students.
+    match /tgq/{id} {
+      allow create: if (isTeacher() || isStaff())
+        && request.resource.data.keys().hasOnly(['ev', 'uids', 'msg', 'btn', 'href', 'by', 'at'])
+        && request.resource.data.by == request.auth.uid
+        && request.resource.data.uids is list && request.resource.data.uids.size() > 0 && request.resource.data.uids.size() <= 1000
+        && request.resource.data.msg is map && request.resource.data.ev is string;
+    }
     // Services the centre offers its teachers. Teachers read them; only the owner changes them.
     match /centre/{doc} {
       allow read: if isTeacher() || isStaff();

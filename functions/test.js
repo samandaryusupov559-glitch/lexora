@@ -11,9 +11,10 @@ function doc(path) {
     delete: async () => { store.delete(path); } };
 }
 function collection(path) {
-  const list = (f, v) => [...store.keys()].filter(k => k.slice(0, k.lastIndexOf('/')) === path && (!f || (store.get(k) || {})[f] === v)).map(snap);
-  return { doc: id => doc(path + '/' + (id || 'auto' + (++autoId))), add: async d => { const p = path + '/auto' + (++autoId); store.set(p, { ...d }); return doc(p); },
-    where: (f, op, v) => ({ get: async () => ({ docs: list(f, v) }) }), get: async () => ({ docs: list() }) };
+  const OPS = { '==': (a, b) => a === b, '<=': (a, b) => a <= b, '<': (a, b) => a < b, '>': (a, b) => a > b, '>=': (a, b) => a >= b };
+  const list = fs => [...store.keys()].filter(k => k.slice(0, k.lastIndexOf('/')) === path && fs.every(([f, op, v]) => OPS[op]((store.get(k) || {})[f], v))).map(snap);
+  const query = fs => ({ where: (f, op, v) => query([...fs, [f, op, v]]), get: async () => { const docs = list(fs); return { docs, empty: !docs.length }; } });
+  return { doc: id => doc(path + '/' + (id || 'auto' + (++autoId))), add: async d => { const p = path + '/auto' + (++autoId); store.set(p, { ...d }); return doc(p); }, ...query([]) };
 }
 const fakeDb = { doc, collection };
 const users = { s1: { email: 'aziza@x.com', emailVerified: false }, own: { email: 'samandaryusupov559@gmail.com', emailVerified: true }, dil: { email: 'dil@x.com', emailVerified: true } };
@@ -124,6 +125,30 @@ const ev = (params, after, before) => ({ params, data: before === undefined ? { 
   ok('the same lesson is not sent again', sent.length === 0);
   sent.length = 0; await bot.onReview.run(ev({ uid: 's1', eid: 'e1' }, { status: 'reviewed' }, { status: 'inreview' }));
   ok('checked entry is announced with its title', /My weekend/.test(last().text));
+
+  console.log('Teacher announcements (tgq)');
+  store.set('journals/s2', { name: 'Bobur', teacher: 'main' }); store.set('contacts/s2', { lang: 'ru' }); store.set('tg/s2', { chatId: 44, role: 'student' });
+  const note = (by, uids) => { store.set('tgq/n1', { ev: 'ann', by, uids, msg: { uz: 'E’lon: dars yo‘q', ru: 'Объявление: урока нет', en: 'Notice: no lesson' }, btn: { uz: 'Lexorani ochish', ru: 'Открыть', en: 'Open' } });
+    return { params: { id: 'n1' }, data: { data: () => store.get('tgq/n1'), ref: doc('tgq/n1') } }; };
+  sent.length = 0; await bot.onNotice.run(note('own', ['s1', 's2']));
+  ok('owner reaches every student, each in their language', sent.length === 2 && sent.some(x => x.chat_id === 11 && /dars yo‘q/.test(x.text)) && sent.some(x => x.chat_id === 44 && /урока нет/.test(x.text)));
+  ok('the queued notice is deleted', !store.has('tgq/n1'));
+  sent.length = 0; await bot.onNotice.run(note('dil', ['s1', 's2']));
+  ok("staff teacher reaches only their own students", sent.length === 1 && sent[0].chat_id === 11);
+  sent.length = 0; await bot.onNotice.run(note('s1', ['s2']));
+  ok('a student cannot send announcements', sent.length === 0 && !store.has('tgq/n1'));
+
+  console.log('Daily newspaper');
+  const now = Date.now(), d = new Date(now + 5 * 3600e3).toISOString().slice(0, 10);
+  store.set('premium/main', { news: { on: true, name: 'The Lexora Daily' } });
+  store.set('newsDays/s1_' + d, { releaseAt: now - 60e3, week: d, stories: [{ h: 'Rain in Tashkent' }, { h: 'New metro line' }] });
+  store.set('newsDays/s2_' + d, { releaseAt: now - 60e3, week: d, stories: [{ h: 'Snow' }] });
+  store.set('newsDays/s1_2099-01-01', { releaseAt: now + 3600e3, stories: [{ h: 'Later' }] });
+  store.set('passes/s1', { news: { until: now + 10 * 864e5 } }); store.set('passes/s2', { news: { until: now - 864e5 } });
+  sent.length = 0; await bot.newsOut.run({});
+  ok('paying reader gets the headlines', sent.length === 1 && sent[0].chat_id === 11 && /Rain in Tashkent/.test(sent[0].text) && /gazetangiz keldi/.test(sent[0].text));
+  sent.length = 0; await bot.newsOut.run({});
+  ok('the same issue is never sent twice', sent.length === 0);
 
   console.log(`\n${pass} passed, ${fail} failed`); process.exit(fail ? 1 : 0);
 })().catch(e => { console.error(e); process.exit(1); });
