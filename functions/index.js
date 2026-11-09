@@ -46,6 +46,7 @@ const T = {
     signup: 'Ro‘yxatdan o‘tish', open: 'Lexorani ochish', join: 'Darsga kirish',
     msgFrom: '💬 {name}:', guest: '🌐 Sayt mehmoni {name} ({contact}):', replyHint: '↩ Javob berish uchun shu xabarga “Reply” qiling.',
     sent: '✅ Yuborildi.', notLinked: 'Avval Lexoradagi “Telegram’ni ulash” tugmasi orqali akkauntingizni ulang.', noReply: 'Bu xabarga javob yozib bo‘lmaydi. Lexoraning o‘zida yozing.',
+    app: '👩‍🏫 Yangi o‘qituvchilik arizasi: {name} · {contact}\n{langs} · {years} yil tajriba{levels}{bio}',
     lead: '🆕 Sinov darsi so‘rovi: {name} · {contact}\n{lang}{fmt}{msg}', assigned: '📌 Sizga sinov darsi so‘rovi biriktirildi: {name} · {contact}\n{lang}',
     live: '🔴 {name} darsni boshladi.{label}', checked: '✅ Yozuvingiz tekshirildi: “{title}”.', revise: '✏️ Ustoz “{title}” yozuvini qayta yozishni so‘radi.',
     btnHelp: '❓ Yordam', btnStatus: '📊 Holat', btnMenu: '📋 Menyu',
@@ -67,6 +68,7 @@ const T = {
     signup: 'Зарегистрироваться', open: 'Открыть Lexora', join: 'Войти на урок',
     msgFrom: '💬 {name}:', guest: '🌐 Посетитель сайта {name} ({contact}):', replyHint: '↩ Чтобы ответить, сделайте «Ответить» (Reply) на это сообщение.',
     sent: '✅ Отправлено.', notLinked: 'Сначала подключите аккаунт кнопкой «Подключить Telegram» в Lexora.', noReply: 'На это сообщение нельзя ответить. Напишите в самой Lexora.',
+    app: '👩‍🏫 Новая заявка преподавателя: {name} · {contact}\n{langs} · опыт {years} лет{levels}{bio}',
     lead: '🆕 Заявка на пробный урок: {name} · {contact}\n{lang}{fmt}{msg}', assigned: '📌 Вам назначена заявка на пробный урок: {name} · {contact}\n{lang}',
     live: '🔴 {name} начал(а) урок.{label}', checked: '✅ Ваша запись проверена: «{title}».', revise: '✏️ Преподаватель просит переписать «{title}».',
     btnHelp: '❓ Помощь', btnStatus: '📊 Статус', btnMenu: '📋 Меню',
@@ -88,6 +90,7 @@ const T = {
     signup: 'Sign up', open: 'Open Lexora', join: 'Join the lesson',
     msgFrom: '💬 {name}:', guest: '🌐 Site visitor {name} ({contact}):', replyHint: '↩ Reply to this message to answer.',
     sent: '✅ Sent.', notLinked: 'First connect your account with “Connect Telegram” in Lexora.', noReply: 'You cannot answer this message here. Please write in Lexora.',
+    app: '👩‍🏫 New teacher application: {name} · {contact}\n{langs} · {years} years of experience{levels}{bio}',
     lead: '🆕 Trial request: {name} · {contact}\n{lang}{fmt}{msg}', assigned: '📌 A trial request was assigned to you: {name} · {contact}\n{lang}',
     live: '🔴 {name} has started the lesson.{label}', checked: '✅ Your entry was checked: “{title}”.', revise: '✏️ Your teacher asks you to rewrite “{title}”.',
     btnHelp: '❓ Help', btnStatus: '📊 Status', btnMenu: '📋 Menu',
@@ -317,6 +320,13 @@ exports.onLeadCreated = onDocumentCreated('leads/{id}', async ev => {
   const l = ev.data && ev.data.data(); if (!l) return;
   await sendOwner(lang => ({ text: leadText(lang, 'lead', l), extra: btn(t(lang, 'open'), SITE()) }));
   if (l.tid && l.tid !== 'main') await sendTeacher(l.tid, lang => ({ text: leadText(lang, 'lead', l), extra: btn(t(lang, 'open'), SITE()) }));
+});
+
+// a visitor applies to teach: tell the owner
+exports.onApplication = onDocumentCreated('applications/{id}', async ev => {
+  const a = ev.data && ev.data.data(); if (!a) return;
+  await sendOwner(lang => ({ text: t(lang, 'app', { name: clip(a.name, 80), contact: clip(a.contact, 80), langs: (a.langs || []).join(', '), years: a.years || 0,
+    levels: a.levels ? ' · ' + clip(a.levels, 60) : '', bio: a.bio ? '\n“' + clip(a.bio, 400) + '”' : '' }), extra: btn(t(lang, 'open'), SITE()) }));
 });
 
 // a request is given to a teacher: tell the teacher, and send the person their sign-up link if they pressed Start

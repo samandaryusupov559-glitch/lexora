@@ -126,6 +126,9 @@ const ev = (params, after, before) => ({ params, data: before === undefined ? { 
   sent.length = 0; await bot.onReview.run(ev({ uid: 's1', eid: 'e1' }, { status: 'reviewed' }, { status: 'inreview' }));
   ok('checked entry is announced with its title', /My weekend/.test(last().text));
 
+  console.log('Teacher applications');
+  sent.length = 0; await bot.onApplication.run(ev({ id: 'a1' }, { name: 'Malika', contact: '@malika', langs: ['English', 'German'], years: 5, bio: 'I teach speaking.' }));
+  ok('owner hears about a new teacher application', sent.length === 1 && sent[0].chat_id === 33 && /Malika/.test(sent[0].text) && /German/.test(sent[0].text));
   console.log('Teacher announcements (tgq)');
   store.set('journals/s2', { name: 'Bobur', teacher: 'main' }); store.set('contacts/s2', { lang: 'ru' }); store.set('tg/s2', { chatId: 44, role: 'student' });
   const note = (by, uids) => { store.set('tgq/n1', { ev: 'ann', by, uids, msg: { uz: 'E’lon: dars yo‘q', ru: 'Объявление: урока нет', en: 'Notice: no lesson' }, btn: { uz: 'Lexorani ochish', ru: 'Открыть', en: 'Open' } });
