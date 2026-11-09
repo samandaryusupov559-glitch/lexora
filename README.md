@@ -75,6 +75,21 @@ Qoidalar yangilanmaguncha tegishli sahifalarda shu haqda ogohlantirish chiqadi.
 
 **Xavfsizlik:** talaba to'lovlarni, qarzini, narxlarni yoki band qilish holatini o'zgartira olmaydi, boshqa talabaning ma'lumotini ko'ra olmaydi. Buni `tests/rules.test.mjs` tekshiradi (86 ta tekshiruv, jumladan to'lamasdan gazeta yoki mashq to'plamini o'qishga urinishlar). Firebase → **Authentication → Users** ro'yxatida sizning emailingiz bilan faqat bitta (o'zingizning) akkaunt borligiga ishonch hosil qiling.
 
+## Chat va so'rovlarni taqsimlash
+
+- **Mehmon chati:** saytdagi **Biz bilan yozishish** tugmasi (bosh sahifa, ustoz profili, sinov darsi oynasi). Mehmon ismi, telefon yoki Telegrami va savolini yozadi, keyin Lexoraning o'zida yozishadi. Javobni ko'rish uchun saytni shu brauzerda ochadi.
+- **O'quvchi–ustoz chati:** darsni boshlagan o'quvchi chap menyudagi **Xabarlar** bo'limida yoki **Ustozlar** sahifasidagi **Yozish** tugmasi orqali o'z ustozlariga yozadi. Bunga asosiy ustozi va tasdiqlangan qo'shimcha ustozlari kiradi.
+- **Kim ko'radi:** markaz egasi hamma chatni ko'radi. Ustoz o'z o'quvchilarining chatini va o'ziga biriktirilgan mehmon chatlarini ko'radi. O'quvchi faqat o'z chatini ko'radi.
+- **Adolatli taqsimlash:** "Istalgan ustoz" tanlangan sinov so'rovlari va mehmon chatlari **Ustozlar → Sinov darsi so'rovlari** bo'limida taqsimlanadi. So'rov shu tilni o'qitadigan, o'quvchilari va yangi so'rovlari eng kam bo'lgan ko'rinadigan ustozga beriladi. Har birini qo'lda biriktirish, **Hammasini adolatli taqsimlash** tugmasini bosish yoki avtomatik taqsimlashni yoqish mumkin. Avtomatik taqsimlash sizning sahifangiz ochiq turganda ishlaydi. So'rovni faqat markaz egasi biriktiradi, shuning uchun ustozlar uni o'zaro talashmaydi.
+
+## Speaking club va kutubxona tillar bo'yicha
+
+- Markaz tillari: ingliz, rus, nemis, turk, koreys, xitoy, yapon, ispan. Har bir tilning o'z speaking clubi va kutubxona javoni bor.
+- O'quvchi faqat o'qiyotgan tillarining clubida qatnashadi va faqat o'sha tillar kitoblarini ko'radi. Bular asosiy ustozining tillari va siz tasdiqlagan qo'shimcha darslar tillari. Ustoz o'zi o'qitadigan tillarning clubini boshqaradi va faqat o'sha tillarda kitob qo'shadi. Markaz egasi hammasini ko'radi.
+- Ustozning tillari uning profilidagi "Tillar" ro'yxatidan olinadi. Tillari belgilanmagan ustoz ingliz tili ustozi hisoblanadi.
+
+Bu bo'limlar ishlashi uchun yangi `firestore.rules` ni Firebase'ga qo'ying (yuqoridagi "Yangilash" bo'limi). Tekshiruvlar: `tests/chat.test.mjs`, `tests/langs.test.mjs`.
+
 ## Foydalanish
 
 1. Saytga birinchi bo'lib **o'zingiz** kiring: **Teacher sign-in** tugmasini bosing, `TEACHER_EMAIL` dagi emailni yozing va kelgan havolani o'sha qurilmada oching. O'qituvchi sahifasi ochiladi.

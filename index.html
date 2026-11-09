@@ -1007,6 +1007,25 @@ td.nwc.off{color:var(--ink-3);font-size:18px}
 .cdel{border:0;background:none;color:var(--ink-3);font-size:16px;line-height:1;cursor:pointer;padding:0 2px;margin-left:auto}
 .club-in{display:flex;gap:8px;padding:12px 14px;border-top:1px solid var(--line);background:var(--sheet)}
 .club-in textarea{flex:1;resize:none}
+.chat{grid-template-columns:minmax(240px,.75fr) minmax(0,1.75fr)}
+.ch-list{display:flex;flex-direction:column;gap:2px;padding:8px;max-height:72vh;overflow-y:auto}
+.ch-sec{font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--ink-3);margin:10px 8px 4px}
+.ch-none{margin:2px 8px 6px}
+.chrow{display:flex;gap:10px;align-items:center;width:100%;text-align:left;border:0;background:none;padding:8px;border-radius:12px;cursor:pointer;color:inherit;font:inherit}
+.chrow:hover{background:var(--sheet-2)}.chrow.on{background:var(--blue-soft)}
+.chrow-t{display:flex;flex-direction:column;min-width:0;flex:1}.chrow-t .small{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.chrow.un b{font-weight:800}
+.chrow-m{display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex:none}
+.chdot{width:9px;height:9px;border-radius:50%;background:var(--pen);display:inline-block;flex:none}
+.chdot[hidden]{display:none}
+.btn .chdot{margin-left:4px}
+.ch-head{display:flex;gap:10px;align-items:center;padding:12px 14px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.ch-head .asg{margin-left:auto}
+.asg{display:inline-flex;gap:6px;align-items:center;flex-wrap:wrap}
+.asg-sel{width:auto;padding:6px 10px;min-height:0}
+.chat-pick{margin:auto;padding:40px 16px;text-align:center}
+.gch-msgs{min-height:260px;max-height:50vh;border:1px solid var(--line);border-radius:12px;margin:10px 0}
+.gch-in{border:1px solid var(--line);border-radius:12px;padding:8px;margin-bottom:8px}
 .lib-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:14px}
 .lib{display:flex;gap:14px;padding:16px;align-items:flex-start}
 .lib-ic{font-size:30px;line-height:1;width:48px;height:48px;display:grid;place-items:center;border-radius:14px;background:var(--sheet-2);flex:none}
@@ -1073,6 +1092,7 @@ const PROMPT_IDEAS = [
   'If you could spend tomorrow anywhere in Uzbekistan, where would you go and why?',
 ];
 const I = {
+  chat:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"><path d="M4 5.5h16v10.5H10l-4.5 3.5V16H4z"/><path d="M8 9.5h8M8 12.5h5"/></svg>',
   inbox:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M3 13l2.5-7.5h13L21 13v5.5H3z"/><path d="M3 13h5l1.5 2.5h5L16 13h5"/></svg>',
   people:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="9" cy="8.5" r="3.2"/><path d="M3 19.5c.8-3.3 3.2-5 6-5s5.2 1.7 6 5"/><circle cx="17" cy="9" r="2.5"/><path d="M16.5 14.6c2.3.2 3.8 1.8 4.5 4.4"/></svg>',
   chart:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 20V10M10 20V4M16 20v-7M21 20H3"/></svg>',
@@ -1314,9 +1334,9 @@ const S = {
   myProfile:undefined, myEntries:{}, myFeedback:null, myReviews:{}, myBalance:undefined, edit:null,
   lg:{settings:{fee:600000,lessons:12,minutes:80}, draft:null, students:[], payments:[], bal:{}, month:curYM(), filter:'all', q:'', loaded:{}, err:null},
 };
-const EDIT_VIEWS = new Set(['review','write','prompt','bank','setup','login','newsEdit','setEdit','me','verify','club']);
+const EDIT_VIEWS = new Set(['review','write','prompt','bank','setup','login','newsEdit','setEdit','me','verify','club','chat']);
 function teardown(){ S.unsubs.forEach(u=>{try{u()}catch(e){}}); S.unsubs=[]; closePop(); closeDlg(); }
-function refresh(){ renderTop(); renderNav(); if(!EDIT_VIEWS.has(S.view.name) && !busyNow()) renderMain(); if(S.mode==='teacher' && S.role!=='staff'){ ratingScheduleSync(); centreScheduleSync(); } }
+function refresh(){ clubSync(); libSync(); enrollLangsSoon(); renderTop(); renderNav(); if(!EDIT_VIEWS.has(S.view.name) && !busyNow()) renderMain(); drawChat(); if(S.mode==='teacher' && S.role!=='staff'){ ratingScheduleSync(); centreScheduleSync(); asgSoon(); } }
 function go(name, extra={}){ closePop(); S.view={name,...extra}; renderNav(); renderMain(); window.scrollTo({top:0}); }
 
 /* ---------------- boot ---------------- */
@@ -1451,9 +1471,11 @@ function startStudent(){
   refresh(); renderMain();
 }
 function refreshStudent(){
+  clubSync(); libSync();
   renderTop(); renderNav();
   if(S.view.name==='setup' && S.myProfile===null && $('#setup-name')) return;
   if((!EDIT_VIEWS.has(S.view.name) && !busyNow()) || (S.view.name==='setup')) renderMain();
+  drawChat();
 }
 
 /* ---------------- top + nav ---------------- */
@@ -1490,19 +1512,19 @@ function renderNav(){
   if(S.role==='staff'){
     const waiting = allEntries().filter(e=>e.status==='submitted').length;
     document.title = (waiting?`(${waiting}) `:'')+'Lexora · '+tr('title.teacher');
-    n.innerHTML = navBtn('inbox',tr('nav.inbox'),'inbox',waiting) + navBtn('students',tr('nav.students'),'people',Object.keys(S.profiles).length,true) + navBtn('me',tr('c.meH'),'team') + navBtn('groups',tr('c.grpH'),'people') + navBtn('club',tr('c.clubNav'),'bulb',clubVideoOn()?'●':0) + navBtn('library',tr('c.libNav'),'book') + navBtn('centre',tr('c.centreH'),'spark',Object.values(S.leads||{}).filter(l=>!l.st).length+pendingTorders()) + navBtn('bank',tr('nav.bank'),'bank') + `<div class="nav-foot">${tr('c.navFootStaff')}</div>`;
+    n.innerHTML = navBtn('inbox',tr('nav.inbox'),'inbox',waiting) + navBtn('chat',tr('dm.nav'),'chat',chatUnreadT()) + navBtn('students',tr('nav.students'),'people',Object.keys(S.profiles).length,true) + navBtn('me',tr('c.meH'),'team') + navBtn('groups',tr('c.grpH'),'people') + navBtn('club',tr('c.clubNav'),'bulb',clubVideoOn()?'●':0) + navBtn('library',tr('c.libNav'),'book') + navBtn('centre',tr('c.centreH'),'spark',Object.values(S.leads||{}).filter(l=>!l.st).length+pendingTorders()) + navBtn('bank',tr('nav.bank'),'bank') + `<div class="nav-foot">${tr('c.navFootStaff')}</div>`;
     return;
   }
   if(S.mode==='teacher'){
     const waiting = allEntries().filter(e=>e.status==='submitted').length;
     document.title = (waiting?`(${waiting}) `:'')+'Lexora · '+tr('title.teacher');
-    n.innerHTML = navBtn('inbox',tr('nav.inbox'),'inbox',waiting) + navBtn('students',tr('nav.students'),'people',myStudentIds().length,true) + navBtn('team',tr('c.teamH'),'team',newLeads()+pendingStaffReq()+pendingApps()+pendingEnrolls()+pendingTorders()) + (S.team?.[MAIN_TID]?navBtn('me',tr('c.meH'),'pen'):'') + navBtn('groups',tr('c.grpH'),'people') + navBtn('club',tr('c.clubNav'),'bulb',clubVideoOn()?'●':0) + navBtn('library',tr('c.libNav'),'book') + navBtn('ledger',tr('nav.ledger'),'coin',pendingClaims()||lgOwing(),!pendingClaims()) + navBtn('bookings',tr('nav.book'),'spark',pendingRequests()) + navBtn('market',tr('nav.shop'),'bag',pendingOrders()+pendingPasses()) + navBtn('rating',tr('rt.h'),'trophy') + navBtn('board',tr('nav.board'),'flag') + navBtn('insights',tr('nav.insights'),'chart') + navBtn('prompt',tr('nav.prompt'),'bulb') + navBtn('bank',tr('nav.bank'),'bank') +
+    n.innerHTML = navBtn('inbox',tr('nav.inbox'),'inbox',waiting) + navBtn('chat',tr('dm.nav'),'chat',chatUnreadT()) + navBtn('students',tr('nav.students'),'people',myStudentIds().length,true) + navBtn('team',tr('c.teamH'),'team',newLeads()+pendingStaffReq()+pendingApps()+pendingEnrolls()+pendingTorders()) + (S.team?.[MAIN_TID]?navBtn('me',tr('c.meH'),'pen'):'') + navBtn('groups',tr('c.grpH'),'people') + navBtn('club',tr('c.clubNav'),'bulb',clubVideoOn()?'●':0) + navBtn('library',tr('c.libNav'),'book') + navBtn('ledger',tr('nav.ledger'),'coin',pendingClaims()||lgOwing(),!pendingClaims()) + navBtn('bookings',tr('nav.book'),'spark',pendingRequests()) + navBtn('market',tr('nav.shop'),'bag',pendingOrders()+pendingPasses()) + navBtn('rating',tr('rt.h'),'trophy') + navBtn('board',tr('nav.board'),'flag') + navBtn('insights',tr('nav.insights'),'chart') + navBtn('prompt',tr('nav.prompt'),'bulb') + navBtn('bank',tr('nav.bank'),'bank') +
       `<div class="nav-foot">${tr('nav.foot')}</div>`;
   } else {
     const unseen = studentEntries().filter(e=>e.isNew).length;
     document.title = (unseen?`(${unseen}) `:'')+'Lexora · '+tr('title.student');
     const owe = S.myBalance && S.myBalance.left>0;
-    n.innerHTML = navBtn('home',tr('nav.home'),'home',unseen) + navBtn('write',tr('nav.write'),'pen') + navBtn('mistakes',tr('nav.mistakes'),'flag') + navBtn('words',tr('nav.words'),'book',(S.myFeedback?.vocab||[]).length,true) + navBtn('learn',tr('nav.learn'),'bulb',(S.board?.posts||[]).length,true) + navBtn('teachers',tr('c.navTeachers'),'team',Object.values(S.myLiveFor||{}).some(isLive)?'●':(promoOn(S.promo)?'%':0)) + navBtn('club',tr('c.clubNav'),'bulb',clubVideoOn()?'●':0) + navBtn('library',tr('c.libNav'),'book') + navBtn('book',tr('nav.book'),'spark') + (S.rating?.on!==false && (S.rating?.list||[]).length ? navBtn('rating',tr('rt.h'),'trophy') : '') + navBtn('services',tr('nav.services'),'cards',myServiceCount(),true) + navBtn('market',tr('nav.shop'),'bag') + (S.myBalance? navBtn('pay',tr('nav.pay'),'coin',owe?'!':0,false) : '');
+    n.innerHTML = navBtn('home',tr('nav.home'),'home',unseen) + navBtn('chat',tr('dm.nav'),'chat',chatUnreadS()) + navBtn('write',tr('nav.write'),'pen') + navBtn('mistakes',tr('nav.mistakes'),'flag') + navBtn('words',tr('nav.words'),'book',(S.myFeedback?.vocab||[]).length,true) + navBtn('learn',tr('nav.learn'),'bulb',(S.board?.posts||[]).length,true) + navBtn('teachers',tr('c.navTeachers'),'team',Object.values(S.myLiveFor||{}).some(isLive)?'●':(promoOn(S.promo)?'%':0)) + navBtn('club',tr('c.clubNav'),'bulb',clubVideoOn()?'●':0) + navBtn('library',tr('c.libNav'),'book') + navBtn('book',tr('nav.book'),'spark') + (S.rating?.on!==false && (S.rating?.list||[]).length ? navBtn('rating',tr('rt.h'),'trophy') : '') + navBtn('services',tr('nav.services'),'cards',myServiceCount(),true) + navBtn('market',tr('nav.shop'),'bag') + (S.myBalance? navBtn('pay',tr('nav.pay'),'coin',owe?'!':0,false) : '');
   }
 }
 
@@ -1572,7 +1594,7 @@ function renderMain0(){
   if(S.mode==='student' && S.myProfile===undefined){ m.innerHTML=`<div class="loading">${tr('load.student')}</div>`; return; }
   const fn = {inbox:vInbox, students:vStudents, student:vStudent, insights:vInsights, prompt:vPrompt, bank:vBank, review:vReview, ledger:vLedger, board:vBoard, bookings:vBookings, market:vMarket, learn:vLearn, book:vBook, rating:()=>S.mode==='teacher'?vRatingT():vRatingS(),
               home:vHome, write:vWrite, entry:vEntry, mistakes:vMistakes, words:vWords, setup:vSetup, pay:vPay,
-              news:vNews, newsEdit:vNewsEdit, study:vStudy, services:vServices, set:vSet, setEdit:vSetEdit, team:vTeam, me:vMe, centre:vCentre, teachers:vStuTeachers, groups:vGroups, club:vClub, library:vLibrary}[v];
+              news:vNews, newsEdit:vNewsEdit, study:vStudy, services:vServices, set:vSet, setEdit:vSetEdit, team:vTeam, me:vMe, centre:vCentre, teachers:vStuTeachers, groups:vGroups, club:vClub, library:vLibrary, chat:vChat}[v];
   m.innerHTML = fn ? fn() : '';
   after[v] && after[v]();
 }
@@ -4504,6 +4526,20 @@ const myTid = () => S.role==='staff' ? S.staffTid : MAIN_TID;
 const tidOf = p => (p && p.teacher) || MAIN_TID;
 const prefsPath = () => S.role==='staff' ? 'teacher/prefs-'+S.staffTid : 'teacher/prefs';
 const CLANGS = ['English','Russian','Uzbek','Korean','German','Turkish','Arabic','French','Chinese','Spanish','Japanese','Italian'];
+// languages the centre teaches: each has its own speaking club and library shelf
+const CLUB_LANGS = ['English','Russian','German','Turkish','Korean','Chinese','Japanese','Spanish'];
+const langName = l => { const k='lng.'+l, v=tr(k); return v===k ? l : v; };
+const langOpts = (list, cur) => list.map(l=>`<option value="${esc(l)}" ${l===cur?'selected':''}>${esc(langName(l))}</option>`).join('');
+// a teacher without languages counts as an English teacher (same as firestore.rules)
+const tLangsOf = tid => { const l=(S.team?.[tid]?.langs||[]).filter(Boolean); return l.length ? l : ['English']; };
+// the languages this person teaches or studies: they take part in those clubs and see those library shelves
+function myLangs(){
+  if(S.mode==='teacher' && S.role!=='staff') return [...new Set([...CLUB_LANGS, ...Object.values(S.team||{}).flatMap(t=>t.langs||[])])];
+  if(S.role==='staff') return tLangsOf(S.staffTid);
+  if(S.mode==='student') return S.myProfile ? [...new Set([...tLangsOf(tidOf(S.myProfile)), ...(S.myEnrollSt?.langs||[])])] : [];
+  return [];
+}
+const langsReady = () => S.role==='owner' || (S.teamLoaded && (S.mode!=='student' || S.myProfile!==undefined));
 const TLEVEL_STEPS = [0, 60, 150, 300, 500];
 const TPTS = {student:10, entry:1, gain:20};
 const round1 = v => Math.round(v*10)/10;
@@ -4648,10 +4684,12 @@ function startCentre(role){
   const quiet=()=>{};
   const teamFrom = q => { const o={}; q.docs.forEach(d=>{ if(d.exists) o[d.id]=d.data(); }); S.team=o; S.teamLoaded=true; };
   S.promo=null; S.pricing=null; S._w={}; S.unsubs.push(stopWatches);
+  S.dms={}; S.gchats={}; S.myDms={}; S.asgCfg={}; S._chRead=null; chatUnwatch(); S._gDocUn=null; S.gchat=undefined; S.unsubs.push(chatUnwatch);
   if(role==='guest'){
     S.unsubs.push(S.db.doc('site/promo').onSnapshot(x=>{ S.promo=x.exists?x.data():null; if(S.view.name==='landing') renderMain(); }, quiet));
     S.unsubs.push(S.db.doc('site/pricing').onSnapshot(x=>{ S.pricing=x.exists?x.data():null; if(S.view.name==='landing') renderMain(); }, quiet));
     S.unsubs.push(S.db.collection('teachers').where('visible',true).onSnapshot(q=>{ teamFrom(q); if(S.view.name==='landing') renderMain(); }, ()=>{ S.teamLoaded=true; if(S.view.name==='landing') renderMain(); }));
+    guestChatWatch();
     return;
   }
   S.unsubs.push(S.db.collection('teachers').onSnapshot(q=>{ teamFrom(q); refreshAny(); if(role==='owner') centreScheduleSync(); }, ()=>{ S.teamLoaded=true; }));
@@ -4660,7 +4698,7 @@ function startCentre(role){
   const where1 = (path, f, v, key) => S.unsubs.push(S.db.collection(path).where(f,v).onSnapshot(q=>{ const o={}; q.docs.forEach(d=>{ if(d.exists) o[d.id]=d.data(); }); S[key]=o; refreshAny(); }, quiet));
   one('site/pricing','pricing',null);
   if(role==='owner'){
-    col('leads','leads'); col('staffReq','sreq'); col('teacherPriv','tpriv'); col('applications','apps');
+    col('leads','leads', asgSoon); col('dm','dms'); col('gchat','gchats', asgSoon); one('centre/assign','asgCfg',{}, asgSoon); col('staffReq','sreq'); col('teacherPriv','tpriv'); col('applications','apps');
     col('enroll','enrolls'); col('enrollStatus','enrollSt'); col('roster','rosters'); col('live','lives'); col('torders','torders'); one('site/promo','promo',{});
     one('groups/'+MAIN_TID,'myGroups',null); startClub(); col('library','lib'); one('centre/upload','upCfg',null);
     col('staff','staffEmails', ()=>{ S.staffMap={}; for(const [em,x] of Object.entries(S.staffEmails||{})) if(x?.tid) S.staffMap[x.tid]=em; });
@@ -4668,13 +4706,14 @@ function startCentre(role){
   }
   if(role==='staff'){
     const t=S.staffTid;
+    where1('dm','tid',t,'dms'); where1('gchat','tid',t,'gchats');
     one('centre/offers','offers',{items:[]}); one('staffReq/'+t,'mySreq',null); one('teacherPriv/'+t,'myTPriv',null);
-    one('roster/'+t,'myRoster',null); one('live/'+t,'myLive',null); where1('torders','tid',t,'torders'); one('groups/'+t,'myGroups',null); startClub(); col('library','lib'); one('centre/upload','upCfg',null);
+    one('roster/'+t,'myRoster',null); one('live/'+t,'myLive',null); where1('torders','tid',t,'torders'); one('groups/'+t,'myGroups',null); startClub(); startLib(); one('centre/upload','upCfg',null);
     S.unsubs.push(S.db.collection('leads').where('tid',t).onSnapshot(q=>{ const o={}; q.docs.forEach(d=>{ if(d.exists) o[d.id]=d.data(); }); S.leads=o; refreshAny(); }, quiet));
   }
   if(role==='student'){
     one('lessons/'+S.uid,'myLessons',null); one('site/promo','promo',null);
-    one('liveFor/'+S.uid,'myLiveFor',null); startClub(); S.unsubs.push(S.db.collection('library').onSnapshot(q=>{ const o={}; q.docs.forEach(d=>{ if(d.exists) o[d.id]=d.data(); }); S.lib=o; refreshAny(); }, quiet));
+    one('liveFor/'+S.uid,'myLiveFor',null); startClub(); startLib();
     one('enroll/'+S.uid,'myEnroll',null); one('enrollStatus/'+S.uid,'myEnrollSt',null, studentWatches); where1('torders','uid',S.uid,'myTorders');
     // the chosen teacher's Meet link follows the journal (it can only be read once the journal exists)
     S.unsubs.push(S.db.doc('journals/'+S.uid).onSnapshot(s=>{
@@ -4739,7 +4778,7 @@ function vLanding(){
       <span class="lp-kicker">${tr('c.kicker')}</span>
       <h1>${tr('c.h')}</h1>
       <p>${tr('c.p')}</p>
-      <div class="row lp-cta"><button class="btn pen" data-act="c-trial">${I.spark} ${tr('c.trial')}</button><a class="btn lp-ghost" href="#teachers">${tr('c.meet')}</a><button class="btn lp-ghost" data-act="c-apply">${tr('c.joinBtn')}</button></div>
+      <div class="row lp-cta"><button class="btn pen" data-act="c-trial">${I.spark} ${tr('c.trial')}</button><button class="btn lp-ghost" data-act="c-gchat">${I.chat} ${tr('dm.guestBtn')}${guestDot()}</button><a class="btn lp-ghost" href="#teachers">${tr('c.meet')}</a><button class="btn lp-ghost" data-act="c-apply">${tr('c.joinBtn')}</button></div>
       <div class="lp-stats"><div><b class="num">${all.length||'–'}</b><span>${tr('c.sTeachers')}</span></div><div><b class="num">${students||'–'}</b><span>${tr('c.sStudents')}</span></div><div><b class="num">${langs.length||'–'}</b><span>${tr('c.sLangs')}</span></div></div>
     </div><div class="lp-art" aria-hidden="true">${I.nib}</div></section>
     ${promoBanner('guest')}
@@ -4754,7 +4793,7 @@ function vLanding(){
     <section class="section card lp-join"><div><span class="label">${tr('c.joinK')}</span><h2>${tr('c.joinH')}</h2><p class="muted">${tr('c.joinP')}</p></div>
       <button class="btn primary" data-act="c-apply">${I.team} ${tr('c.joinBtn')}</button></section>
     <section class="section lp-end"><h2>${tr('c.endH')}</h2><p class="muted">${tr('c.endP')}</p>
-      <div class="row" style="justify-content:center;gap:10px;flex-wrap:wrap;margin-top:14px"><button class="btn pen" data-act="c-trial">${tr('c.trial')}</button><button class="btn" data-act="c-signin">${tr('c.signin')}</button></div></section>`;
+      <div class="row" style="justify-content:center;gap:10px;flex-wrap:wrap;margin-top:14px"><button class="btn pen" data-act="c-trial">${tr('c.trial')}</button><button class="btn" data-act="c-gchat">${tr('dm.guestBtn')}${guestDot()}</button><button class="btn" data-act="c-signin">${tr('c.signin')}</button></div></section>`;
 }
 function openTeacherProfile(tid){
   const t=S.team[tid]; if(!t) return; const st=t.stats||{}, L=tLevel(st.score);
@@ -4770,21 +4809,21 @@ function openTeacherProfile(tid){
       ${tsvcList(t, tid)}
       <p class="small faint">${tr('c.lvNote',{level:L.name})}</p>
     </div>
-    <div class="dlg-foot"><button type="button" class="btn ghost" data-act="dlg-close">${tr('close')}</button>${S.mode==='guest'?`<button type="button" class="btn pen" data-act="c-trial" data-tid="${esc(tid)}">${tr('c.trialWith',{name:esc((t.name||'').split(' ')[0])})}</button>`:''}</div></div>`, {type:'tprof', id:tid});
+    <div class="dlg-foot"><button type="button" class="btn ghost" data-act="dlg-close">${tr('close')}</button>${S.mode==='guest'?`<button type="button" class="btn" data-act="c-gchat" data-tid="${esc(tid)}">${tr('dm.guestBtn')}</button><button type="button" class="btn pen" data-act="c-trial" data-tid="${esc(tid)}">${tr('c.trialWith',{name:esc((t.name||'').split(' ')[0])})}</button>`:''}</div></div>`, {type:'tprof', id:tid});
 }
 function openTrial(tid){
-  const all=teamList(false), langs=[...new Set([...all.flatMap(t=>t.langs||[]), 'English'])];
+  const all=teamList(false), langs=[...new Set([...CLUB_LANGS, ...all.flatMap(t=>t.langs||[])])];
   const pre = tid && S.team[tid] ? (S.team[tid].langs||[])[0] : '';
   showDlg(`<form id="tr-form" novalidate>${dlgHead(tr('c.trialK'), tr('c.trialH'))}
     <div class="dlg-body"><p class="muted">${tr('c.trialP')}</p>
       <label class="field"><span>${tr('c.fName')}</span><input class="inp" id="tr-name" maxlength="80" autocomplete="name" required></label>
       <label class="field"><span>${tr('c.fContact')}</span><input class="inp" id="tr-contact" maxlength="120" placeholder="+998 90 123 45 67 / @telegram" required></label>
-      <div class="grid2" style="gap:12px"><label class="field"><span>${tr('c.fLang')}</span><select class="inp" id="tr-lang">${langs.map(l=>`<option ${l===pre?'selected':''}>${esc(l)}</option>`).join('')}</select></label>
+      <div class="grid2" style="gap:12px"><label class="field"><span>${tr('c.fLang')}</span><select class="inp" id="tr-lang">${langOpts(langs, pre)}</select></label>
         <label class="field"><span>${tr('c.fLevel')}</span><select class="inp" id="tr-level"><option value="">${tr('c.notSure')}</option><option value="0">${tr('c.beginner')}</option>${LEVELS.map(l=>`<option>${l}</option>`).join('')}</select></label></div>
       <label class="field"><span>${tr('c.fTeacher')}</span><select class="inp" id="tr-tid"><option value="">${tr('c.anyTeacher')}</option>${all.map(t=>`<option value="${esc(t.tid)}" ${t.tid===tid?'selected':''}>${esc(t.name||'')}</option>`).join('')}</select></label>
       <label class="field"><span>${tr('c.fMsg')} <span class="faint">${tr('optional')}</span></span><textarea class="inp" id="tr-msg" rows="3" maxlength="500" placeholder="${tr('c.fMsgPh')}"></textarea></label>
       <p class="lg-err" id="tr-err" role="alert"></p></div>
-    <div class="dlg-foot"><button type="button" class="btn ghost" data-act="dlg-close">${tr('cancel')}</button><button class="btn pen" id="tr-go">${tr('c.send')}</button></div></form>`, {type:'trial'});
+    <div class="dlg-foot"><button type="button" class="btn ghost" data-act="dlg-close">${tr('cancel')}</button><button type="button" class="btn" data-act="c-gchat" data-tid="${esc(tid||'')}">${tr('dm.guestBtn')}</button><button class="btn pen" id="tr-go">${tr('c.send')}</button></div></form>`, {type:'trial'});
   $('#tr-form').addEventListener('submit', async e=>{
     e.preventDefault(); const name=$('#tr-name').value.trim(), contact=$('#tr-contact').value.trim();
     if(!name){ $('#tr-err').textContent=tr('c.needName'); return; } if(contact.length<3){ $('#tr-err').textContent=tr('c.needContact'); return; }
@@ -4912,8 +4951,8 @@ function vTeam(){
     ${hasMain?'':`<div class="notice info" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"><span>${tr('c.mainFirst')}</span><button class="btn sm primary" data-act="c-tedit" data-tid="${MAIN_TID}">${tr('c.mainBtn')}</button></div>`}
     ${list.length?`<div class="tlist">${list.map(row).join('')}</div>`:`<div class="empty"><h3>${tr('c.teamEmptyH')}</h3><p>${tr('c.teamEmptyP')}</p></div>`}
     ${appsSection()}${enrollSection()}${pricingSection()}${tordersSection(false)}
-    <div class="section"><h2>${tr('c.leadsH')}</h2>${leads.length?`<div class="list">${leads.map(l=>`<div class="req ${l.st?'ok':'wait'}">${avatar(l.name,l.id)}<div style="min-width:0"><b>${esc(l.name)}</b> <span class="faint">·</span> <span class="num">${esc(l.contact)}</span>
-        <div class="small muted">${[l.lang, l.level==='beginner'?tr('c.beginner'):l.level, l.tid?tr('c.forT',{name:esc(tName(l.tid))}):tr('c.anyTeacher')].filter(Boolean).map(x=>x).join(' · ')} · ${ago(l.at)}</div>${l.msg?`<div class="small req-note">“${esc(l.msg)}”</div>`:''}</div>
+    <div class="section"><div class="row" style="justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap"><h2 style="margin:0">${tr('c.leadsH')}</h2>${asgBar()}</div><p class="small muted" style="margin:6px 0 12px">${tr('c.asgP')}</p>${leads.length?`<div class="list">${leads.map(l=>`<div class="req ${l.st?'ok':'wait'}">${avatar(l.name,l.id)}<div style="min-width:0"><b>${esc(l.name)}</b> <span class="faint">·</span> <span class="num">${esc(l.contact)}</span>
+        <div class="small muted">${[l.lang, l.level==='beginner'?tr('c.beginner'):l.level, l.tid?tr('c.forT',{name:esc(tName(l.tid))}):tr('c.anyTeacher')].filter(Boolean).map(x=>x).join(' · ')} · ${ago(l.at)}</div>${l.msg?`<div class="small req-note">“${esc(l.msg)}”</div>`:''}${l.st?'':`<div style="margin-top:8px">${asgPicker('lead', l.id, l)}</div>`}</div>
         <div class="req-act">${l.st?`<span class="pill bk-ok">${tr('c.contacted')}</span><button class="btn ghost sm" data-act="c-lead-del" data-id="${esc(l.id)}" style="color:var(--pen)">${tr('delete')}</button>`:`<button class="btn sm primary" data-act="c-lead-done" data-id="${esc(l.id)}">${tr('c.markContacted')}</button>`}</div></div>`).join('')}</div>`:`<p class="faint">${tr('c.noLeads')}</p>`}</div>
     <div class="section"><h2>${tr('c.actH')}</h2>${act.length?`<div class="tact">${act.map(e=>`<div class="tact-row"><span class="tact-dot ${e.kind==='entry'?'in':''}"></span><span>${e.kind==='entry'
         ? tr('c.actEntry',{s:esc(e.name||''), t:esc(e.title), teacher:esc(tName(e.tid))})
@@ -5149,6 +5188,7 @@ function stopWatches(){ for(const w of Object.values(S._w||{})) for(const u of O
 function studentWatches(){ // teachers' Meet links and live status for every teacher of this student
   const ids=myTids(); S.extraPriv=S.extraPriv||{}; S.lives=S.lives||{};
   watchSet('priv', ids.filter(t=>t!==tidOf(S.myProfile)), t=>'teacherPriv/'+t, (t,d)=>{ if(d) S.extraPriv[t]=d; else delete S.extraPriv[t]; });
+  S.myDms=S.myDms||{}; watchSet('dm', ids, t=>'dm/'+S.uid+'_'+t, (t,d)=>{ if(d) S.myDms[t]=d; else delete S.myDms[t]; });
 
 }
 const meetOf = tid => tid===tidOf(S.myProfile) ? S.myTPriv?.meet : S.extraPriv?.[tid]?.meet;
@@ -5160,6 +5200,7 @@ function vStuTeachers(){
     return `<div class="card tmine2">${tPhoto(t,tid)}<div style="min-width:0;flex:1"><b>${esc(t.name||'')}</b> ${live?`<span class="livedot">${tr('c.liveNow')}</span>`:''}
       <div class="small muted">${(t.langs||[]).map(esc).join(' · ')}${t.lessonLen?' · '+lenText(t.lessonLen):''}</div>${levelBadge(t.stats)}</div>
       <div class="tmine-act">${meet?`<a class="btn ${live?'pen':''} sm" href="${esc(meet)}" target="_blank" rel="noopener">${I.video} ${tr('c.join')}</a>`:`<span class="small faint">${tr('c.noMeetYet')}</span>`}
+      <button class="btn sm" data-act="c-ch-open" data-tid="${esc(tid)}">${I.chat} ${tr('dm.write')}${unreadFor(S.myDms?.[tid],'s')?'<span class="chdot"></span>':''}</button>
       <button class="btn ghost sm" data-act="c-tprof" data-tid="${esc(tid)}">${tr('c.viewProfile')}</button></div></div>`; }).join('');
   const others = all.filter(t=>!mine.includes(t.tid));
   const card = t => { const r=req.find(x=>x.tid===t.tid), s=st[t.tid];
@@ -5208,12 +5249,238 @@ function enrollSection(){
 after.team = () => { wirePricing(); const f=$('#pr-form'); if(!f) return; f.addEventListener('submit', async e=>{ e.preventDefault();
   const d={on:$('#pr-on').checked, pct:Math.max(1,Math.min(90,Math.round(+$('#pr-pct').value||0))), min:Math.max(2,Math.min(10,Math.round(+$('#pr-min').value||2))), until:$('#pr-until').value||'', note:$('#pr-note').value.trim()};
   try{ await S.db.doc('site/promo').set(d); toast(tr('c.saved')); }catch(err){ dbErr(err,'svc'); } }); };
+function enrollLangs(uid, st){
+  const out=new Set();
+  for(const tid of okTids(st)){ const l=(S.enrolls?.[uid]?.items||[]).find(i=>i.tid===tid)?.lang || S.rosters?.[tid]?.students?.[uid]?.lang; (l?[l]:tLangsOf(tid)).forEach(x=>out.add(x)); }
+  return [...out].sort();
+}
+// older confirmations have no langs yet: the owner's page fills them in
+let elT=null;
+const enrollLangsSoon = () => { if(S.role!=='owner' || S.demo) return; clearTimeout(elT); elT=setTimeout(enrollLangsSync, 1500); };
+async function enrollLangsSync(){
+  if(S.role!=='owner' || !S.teamLoaded || !S.enrollSt || !S.rosters || !S.enrolls) return;
+  for(const [uid,st] of Object.entries(S.enrollSt)){ const want=enrollLangs(uid,st); if(JSON.stringify(want)===JSON.stringify(st.langs||[])) continue;
+    try{ await S.db.doc('enrollStatus/'+uid).set({langs:want},{merge:true}); }catch(e){ return; } }
+}
 async function setEnroll(uid, tid, st){
   const cur={...(S.enrollSt?.[uid]||{})}, ro=clone(S.rosters?.[tid]||{students:{}}); ro.students=ro.students||{};
   if(st==='off'){ delete cur[tid]; delete ro.students[uid];
     const e=S.enrolls?.[uid]; if(e) await S.db.doc('enroll/'+uid).set({...e, items:(e.items||[]).filter(i=>i.tid!==tid)}); }
   else { cur[tid]=st; if(st==='ok'){ const i=(S.enrolls?.[uid]?.items||[]).find(x=>x.tid===tid); ro.students[uid]={name:S.profiles[uid]?.name||'', lang:i?.lang||'', since:Date.now()}; } else delete ro.students[uid]; }
-  await S.db.doc('enrollStatus/'+uid).set(cur); await S.db.doc('roster/'+tid).set(ro);
+  cur.langs=enrollLangs(uid, cur); await S.db.doc('enrollStatus/'+uid).set(cur); await S.db.doc('roster/'+tid).set(ro);
+}
+
+/* ---------- chats ----------
+   gchat/{id}: a site visitor's chat with the centre. The id is a long random secret kept in the visitor's browser.
+     {name, contact, lang, tid, at, lastAt, lastBy:'g'|'t', lastText, rg, rt}   gchat/{id}/msgs/{m}: {name, text, at, by, uid?}
+   dm/{uid}_{tid}: a student's chat with one of their teachers (opens once lessons have started).
+     {uid, tid, name, lastAt, lastBy:'s'|'t', lastText, rs, rt}                  dm/{id}/msgs/{m}: {uid, name, text, at, by}
+   lastBy/r*: who wrote last and when each side last read — that makes the unread dots. */
+const chatClip = t => String(t||'').replace(/\s+/g,' ').trim().slice(0,140);
+const chatTime = at => { const d=new Date(at), hm=d.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}); return new Date().toDateString()===d.toDateString() ? hm : d.toLocaleDateString([], {day:'numeric',month:'short'})+' '+hm; };
+const READ_KEY = {g:'rg', s:'rs', t:'rt'};
+const unreadFor = (c, side) => !!(c && c.lastAt && c.lastBy && c.lastBy!==side && (c[READ_KEY[side]]||0) < c.lastAt);
+const chatUnreadT = () => Object.values(S.dms||{}).filter(c=>unreadFor(c,'t')).length + Object.values(S.gchats||{}).filter(c=>unreadFor(c,'t')).length;
+const chatUnreadS = () => Object.values(S.myDms||{}).filter(c=>unreadFor(c,'s')).length;
+const chatMyName = () => (S.mode==='student' ? (S.myProfile?.name||tr('student')) : (S.team?.[myTid()]?.name || S.me?.name || tr('teacher'))).slice(0,80);
+const byLast = (a,b) => (b.lastAt||0)-(a.lastAt||0);
+const gchatId = () => LS.get('gchat-id','');
+const secretId = () => Array.from(crypto.getRandomValues(new Uint8Array(16)), b=>b.toString(36).padStart(2,'0')).join('').slice(0,28);
+
+// the chat on screen now: {kind:'g'|'dm', id, doc, side, tid?}
+function chatCur(){
+  if(S.mode==='guest'){ const id=gchatId(); return id ? {kind:'g', id, doc:S.gchat||null, side:'g'} : null; }
+  if(S.view.name!=='chat') return null;
+  if(S.mode==='student'){ const tid=S.view.tid; return tid ? {kind:'dm', id:S.uid+'_'+tid, doc:S.myDms?.[tid]||null, side:'s', tid} : null; }
+  const k=S.view.k==='g'?'g':'dm', id=S.view.id; if(!id) return null;
+  return {kind:k, id, doc:(k==='g'?S.gchats:S.dms)?.[id]||null, side:'t'};
+}
+function chatWatch(path){
+  if(S._chPath===path) return; chatUnwatch(); if(!path) return;
+  S._chPath=path; S.chMsgs={}; S.chErr=null;
+  S._chUn = S.db.collection(path).onSnapshot(q=>{ const o={}; q.docs.forEach(d=>{ if(d.exists) o[d.id]=d.data(); }); S.chMsgs=o; S.chErr=null; drawChatMsgs(); },
+    e=>{ S.chErr=(e&&e.code)||'error'; drawChatMsgs(); });
+}
+function chatUnwatch(){ if(S._chUn){ try{ S._chUn(); }catch(e){} } S._chUn=null; S._chPath=null; S.chMsgs={}; }
+function chatMsgsHtml(){
+  if(S.chErr) return `<div class="notice" style="margin:auto">${tr('dm.err',{code:esc(String(S.chErr))})}</div>`;
+  const side=S._chSide, list=Object.entries(S.chMsgs||{}).map(([id,m])=>({id,...m})).sort((a,b)=>a.at-b.at);
+  if(!list.length) return `<p class="faint club-empty">${tr('dm.empty')}</p>`;
+  return list.map(m=>{ const mine = side==='t' ? (m.by==='t' && m.uid===S.uid) : m.by===side, staff=m.by==='t';
+    return `<div class="cmsg ${mine?'me':''} ${staff&&!mine&&side!=='t'?'mod':''}">${mine?'':avatar(m.name||'?',m.uid||m.name)}<div class="cb"><div class="cmeta"><b>${esc(m.name||'')}</b> <span class="faint">${esc(chatTime(m.at))}</span>
+      ${S.role==='owner'&&side==='t'?`<button class="cdel" data-act="c-ch-del" data-id="${esc(m.id)}" title="${tr('delete')}">×</button>`:''}</div><div class="ctext">${esc(m.text)}</div></div></div>`; }).join('');
+}
+function drawChatMsgs(){
+  const el=$('#ch-msgs'); if(!el) return;
+  const atEnd = !el.dataset.ready || el.scrollHeight-el.scrollTop-el.clientHeight<80;
+  el.innerHTML=chatMsgsHtml(); el.dataset.ready='1'; if(atEnd) el.scrollTop=el.scrollHeight; chatMarkRead();
+}
+function chatMarkRead(){
+  const c=chatCur(); if(!c || !c.doc || !unreadFor(c.doc,c.side) || !$('#ch-msgs') || document.hidden) return;
+  const key=c.kind+c.id+':'+c.doc.lastAt; if(S._chRead===key) return; S._chRead=key;
+  (async()=>{ try{ await S.db.doc((c.kind==='g'?'gchat/':'dm/')+c.id).update({[READ_KEY[c.side]]:Date.now()}); }catch(e){} })();
+}
+document.addEventListener('visibilitychange', ()=>{ if(!document.hidden) chatMarkRead(); });
+async function chatSend(text){
+  const c=chatCur(); if(!c) return; text=String(text||'').trim().slice(0,1000); if(!text) return;
+  const now=Date.now(), last={lastAt:now, lastText:chatClip(text)}, base=c.kind==='g'?'gchat/':'dm/';
+  if(c.side==='g'){
+    await S.db.collection(base+c.id+'/msgs').doc().set({name:(c.doc?.name||tr('dm.guestTag')).slice(0,80), text, at:now, by:'g'});
+    await S.db.doc(base+c.id).update({...last, lastBy:'g', rg:now});
+  } else if(c.side==='s'){
+    await S.db.doc(base+c.id).set({uid:S.uid, tid:c.tid, name:(S.myProfile?.name||'').slice(0,80), ...last, lastBy:'s', rs:now}, {merge:true});
+    await S.db.collection(base+c.id+'/msgs').doc().set({uid:S.uid, name:chatMyName(), text, at:now, by:'s'});
+  } else {
+    await S.db.collection(base+c.id+'/msgs').doc().set({uid:S.uid, name:chatMyName(), text, at:now, by:'t'});
+    await S.db.doc(base+c.id).update({...last, lastBy:'t', rt:now});
+  }
+}
+function wireChatForm(){
+  const f=$('#ch-form'); if(!f) return; const ta=$('#ch-text');
+  ta.addEventListener('keydown', e=>{ if(e.key==='Enter' && !e.shiftKey && !matchMedia('(hover:none)').matches){ e.preventDefault(); f.requestSubmit(); } });
+  f.addEventListener('submit', async e=>{ e.preventDefault(); const text=ta.value; if(!text.trim()) return; const b=f.querySelector('button'); ta.value=''; b.disabled=true;
+    try{ await chatSend(text); }catch(err){ ta.value=text; toast(tr('dm.fail',{code:esc(String(err?.code||err?.message||err))}), 8000); }
+    b.disabled=false; ta.focus(); });
+}
+const chRow = (data, name, id, sub, at, un, on) => `<button class="chrow ${on?'on':''} ${un?'un':''}" data-act="c-ch-open" ${data}>${avatar(name,id)}<span class="chrow-t"><b>${esc(name)}</b><span class="small muted">${esc(sub||'')}</span></span><span class="chrow-m">${at?`<span class="small faint">${esc(ago(at))}</span>`:''}${un?'<span class="chdot"></span>':''}</span></button>`;
+const chatPane = head => `<div class="club-chat card"><div class="ch-head" id="ch-head">${head}</div><div class="club-msgs" id="ch-msgs"></div>
+  <form id="ch-form" class="club-in" novalidate><textarea class="inp" id="ch-text" rows="2" maxlength="1000" placeholder="${tr('dm.ph')}"></textarea><button class="btn pen">${tr('dm.send')}</button></form></div>`;
+function contactHtml(x){
+  x=String(x||'').trim(); const tg=x.match(/^@([A-Za-z][\w]{3,31})$/), ph=x.replace(/[^\d+]/g,'');
+  if(tg) return `<a href="https://t.me/${esc(tg[1])}" target="_blank" rel="noopener">${esc(x)}</a>`;
+  if(ph.replace('+','').length>=7) return `<a href="tel:${esc(ph)}">${esc(x)}</a>`;
+  return esc(x);
+}
+
+// students: one chat per teacher they have started lessons with
+function chatListS(){ return myTids().map(tid=>{ const c=S.myDms?.[tid]; return chRow(`data-tid="${esc(tid)}"`, tName(tid), tid, c?.lastText || (S.team?.[tid]?.langs||[]).join(', '), c?.lastAt, unreadFor(c,'s'), tid===S.view.tid); }).join(''); }
+const chatHeadS = () => `${avatar(tName(S.view.tid),S.view.tid)}<div style="min-width:0"><b>${esc(tName(S.view.tid))}</b><div class="small muted">${tr('dm.teacherK')}</div></div>`;
+function vChatS(){
+  const head=`<div class="page-head"><div><h1>${tr('dm.h')}</h1><p>${tr('dm.pS')}</p></div></div>`;
+  if(!S.myProfile) return head+`<div class="empty"><p>${tr('dm.noTeachers')}</p></div>`;
+  const tids=myTids(); if(!tids.includes(S.view.tid)) S.view.tid = tids.find(t=>unreadFor(S.myDms?.[t],'s')) || tids[0];
+  return head+`<div class="club chat"><div class="card ch-list" id="ch-list">${chatListS()}</div>${chatPane(chatHeadS())}</div>`;
+}
+// teachers: their students' chats + visitors' chats (the owner sees all of them)
+function chatThreadsT(){
+  return {dms:Object.entries(S.dms||{}).map(([id,c])=>({k:'dm', id, ...c, nm:c.name||S.profiles?.[c.uid]?.name||'–'})).sort(byLast),
+          gs:Object.entries(S.gchats||{}).map(([id,c])=>({k:'g', id, ...c, nm:c.name||'–'})).sort(byLast)};
+}
+function chatListT(){
+  const {dms,gs}=chatThreadsT(), v=S.view;
+  const sub = c => (S.role==='owner' && c.k==='dm' && c.tid!==MAIN_TID ? tName(c.tid)+' · ' : '') + (S.role==='owner' && c.k==='g' && !c.tid ? tr('c.anyTeacher')+' · ' : '') + (c.lastText||'');
+  const rows = arr => arr.map(c=>chRow(`data-k="${c.k}" data-id="${esc(c.id)}"`, c.nm, c.uid||c.id, sub(c), c.lastAt, unreadFor(c,'t'), v.k===c.k && v.id===c.id)).join('');
+  return `<h3 class="ch-sec">${tr('dm.students')}</h3>${dms.length?rows(dms):`<p class="faint small ch-none">${tr('dm.noS')}</p>`}
+    <h3 class="ch-sec">${tr('dm.guests')}</h3>${gs.length?rows(gs):`<p class="faint small ch-none">${tr('dm.noG')}</p>`}`;
+}
+function chatHeadT(){
+  const v=S.view, c=(v.k==='g'?S.gchats:S.dms)?.[v.id]; if(!c) return '';
+  if(v.k!=='g'){ const nm=c.name||S.profiles?.[c.uid]?.name||'–'; return `${avatar(nm,c.uid)}<div style="min-width:0"><b>${esc(nm)}</b><div class="small muted">${tr('dm.withT',{name:esc(tName(c.tid))})}</div></div>`; }
+  return `${avatar(c.name||'?',v.id)}<div style="min-width:0"><b>${esc(c.name||'–')}</b> <span class="pill">${tr('dm.guestTag')}</span>
+    <div class="small muted">${contactHtml(c.contact)}${c.lang?' · '+esc(c.lang):''}${c.tid?' · '+tr('c.forT',{name:esc(tName(c.tid))}):''}</div></div>${S.role==='owner'?asgPicker('g',v.id,c):''}`;
+}
+function vChatT(){
+  const v=S.view, head=`<div class="page-head"><div><h1>${tr('dm.h')}</h1><p>${tr('dm.pT')}</p></div></div>`;
+  if(!v.id){ const {dms,gs}=chatThreadsT(), all=[...dms,...gs].sort(byLast), first=all.find(c=>unreadFor(c,'t'))||all[0]; if(first){ v.k=first.k; v.id=first.id; } }
+  const c=chatCur();
+  return head+`<div class="club chat"><div class="card ch-list" id="ch-list">${chatListT()}</div>${c&&c.doc?chatPane(chatHeadT()):`<div class="club-chat card"><p class="faint chat-pick">${tr('dm.pick')}</p></div>`}</div>`;
+}
+const vChat = () => S.mode==='student' ? vChatS() : vChatT();
+after.chat = () => {
+  const c=chatCur(); S._chSide = S.mode==='student'?'s':'t';
+  chatWatch(c && $('#ch-msgs') ? (c.kind==='g'?'gchat/':'dm/')+c.id+'/msgs' : null); drawChatMsgs(); wireChatForm();
+  if(c && $('#ch-text') && !matchMedia('(hover:none)').matches) $('#ch-text').focus();
+};
+// live data changed: redraw the list and header, never the half-typed message
+function drawChat(){
+  if(S.view.name!=='chat') return;
+  const l=$('#ch-list'); if(l) l.innerHTML = S.mode==='student' ? chatListS() : chatListT();
+  const h=$('#ch-head'); if(h && !(h.contains(document.activeElement) && document.activeElement.tagName==='SELECT')) h.innerHTML = S.mode==='student' ? chatHeadS() : chatHeadT();
+  if(S.mode==='teacher' && !h && chatCur()?.doc) renderMain();   // the chosen chat just arrived
+  chatMarkRead();
+}
+
+/* visitors: "Chat with us" on the public page */
+function guestChatWatch(){
+  const id=gchatId(); if(!id || S._gDocUn) return;
+  S._gDocUn = S.db.doc('gchat/'+id).onSnapshot(s=>{ S.gchat = s.exists ? s.data() : null; if(!s.exists) LS.del('gchat-id'); drawGuestDots(); chatMarkRead(); }, ()=>{});
+  S.unsubs.push(()=>{ if(S._gDocUn){ try{ S._gDocUn(); }catch(e){} S._gDocUn=null; } });
+}
+const guestDot = () => `<span class="chdot" data-gdot ${unreadFor(S.gchat,'g')?'':'hidden'}></span>`;
+function drawGuestDots(){ const on=unreadFor(S.gchat,'g'); document.querySelectorAll('[data-gdot]').forEach(e=>e.hidden=!on); }
+function openGuestChat(tid){
+  if(gchatId() && S.gchat!==null) return showGuestChat();
+  const all=teamList(false), langs=[...new Set([...CLUB_LANGS, ...all.flatMap(t=>t.langs||[])])];
+  const pre = tid && S.team[tid] ? (S.team[tid].langs||[])[0] : '';
+  showDlg(`<form id="gs-form" novalidate>${dlgHead(tr('dm.guestK'), tr('dm.guestH'))}
+    <div class="dlg-body"><p class="muted">${tr('dm.guestP')}</p>
+      <div class="grid2" style="gap:12px"><label class="field"><span>${tr('c.fName')}</span><input class="inp" id="gs-name" maxlength="80" autocomplete="name" required></label>
+        <label class="field"><span>${tr('c.fContact')}</span><input class="inp" id="gs-contact" maxlength="120" placeholder="+998 90 123 45 67 / @telegram" required></label></div>
+      <div class="grid2" style="gap:12px"><label class="field"><span>${tr('c.fLang')}</span><select class="inp" id="gs-lang">${langOpts(langs, pre)}</select></label>
+        <label class="field"><span>${tr('c.fTeacher')}</span><select class="inp" id="gs-tid"><option value="">${tr('c.anyTeacher')}</option>${all.map(t=>`<option value="${esc(t.tid)}" ${t.tid===tid?'selected':''}>${esc(t.name||'')}</option>`).join('')}</select></label></div>
+      <label class="field"><span>${tr('dm.firstMsg')}</span><textarea class="inp" id="gs-msg" rows="3" maxlength="1000" placeholder="${tr('c.fMsgPh')}" required></textarea></label>
+      <p class="lg-err" id="gs-err" role="alert"></p></div>
+    <div class="dlg-foot"><button type="button" class="btn ghost" data-act="dlg-close">${tr('cancel')}</button><button class="btn pen" id="gs-go">${tr('dm.start')}</button></div></form>`, {type:'gchat'});
+  $('#gs-form').addEventListener('submit', async e=>{
+    e.preventDefault(); const name=$('#gs-name').value.trim(), contact=$('#gs-contact').value.trim(), text=$('#gs-msg').value.trim(), err=$('#gs-err');
+    if(!name){ err.textContent=tr('c.needName'); return; } if(contact.length<3){ err.textContent=tr('c.needContact'); return; } if(!text){ err.textContent=tr('dm.needMsg'); return; }
+    const id=secretId(), now=Date.now(), d={name:name.slice(0,80), contact:contact.slice(0,120), lang:$('#gs-lang').value.slice(0,40), tid:$('#gs-tid').value, at:now, lastAt:now, lastBy:'g', lastText:chatClip(text)};
+    const btn=$('#gs-go'); btn.disabled=true;
+    try{ await S.db.doc('gchat/'+id).set(d); await S.db.collection('gchat/'+id+'/msgs').doc().set({name:d.name, text:text.slice(0,1000), at:now, by:'g'});
+      LS.set('gchat-id', id); S.gchat=d; guestChatWatch(); showGuestChat();
+    }catch(e2){ btn.disabled=false; err.textContent=tr('c.sendFail'); }
+  });
+}
+function showGuestChat(){
+  const c=S.gchat||{};
+  const d=showDlg(`${dlgHead(tr('dm.guestK'), tr('dm.guestH'))}<div class="dlg-body">
+      ${c.name?`<p class="small muted" style="margin:0">${esc(c.name)} · ${esc(c.contact||'')}</p>`:''}
+      <div class="club-msgs gch-msgs" id="ch-msgs"></div>
+      <form id="ch-form" class="club-in gch-in" novalidate><textarea class="inp" id="ch-text" rows="2" maxlength="1000" placeholder="${tr('dm.ph')}"></textarea><button class="btn pen">${tr('dm.send')}</button></form>
+      <p class="small faint" style="margin:0">${tr('dm.guestNote')}</p></div>`, {type:'gchat-live'});
+  S._chSide='g'; chatWatch('gchat/'+gchatId()+'/msgs'); drawChatMsgs(); wireChatForm();
+  d.addEventListener('close', ()=>chatUnwatch());
+}
+
+/* "any teacher" requests and visitor chats: share them fairly so teachers don't compete for them.
+   The fairest teacher is visible, teaches the language, and has the fewest students + new requests (+ ones given in this round). */
+function leadLoad(tid, plan){
+  const monthAgo=Date.now()-30*864e5;
+  return teacherStats(tid).students
+    + Object.values(S.leads||{}).filter(x=>x.tid===tid && !x.st).length
+    + Object.values(S.gchats||{}).filter(x=>x.tid===tid && (x.at||0)>monthAgo).length
+    + (plan?.[tid]||0);
+}
+function pickTeacher(x, plan){
+  const all=teamList(false); if(!all.length) return '';
+  const lang=String(x.lang||'').trim().toLowerCase();
+  const fits=all.filter(t=>(t.langs||[]).some(l=>String(l).trim().toLowerCase()===lang));
+  return (fits.length?fits:all).map(t=>({tid:t.tid, n:leadLoad(t.tid,plan), name:t.name||''})).sort((a,b)=>a.n-b.n || a.name.localeCompare(b.name))[0].tid;
+}
+const freeItems = () => [...Object.entries(S.leads||{}).filter(([,l])=>!l.tid && !l.st).map(([id,l])=>['lead',id,l]),
+                         ...Object.entries(S.gchats||{}).filter(([,c])=>!c.tid).map(([id,c])=>['g',id,c])].sort((a,b)=>(a[2].at||0)-(b[2].at||0));
+const assignTo = (k, id, tid) => S.db.doc((k==='g'?'gchat/':'leads/')+id).update({tid});
+async function distributeAll(){
+  const plan={}; let n=0;
+  for(const [k,id,x] of freeItems()){ const tid=pickTeacher(x,plan); if(!tid) break; plan[tid]=(plan[tid]||0)+1; try{ await assignTo(k,id,tid); n++; }catch(e){ break; } }
+  return n;
+}
+let asgBusy=false, asgT=null;
+const asgSoon = () => { clearTimeout(asgT); asgT=setTimeout(autoAssign, 900); };
+async function autoAssign(){
+  if(S.role!=='owner' || !S.asgCfg?.auto || asgBusy || !S.teamLoaded || !S.loaded?.p || !S.loaded?.f || !freeItems().length) return;
+  asgBusy=true; try{ const n=await distributeAll(); if(n) toast(tr('c.asgDone',{n})); }finally{ asgBusy=false; }
+}
+function asgPicker(kind, id, x){
+  const all=teamList(true); if(!all.length) return '';
+  const sug = x.tid ? '' : pickTeacher(x);
+  return `<span class="asg">${sug?`<span class="small muted">${tr('c.asgSug',{name:esc(tName(sug))})}</span>`:''}
+    <select class="inp asg-sel" data-asg-sel="${esc(id)}" aria-label="${tr('c.fTeacher')}"><option value="">${tr('c.anyTeacher')}</option>${all.map(t=>`<option value="${esc(t.tid)}" ${t.tid===(x.tid||sug)?'selected':''}>${esc(t.name||'')}</option>`).join('')}</select>
+    <button class="btn sm primary" data-act="c-asg" data-k="${kind}" data-id="${esc(id)}">${tr(x.tid?'c.asgChange':'c.asgBtn')}</button></span>`;
+}
+function asgBar(){
+  const n=freeItems().length;
+  return `<span class="row" style="gap:10px;align-items:center;flex-wrap:wrap"><label class="small row" style="gap:6px;cursor:pointer"><input type="checkbox" data-act="c-asg-auto" ${S.asgCfg?.auto?'checked':''}> ${tr('c.asgAuto')}</label>${n?`<button class="btn sm pen" data-act="c-asg-all">${tr('c.asgAll',{n})}</button>`:''}</span>`;
 }
 
 /* ---------- one-tap lessons on Google Meet ---------- */
@@ -5409,25 +5676,39 @@ const CLUB_TOPICS = [
  ['Inventions',['What is the most important invention ever?','What would you invent to make life easier?','Is the internet good or bad for people?']],
 ];
 const dayIdx = d => Math.floor(Date.parse(d+'T12:00:00Z')/864e5);
-function clubDef(day){ const [t,qs]=CLUB_TOPICS[dayIdx(day)%CLUB_TOPICS.length]; return {topic:t, qs, lang:'English'}; }
-const clubNow = () => ({...clubDef(S.clubDay||todayStr()), ...(S.club||{})});
-const clubVideoOn = () => isLive(S.club?.video);
+function clubDef(day){ const [t,qs]=CLUB_TOPICS[dayIdx(day)%CLUB_TOPICS.length]; return {topic:t, qs, lang:S.clubLang||'English'}; }
+const clubNow = () => ({...clubDef(S.clubDay||todayStr()), ...(S.club||{}), lang:S.clubLang||'English'});
+const clubVideoOn = () => Object.values(S.clubs||{}).some(c=>isLive(c?.video));
 const isMod = () => S.mode==='teacher';
+const clubPath = () => 'club/'+(S.clubLang||'English')+'_'+(S.clubDay||todayStr());
+function clubStop(){ (S._clubUn||[]).forEach(u=>{ try{ u(); }catch(e){} }); S._clubUn=[]; S._clubKey=null; }
 function startClub(){
-  (S._clubUn||[]).forEach(u=>{ try{ u(); }catch(e){} });
-  if(!S._clubHooked){ S._clubHooked=true; S.unsubs.push(()=>{ (S._clubUn||[]).forEach(u=>{ try{ u(); }catch(e){} }); S._clubUn=[]; S._clubHooked=false; }); }
-  S.clubDay=todayStr(); S.club=null; S.clubMsgs={}; S.clubErr=null;
-  const fail = e => { S.clubErr=(e&&e.code)||'error'; if(S.view.name==='club'){ drawClubMsgs(); } };
-  S._clubUn=[
-    S.db.doc('club/'+S.clubDay).onSnapshot(s=>{ S.club=s.exists?s.data():null; if(S.view.name==='club') drawClubTop(); else refreshAny(); }, fail),
-    S.db.collection('club/'+S.clubDay+'/msgs').onSnapshot(q=>{ const o={}; q.docs.forEach(d=>{ if(d.exists) o[d.id]=d.data(); }); const n=Object.keys(o).length>Object.keys(S.clubMsgs||{}).length; S.clubMsgs=o; S.clubErr=null;
-      if(S.view.name==='club') drawClubMsgs(n); else refreshAny(); }, fail)];
+  clubStop(); S.clubs={}; S.club=null; S.clubMsgs={};
+  if(!S._clubHooked){ S._clubHooked=true; S.unsubs.push(()=>{ clubStop(); S._clubHooked=false; }); }
+  clubSync();
+}
+// (re)start the listeners when the person's languages, the chosen club or the day change
+function clubSync(){
+  if(!S._clubHooked || !S.db || !langsReady()) return;
+  const langs=myLangs(), saved=LS.get('club-lang','');
+  if(!langs.includes(S.clubLang)) S.clubLang = langs.includes(saved) ? saved : (langs[0]||'');
+  const day=todayStr(), key=langs.join(',')+'|'+S.clubLang+'|'+day; if(key===S._clubKey) return;
+  (S._clubUn||[]).forEach(u=>{ try{ u(); }catch(e){} }); S._clubKey=key;
+  S.clubDay=day; S.clubs={}; S.club=null; S.clubMsgs={}; S.clubErr=null;
+  const cur=S.clubLang, fail = e => { S.clubErr=(e&&e.code)||'error'; if(S.view.name==='club') drawClubMsgs(); };
+  S._clubUn = langs.map(l=>S.db.doc('club/'+l+'_'+day).onSnapshot(x=>{ if(x.exists) S.clubs[l]=x.data(); else delete S.clubs[l]; if(l===S.clubLang) S.club=S.clubs[l]||null;
+      if(S.view.name==='club'){ drawClubTop(); drawClubTabs(); } else refreshAny(); }, l===cur?fail:()=>{}));
+  if(cur) S._clubUn.push(S.db.collection(clubPath()+'/msgs').onSnapshot(q=>{ const o={}; q.docs.forEach(d=>{ if(d.exists) o[d.id]=d.data(); }); const n=Object.keys(o).length>Object.keys(S.clubMsgs||{}).length; S.clubMsgs=o; S.clubErr=null;
+      if(S.view.name==='club') drawClubMsgs(n); else refreshAny(); }, fail));
+  if(S.view.name==='club') renderMain();
 }
 // a new day starts a new club (if the page stayed open past midnight)
-const clubDayCheck = () => { if(S.clubDay && S.clubDay!==todayStr()) startClub(); };
+const clubDayCheck = () => { if(S.clubDay && S.clubDay!==todayStr()) clubSync(); };
+const clubTabsHtml = () => { const langs=myLangs(); return langs.length>1 ? langs.map(l=>`<button data-act="c-club-lang" data-l="${esc(l)}" aria-pressed="${l===S.clubLang}">${esc(langName(l))}${isLive(S.clubs?.[l]?.video)?' <span class="livedot"></span>':''}</button>`).join('') : ''; };
+function drawClubTabs(){ const el=$('#club-tabs'); if(el) el.innerHTML=clubTabsHtml(); }
 function clubTopHtml(){
-  const c=clubNow(), v=S.club?.video, on=clubVideoOn();
-  return `<div class="club-topic card"><span class="label">${tr('c.clubToday',{d:fmtDate(S.clubDay,{weekday:'long',day:'numeric',month:'long'})})} · ${esc(c.lang||'')}</span>
+  const c=clubNow(), v=S.club?.video, on=isLive(v);
+  return `<div class="club-topic card"><span class="label">${tr('c.clubToday',{d:fmtDate(S.clubDay,{weekday:'long',day:'numeric',month:'long'})})} · ${esc(langName(c.lang||''))}</span>
       <h2>${esc(c.topic)}</h2><ol>${(c.qs||[]).map(q=>`<li>${esc(q)}</li>`).join('')}</ol>
       ${S.club?.byName?`<p class="small faint">${tr('c.clubBy',{name:esc(S.club.byName)})}</p>`:''}
       ${isMod()?`<button class="btn sm" data-act="c-club-topic">${tr('c.clubEdit')}</button>`:''}</div>
@@ -5444,7 +5725,9 @@ function clubMsgsHtml(){
       ${(isMod()||mine)?`<button class="cdel" data-act="c-club-del" data-id="${esc(m.id)}" title="${tr('delete')}">×</button>`:''}</div><div class="ctext">${esc(m.text)}</div></div></div>`; }).join('');
 }
 function vClub(){
+  if(langsReady() && !myLangs().length) return `<div class="page-head"><div><h1>${tr('c.clubH')}</h1><p>${tr('c.clubP')}</p></div></div><div class="empty"><p>${tr('c.clubNoLang')}</p></div>`;
   return `<div class="page-head"><div><h1>${tr('c.clubH')}</h1><p>${tr('c.clubP')}</p></div></div>
+    <div class="lp-filter" id="club-tabs" role="group" aria-label="${tr('c.fLang')}">${clubTabsHtml()}</div><p class="small muted" style="margin:-4px 0 14px">${tr(S.mode==='student'?'c.clubLangS':'c.clubLangT')}</p>
     <div class="club"><div class="club-side" id="club-top">${clubTopHtml()}</div>
       <div class="club-chat card"><div class="club-msgs" id="club-msgs">${clubMsgsHtml()}</div>
         <form id="club-form" class="club-in" novalidate><textarea class="inp" id="club-text" rows="2" maxlength="500" placeholder="${tr('c.clubPh')}"></textarea><button class="btn pen" aria-label="${tr('c.clubSend')}">${tr('c.clubSend')}</button></form>
@@ -5457,21 +5740,21 @@ after.club = () => { clubDayCheck(); const el=$('#club-msgs'); if(el) el.scrollT
   f.addEventListener('submit', async e=>{ e.preventDefault(); const text=ta.value.trim(); if(!text) return; clubDayCheck();
     const name = S.mode==='student' ? (S.myProfile?.name||tr('student')) : (S.team?.[myTid()]?.name || S.me?.name || tr('teacher'));
     const d={uid:S.uid, name:name.slice(0,80), text:text.slice(0,500), at:Date.now()}; if(isMod()) d.mod=true;
-    ta.value=''; try{ await S.db.collection('club/'+S.clubDay+'/msgs').doc().set(d); }catch(err){ ta.value=text; toast(tr('c.clubSendFail',{code:esc(String(err?.code||err?.message||err))}), 8000); } }); };
+    ta.value=''; try{ await S.db.collection(clubPath()+'/msgs').doc().set(d); }catch(err){ ta.value=text; toast(tr('c.clubSendFail',{code:esc(String(err?.code||err?.message||err))}), 8000); } }); };
 function openClubTopic(){
   const c=clubNow();
   showDlg(`<form id="ct-form" novalidate>${dlgHead(tr('c.clubH'), tr('c.clubEdit'))}<div class="dlg-body">
     <label class="field"><span>${tr('c.clubTopic')}</span><input class="inp" id="ct-t" maxlength="120" value="${esc(c.topic)}"></label>
     <label class="field"><span>${tr('c.clubQs')}</span><textarea class="inp" id="ct-q" rows="4" maxlength="800">${esc((c.qs||[]).join('\n'))}</textarea></label>
-    <label class="field"><span>${tr('c.fLang')}</span><input class="inp" id="ct-l" maxlength="40" value="${esc(c.lang||'English')}"></label><p class="lg-err" id="ct-err"></p></div>
+    <p class="small muted">${tr('c.fLang')}: <b>${esc(langName(c.lang))}</b></p><p class="lg-err" id="ct-err"></p></div>
     <div class="dlg-foot"><button type="button" class="btn ghost" data-act="dlg-close">${tr('cancel')}</button><button class="btn primary">${tr('save')}</button></div></form>`, {type:'clubtopic'});
   $('#ct-form').addEventListener('submit', async e=>{ e.preventDefault(); const topic=$('#ct-t').value.trim(); if(!topic){ $('#ct-err').textContent=tr('c.needTitle'); return; }
-    const d={topic, qs:$('#ct-q').value.split('\n').map(x=>x.trim()).filter(Boolean).slice(0,8), lang:$('#ct-l').value.trim(), by:myTid(), byName:S.team?.[myTid()]?.name||S.me?.name||''};
-    try{ await S.db.doc('club/'+S.clubDay).set(d,{merge:true}); S.club={...(S.club||{}), ...d}; closeDlg(); drawClubTop(); }catch(err){ $('#ct-err').textContent=lgErrText(err); } });
+    const d={topic, qs:$('#ct-q').value.split('\n').map(x=>x.trim()).filter(Boolean).slice(0,8), lang:S.clubLang, by:myTid(), byName:S.team?.[myTid()]?.name||S.me?.name||''};
+    try{ await S.db.doc(clubPath()).set(d,{merge:true}); S.club={...(S.club||{}), ...d}; closeDlg(); drawClubTop(); }catch(err){ $('#ct-err').textContent=lgErrText(err); } });
 }
 async function clubVideo(url){
   const v={on:true, url, at:Date.now(), until:Date.now()+4*3600e3, by:myTid(), byName:S.team?.[myTid()]?.name||S.me?.name||''};
-  await S.db.doc('club/'+S.clubDay).set({video:v},{merge:true}); S.club={...(S.club||{}), video:v}; drawClubTop();
+  await S.db.doc(clubPath()).set({video:v, lang:S.clubLang},{merge:true}); S.club={...(S.club||{}), video:v}; drawClubTop();
 }
 function openClubVideo(){
   const saved=myMeet();
@@ -5493,21 +5776,30 @@ function driveId(u){ const m=String(u||'').match(/drive\.google\.com\/(?:file\/d
 const drivePreview = u => { const id=driveId(u); return id?`https://drive.google.com/file/d/${id}/preview`:null; };
 const driveDownload = u => { const id=driveId(u); return id?`https://drive.google.com/uc?export=download&id=${id}`:u; };
 const ytId = u => (String(u||'').match(/(?:youtube\.com\/(?:watch\?(?:.*&)?v=|shorts\/|embed\/|live\/)|youtu\.be\/)([\w-]{11})/)||[])[1];
+// staff and students read one language at a time (that is what firestore.rules allows); the owner reads everything
+function libStop(){ (S._libUn||[]).forEach(u=>{ try{ u(); }catch(e){} }); S._libUn=[]; S._libKey=null; }
+function startLib(){ libStop(); S.lib={}; S.libBy={}; if(!S._libHooked){ S._libHooked=true; S.unsubs.push(()=>{ libStop(); S._libHooked=false; }); } libSync(); }
+function libSync(){
+  if(!S._libHooked || !S.db || !langsReady()) return;
+  const langs=myLangs(), key=langs.join(','); if(key===S._libKey) return;
+  (S._libUn||[]).forEach(u=>{ try{ u(); }catch(e){} }); S._libKey=key; S.libBy={}; S.lib={};
+  S._libUn = langs.map(l=>S.db.collection('library').where('lang',l).onSnapshot(q=>{ const o={}; q.docs.forEach(d=>{ if(d.exists) o[d.id]=d.data(); }); S.libBy[l]=o; S.lib=Object.assign({}, ...Object.values(S.libBy)); refreshAny(); }, ()=>{}));
+}
 const libIcon = k => k==='audio'?'🎧':k==='video'?'🎬':k==='link'?'🔗':'📘';
 function vLibrary(){
   const items=Object.entries(S.lib||{}).map(([id,x])=>({id,...x}));
-  const langs=[...new Set(items.map(x=>x.lang).filter(Boolean))].sort();
+  const langs = S.role==='owner' ? [...new Set(items.map(x=>x.lang).filter(Boolean))].sort() : myLangs();
   const myLevel=S.mode==='student'?(S.myProfile?.level||''):'';
   const f=S.view; if(f.lang===undefined) f.lang=''; if(f.level===undefined) f.level=LIB_LEVELS.includes(myLevel)?myLevel:''; if(f.kind===undefined) f.kind='';
   const list=items.filter(x=>(!f.lang||x.lang===f.lang)&&(!f.level||x.level===f.level||x.level==='all')&&(!f.kind||x.kind===f.kind)).sort((a,b)=>(a.lang||'').localeCompare(b.lang||'')||LIB_LEVELS.indexOf(a.level)-LIB_LEVELS.indexOf(b.level)||b.at-a.at);
-  const chips=(key,vals,label)=>`<div class="lp-filter" role="group" aria-label="${label}"><button data-act="c-lib-f" data-k="${key}" data-v="" aria-pressed="${!f[key]}">${tr('c.all')}</button>${vals.map(v=>`<button data-act="c-lib-f" data-k="${key}" data-v="${esc(v)}" aria-pressed="${f[key]===v}">${key==='kind'?libIcon(v)+' '+tr('c.lib.'+v):v==='all'?tr('c.libAllLv'):esc(v)}</button>`).join('')}</div>`;
+  const chips=(key,vals,label)=>`<div class="lp-filter" role="group" aria-label="${label}"><button data-act="c-lib-f" data-k="${key}" data-v="" aria-pressed="${!f[key]}">${tr('c.all')}</button>${vals.map(v=>`<button data-act="c-lib-f" data-k="${key}" data-v="${esc(v)}" aria-pressed="${f[key]===v}">${key==='kind'?libIcon(v)+' '+tr('c.lib.'+v):v==='all'?tr('c.libAllLv'):key==='lang'?esc(langName(v)):esc(v)}</button>`).join('')}</div>`;
   const canEdit = x => S.mode==='teacher' && (S.role==='owner' || x.by===S.staffTid);
   return `<div class="page-head"><div><h1>${tr('c.libH')}</h1><p>${tr('c.libP')}</p></div>${S.mode==='teacher'?`<button class="btn primary" data-act="c-lib">+ ${tr('c.libAdd')}</button>`:''}</div>
     ${langs.length>1?chips('lang',langs,tr('c.fLang')):''}${chips('level',LIB_LEVELS.slice(0,6),tr('c.fLevel'))}${chips('kind',LIB_KINDS,tr('c.libKind'))}
-    ${list.length?`<div class="lib-grid">${list.map(x=>{ const pv=drivePreview(x.url)||(ytId(x.url)?`https://www.youtube.com/embed/${ytId(x.url)}`:null);
+    ${langsReady()&&!myLangs().length?`<div class="notice">${tr('c.clubNoLang')}</div>`:''}${list.length?`<div class="lib-grid">${list.map(x=>{ const pv=drivePreview(x.url)||(ytId(x.url)?`https://www.youtube.com/embed/${ytId(x.url)}`:null);
       const yt=ytId(x.url);
       return `<article class="card lib">${yt?`<button class="lib-thumb" data-act="c-lib-open" data-id="${esc(x.id)}" aria-label="${tr('c.libOpen')}"><img src="https://img.youtube.com/vi/${yt}/mqdefault.jpg" alt="" loading="lazy"><span>▶</span></button>`:`<div class="lib-ic">${libIcon(x.kind)}</div>`}<div style="min-width:0;flex:1"><b>${esc(x.title)}</b>
-        <div class="tchips" style="margin:6px 0">${x.lang?`<span class="lchip">${esc(x.lang)}</span>`:''}<span class="lchip ghost">${x.level==='all'?tr('c.libAllLv'):esc(x.level||'')}</span><span class="lchip ghost">${tr('c.lib.'+x.kind)}</span></div>
+        <div class="tchips" style="margin:6px 0">${x.lang?`<span class="lchip">${esc(langName(x.lang))}</span>`:''}<span class="lchip ghost">${x.level==='all'?tr('c.libAllLv'):esc(x.level||'')}</span><span class="lchip ghost">${tr('c.lib.'+x.kind)}</span></div>
         ${x.desc?`<p class="small muted">${esc(x.desc)}</p>`:''}<p class="small faint">${esc(x.byName||'')}${x.byName?' · ':''}${ago(x.at)}</p>
         <div class="row" style="gap:6px;flex-wrap:wrap;margin-top:8px">${pv?`<button class="btn pen sm" data-act="c-lib-open" data-id="${esc(x.id)}">${x.kind==='audio'?'▶ '+tr('c.libListen'):tr('c.libOpen')}</button>`:`<a class="btn pen sm" href="${esc(x.url)}" target="_blank" rel="noopener">${tr('c.libOpen')}</a>`}
           ${driveId(x.url)?`<a class="btn sm" href="${esc(driveDownload(x.url))}" target="_blank" rel="noopener">${I.up} ${tr('c.libDl')}</a>`:''}
@@ -5560,10 +5852,10 @@ async function uploadFile(file, onPct){
 }
 const kindOf = f => /^audio\//.test(f.type)?'audio' : /^video\//.test(f.type)?'video' : 'book';
 function openLibEdit(id){
-  const x=id?S.lib?.[id]||{}:{kind:'book', level:'A1', lang:(S.team?.[myTid()]?.langs||[])[0]||'English'};
-  const langs=[...new Set([...CLANGS, ...Object.values(S.lib||{}).map(y=>y.lang).filter(Boolean)])];
+  const x=id?S.lib?.[id]||{}:{kind:'book', level:'A1', lang:S.view.lang||tLangsOf(myTid())[0]};
+  const langs = S.role==='staff' ? myLangs() : [...new Set([...CLUB_LANGS, ...CLANGS, ...Object.values(S.lib||{}).map(y=>y.lang).filter(Boolean)])];
   showDlg(`<form id="lb-form" novalidate>${dlgHead(tr('c.libH'), id?esc(x.title):tr('c.libAdd'))}<div class="dlg-body">
-    <div class="grid2" style="gap:12px"><label class="field"><span>${tr('c.fLang')}</span><select class="inp" id="lb-lang">${langs.map(l=>`<option ${l===x.lang?'selected':''}>${esc(l)}</option>`).join('')}</select></label>
+    <div class="grid2" style="gap:12px"><label class="field"><span>${tr('c.fLang')}</span><select class="inp" id="lb-lang">${langOpts(langs, x.lang)}</select></label>
       <label class="field"><span>${tr('c.fLevel')}</span><select class="inp" id="lb-level">${LIB_LEVELS.map(l=>`<option value="${l}" ${l===x.level?'selected':''}>${l==='all'?tr('c.libAllLv'):l}</option>`).join('')}</select></label></div>
     <label class="field"><span>${tr('c.libKind')}</span><select class="inp" id="lb-kind">${LIB_KINDS.map(k=>`<option value="${k}" ${k===x.kind?'selected':''}>${libIcon(k)} ${tr('c.lib.'+k)}</option>`).join('')}</select></label>
     <label class="field"><span>${tr('c.oTitle')}</span><input class="inp" id="lb-title" maxlength="120" value="${esc(x.title||'')}" placeholder="${tr('c.libTitlePh')}"></label>
@@ -5607,21 +5899,28 @@ function seedCentre(db){
     bio:'I graduated from UzSWLU and have taught English and German at a private school for five years. My lessons are built around speaking and short daily homework.', achievements:['IELTS 7.5','Goethe-Zertifikat B2'], msg:'I can teach evenings and weekends.', at:Date.now()-2*3600e3});
   db.m.set('site/promo', {on:true, pct:15, min:2, until:'', note:''});
   db.m.set('enroll/ex-aziza', {name:'Aziza (example)', items:[{id:'e1', tid:'t-dilnoza', lang:'Russian', note:'', at:Date.now()-4*864e5},{id:'e2', tid:'t-jin', lang:'Korean', note:'I want to start Korean', at:Date.now()-3600e3}]});
-  db.m.set('enrollStatus/ex-aziza', {'t-dilnoza':'ok'});
+  db.m.set('enrollStatus/ex-aziza', {'t-dilnoza':'ok', langs:['Russian']});
   db.m.set('roster/t-dilnoza', {students:{'ex-aziza':{name:'Aziza (example)', lang:'Russian', since:Date.now()-4*864e5}}});
   db.m.set('live/t-dilnoza', {on:true, at:Date.now()-5*60000, until:Date.now()+6*3600e3, url:'https://meet.google.com/xyz-abcd-efg', to:['ex-aziza'], label:'Russian A2'});
   db.m.set('liveFor/ex-aziza', {'t-dilnoza':{on:true, at:Date.now()-5*60000, until:Date.now()+6*3600e3, url:'https://meet.google.com/xyz-abcd-efg', label:'Russian A2', name:'Dilnoza R. (example)'}});
   db.m.set('groups/main', {list:[{id:'g1', name:'IELTS evening group', members:['ex-aziza','ex-timur']}]});
   const td=day(0);
-  db.m.set('club/'+td+'/msgs/m1', {uid:'ex-timur', name:'Timur (example)', text:'I think a lazy weekend is better. I sleep a lot and watch films!', at:Date.now()-40*60000});
-  db.m.set('club/'+td+'/msgs/m2', {uid:'ex-madina', name:'Madina (example)', text:'For me a busy weekend is better, I like to go to the mountains with my family.', at:Date.now()-32*60000});
-  db.m.set('club/'+td+'/msgs/m3', {uid:'ex-dilnoza', name:'Dilnoza R. (example)', text:'Great ideas! Madina, which mountains do you go to? Timur, what films do you watch?', at:Date.now()-25*60000, mod:true});
+  db.m.set('club/English_'+td+'/msgs/m1', {uid:'ex-timur', name:'Timur (example)', text:'I think a lazy weekend is better. I sleep a lot and watch films!', at:Date.now()-40*60000});
+  db.m.set('club/English_'+td+'/msgs/m2', {uid:'ex-madina', name:'Madina (example)', text:'For me a busy weekend is better, I like to go to the mountains with my family.', at:Date.now()-32*60000});
+  db.m.set('club/English_'+td+'/msgs/m3', {uid:'ex-dilnoza', name:'Dilnoza R. (example)', text:'Great ideas! Madina, which mountains do you go to? Timur, what films do you watch?', at:Date.now()-25*60000, mod:true});
   db.m.set('library/b1', {lang:'English', level:'A1', kind:'book', title:'English File Elementary — Student’s Book', desc:'Units 1–4, PDF', url:'https://drive.google.com/file/d/1AbCdEfGhIjKlMnOpQrStUvWxYz012345/view', by:'main', byName:'Samandar Y. (example)', at:Date.now()-5*864e5});
   db.m.set('library/b2', {lang:'English', level:'B1', kind:'audio', title:'Listening practice — Unit 3', desc:'Audio for pages 24–27', url:'https://drive.google.com/file/d/1ZyXwVuTsRqPoNmLkJiHgFeDcBa987654/view', by:'main', byName:'Samandar Y. (example)', at:Date.now()-2*864e5});
   db.m.set('library/b3', {lang:'Russian', level:'A2', kind:'book', title:'Поехали! 2 — учебник', desc:'', url:'https://drive.google.com/file/d/1QwErTyUiOpAsDfGhJkLzXcVbNm135792/view', by:'t-dilnoza', byName:'Dilnoza R. (example)', at:Date.now()-864e5});
   db.m.set('library/b4', {lang:'Korean', level:'all', kind:'video', title:'Hangul in 20 minutes', desc:'', url:'https://www.youtube.com/watch?v=abcdefghijk', by:'t-jin', byName:'Jin-woo P. (example)', at:Date.now()-3*864e5});
   db.m.set('torders/o1', {uid:'ex-aziza', name:'Aziza (example)', tid:'t-dilnoza', svcId:'s1', title:'Speaking club', price:30000, note:'Saturday please', at:Date.now()-2*3600e3});
   db.m.set('leads/l2', {name:'Bekzod', contact:'@bekzod_k', lang:'Korean', level:'beginner', tid:'', msg:'', at:Date.now()-26*3600e3});
+  // chats: a student with their teacher, and a site visitor who chose "any teacher"
+  const mAgo = n => Date.now()-n*60000;
+  db.m.set('dm/ex-aziza_main', {uid:'ex-aziza', tid:'main', name:'Aziza (example)', lastAt:mAgo(12), lastBy:'s', lastText:'Can we move Thursday’s lesson to 18:00?', rs:mAgo(12), rt:mAgo(90)});
+  db.m.set('dm/ex-aziza_main/msgs/d1', {uid:'ex-teacher', name:'Samandar', text:'Great essay today! Remember to check the past simple.', at:mAgo(95), by:'t'});
+  db.m.set('dm/ex-aziza_main/msgs/d2', {uid:'ex-aziza', name:'Aziza (example)', text:'Thank you! Can we move Thursday’s lesson to 18:00?', at:mAgo(12), by:'s'});
+  db.m.set('gchat/exampleguestchat0000000001', {name:'Jasur', contact:'@jasur_t', lang:'English', tid:'', at:mAgo(40), lastAt:mAgo(40), lastBy:'g', lastText:'Hello! Do you have IELTS evening groups?'});
+  db.m.set('gchat/exampleguestchat0000000001/msgs/g1', {name:'Jasur', text:'Hello! Do you have IELTS evening groups?', at:mAgo(40), by:'g'});
   db.m.set('centre/offers', {items:[{id:'of1', title:'Classroom for group lessons', desc:'A room at the centre with a whiteboard and projector, per lesson.', price:50000},
     {id:'of2', title:'Ads for your course', desc:'We post your course on the centre’s Instagram and Telegram.', price:100000},
     {id:'of3', title:'Teaching workshop', desc:'Monthly workshop: lesson planning and exam preparation.', price:0}]});
@@ -6046,6 +6345,13 @@ document.addEventListener('click', async ev => {
     case 'c-lang': S.view.lang=b.dataset.l; renderMain(); break;
     case 'c-tprof': openTeacherProfile(b.dataset.tid); break;
     case 'c-trial': openTrial(b.dataset.tid||''); break;
+    case 'c-gchat': openGuestChat(b.dataset.tid||''); break;
+    case 'c-ch-open': S.mode==='student' ? go('chat',{tid:b.dataset.tid}) : go('chat',{k:b.dataset.k, id:b.dataset.id}); break;
+    case 'c-ch-del': { const c=chatCur(); if(c) try{ await S.db.doc((c.kind==='g'?'gchat/':'dm/')+c.id+'/msgs/'+b.dataset.id).delete(); }catch(e){ dbErr(e,'svc'); } break; }
+    case 'c-asg': { const sel=document.querySelector('[data-asg-sel="'+CSS.escape(b.dataset.id)+'"]'); b.disabled=true;
+      try{ await assignTo(b.dataset.k, b.dataset.id, sel?.value||''); toast(tr('c.saved')); }catch(e){ dbErr(e,'svc'); } b.disabled=false; b.blur(); drawChat(); break; }
+    case 'c-asg-all': { b.disabled=true; let n=0; try{ n=await distributeAll(); }catch(e){} toast(n?tr('c.asgDone',{n}):tr('c.asgNone')); b.disabled=false; break; }
+    case 'c-asg-auto': try{ await S.db.doc('centre/assign').set({auto:!!b.checked}); }catch(e){ b.checked=!b.checked; dbErr(e,'svc'); } break;
     case 'c-allt': S.allT = b.dataset.on==='1'; refresh(); renderMain(); break;
     case 'c-tedit': openTeacherEdit(b.dataset.tid||null); break;
     case 'c-tdel': { const t=S.team[b.dataset.tid]; if(!t) break;
@@ -6072,8 +6378,9 @@ document.addEventListener('click', async ev => {
       try{ await S.db.doc('groups/'+myTid()).set({list}); S.myGroups={list}; renderMain(); }catch(e){ dbErr(e,'svc'); } break; }
     case 'c-club-topic': openClubTopic(); break;
     case 'c-club-video': openClubVideo(); break;
-    case 'c-club-vend': try{ await S.db.doc('club/'+S.clubDay).set({video:{on:false, at:Date.now(), until:0}},{merge:true}); S.club={...(S.club||{}), video:{on:false}}; drawClubTop(); }catch(e){ dbErr(e,'svc'); } break;
-    case 'c-club-del': try{ await S.db.doc('club/'+S.clubDay+'/msgs/'+b.dataset.id).delete(); }catch(e){ dbErr(e,'svc'); } break;
+    case 'c-club-vend': try{ await S.db.doc(clubPath()).set({video:{on:false, at:Date.now(), until:0}},{merge:true}); S.club={...(S.club||{}), video:{on:false}}; drawClubTop(); }catch(e){ dbErr(e,'svc'); } break;
+    case 'c-club-lang': S.clubLang=b.dataset.l; LS.set('club-lang', b.dataset.l); clubSync(); break;
+    case 'c-club-del': try{ await S.db.doc(clubPath()+'/msgs/'+b.dataset.id).delete(); }catch(e){ dbErr(e,'svc'); } break;
     case 'c-lib': openLibEdit(b.dataset.id||null); break;
     case 'c-lib-open': openLibItem(b.dataset.id); break;
     case 'c-lib-f': S.view[b.dataset.k]=b.dataset.v; renderMain(); break;
