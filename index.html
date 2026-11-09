@@ -1341,7 +1341,7 @@ const S = {
 };
 const EDIT_VIEWS = new Set(['review','write','prompt','bank','setup','login','newsEdit','setEdit','me','verify','club','chat']);
 function teardown(){ S.unsubs.forEach(u=>{try{u()}catch(e){}}); S.unsubs=[]; closePop(); closeDlg(); }
-function refresh(){ clubSync(); libSync(); enrollLangsSoon(); if(S.leaves && Object.keys(S.leaves).length) setTimeout(finishLeaves, 1500); renderTop(); renderNav(); if(!EDIT_VIEWS.has(S.view.name) && !busyNow()) renderMain(); drawChat(); if(S.mode==='teacher' && S.role!=='staff'){ ratingScheduleSync(); centreScheduleSync(); asgSoon(); } }
+function refresh(){ clubSync(); libSync(); enrollLangsSoon(); if(S.leaves && Object.keys(S.leaves).length) setTimeout(finishLeaves, 1500); if(S.role==='owner') joinSync(); renderTop(); renderNav(); if(!EDIT_VIEWS.has(S.view.name) && !busyNow()) renderMain(); drawChat(); if(S.mode==='teacher' && S.role!=='staff'){ ratingScheduleSync(); centreScheduleSync(); asgSoon(); } }
 function go(name, extra={}){ closePop(); S.view={name,...extra}; renderNav(); renderMain(); window.scrollTo({top:0}); }
 
 /* ---------------- boot ---------------- */
@@ -1367,7 +1367,15 @@ class FireCol{
 }
 
 /* ---------------- boot + sign-in ---------------- */
+// an invite link from the centre: #join=<teacher id>.<request id> — the person signs up straight to that teacher
+function readJoin(){
+  const m=location.hash.match(/^#join=([\w-]+)(?:\.([\w-]+))?/); if(!m) return false;
+  LS.set('want-teacher', m[1]); if(m[2]) LS.set('join-lead', m[2]); else LS.del('join-lead');
+  history.replaceState(null, '', location.pathname+location.search); return true;
+}
+const joinUrl = (tid, leadId) => siteUrl()+'#join='+tid+(leadId?'.'+leadId:'');
 async function boot(){
+  S.joinAsk = readJoin();
   let cfg=null;
   try{ cfg = await import('./config.js'); }catch(e){}
   const fc = cfg && cfg.firebaseConfig;
@@ -1411,8 +1419,8 @@ async function completeSignIn(email){
 }
 function showLogin(){
   teardown(); S.demo=false; S.user=null; S.realOwner=false; S.mode='guest'; S.role='guest'; S.db=S.realDb;
-  S.view = S.pendingLink ? {name:'login', step:'confirm', email: LS.get('signin-email','')||LS.get('last-email','')||''} : {name:'landing'};
-  startCentre('guest');
+  S.view = S.pendingLink ? {name:'login', step:'confirm', email: LS.get('signin-email','')||LS.get('last-email','')||''} : S.joinAsk ? {name:'login', step:'signup', email:''} : {name:'landing'};
+  S.joinAsk=false; startCentre('guest');
   renderTop(); renderNav(); renderMain();
 }
 function startSignedIn(user){
@@ -1759,6 +1767,11 @@ async function wipeOwn(sid, by){
   await db.doc('journals/'+sid).delete();
 }
 // owner: finish what students and teachers started
+let joinBusy=false;
+async function joinSync(){
+  if(S.role!=='owner' || joinBusy || !S.leads || !S.loaded?.p) return; joinBusy=true;
+  try{ for(const [sid,p] of Object.entries(S.profiles)){ const l=p.lead && S.leads[p.lead]; if(l && (l.st!=='joined' || l.uid!==sid)) await S.db.doc('leads/'+p.lead).update({st:'joined', uid:sid}); } }catch(e){} finally{ joinBusy=false; }
+}
 let leavesBusy=false;
 async function finishLeaves(){
   if(S.role!=='owner' || leavesBusy || !S.loaded?.p || !S.loaded?.f || !S.lg?.loaded?.st) return;
@@ -5023,9 +5036,9 @@ function vTeam(){
     ${hasMain?'':`<div class="notice info" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"><span>${tr('c.mainFirst')}</span><button class="btn sm primary" data-act="c-tedit" data-tid="${MAIN_TID}">${tr('c.mainBtn')}</button></div>`}
     ${list.length?`<div class="tlist">${list.map(row).join('')}</div>`:`<div class="empty"><h3>${tr('c.teamEmptyH')}</h3><p>${tr('c.teamEmptyP')}</p></div>`}
     ${appsSection()}${enrollSection()}${pricingSection()}${tordersSection(false)}
-    <div class="section"><div class="row" style="justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap"><h2 style="margin:0">${tr('c.leadsH')}</h2>${asgBar()}</div><p class="small muted" style="margin:6px 0 12px">${tr('c.asgP')}</p>${leads.length?`<div class="list">${leads.map(l=>`<div class="req ${l.st?'ok':'wait'}">${avatar(l.name,l.id)}<div style="min-width:0"><b>${esc(l.name)}</b> <span class="faint">·</span> <span class="num">${esc(l.contact)}</span>
+    <div class="section"><div class="row" style="justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap"><h2 style="margin:0">${tr('c.leadsH')}</h2>${asgBar()}</div><p class="small muted" style="margin:6px 0 12px">${tr('c.asgP')} ${tr('c.joinP')}</p>${leads.length?`<div class="list">${leads.map(l=>`<div class="req ${l.st?'ok':'wait'}">${avatar(l.name,l.id)}<div style="min-width:0"><b>${esc(l.name)}</b> <span class="faint">·</span> <span class="num">${contactHtml(l.contact)}</span>
         <div class="small muted">${[l.lang, l.level==='beginner'?tr('c.beginner'):l.level, l.fmt?tr('pc.'+l.fmt):'', l.quote||'', l.tid?tr('c.forT',{name:esc(tName(l.tid))}):tr('c.anyTeacher')].filter(Boolean).map(x=>x).join(' · ')} · ${ago(l.at)}</div>${l.msg?`<div class="small req-note">“${esc(l.msg)}”</div>`:''}<div style="margin-top:8px">${asgPicker('lead', l.id, l)}</div></div>
-        <div class="req-act">${l.st?`<span class="pill bk-ok">${tr('c.contacted')}</span><button class="btn ghost sm" data-act="c-lead-del" data-id="${esc(l.id)}" style="color:var(--pen)">${tr('delete')}</button>`:`<button class="btn sm primary" data-act="c-lead-done" data-id="${esc(l.id)}">${tr('c.markContacted')}</button>`}</div></div>`).join('')}</div>`:`<p class="faint">${tr('c.noLeads')}</p>`}</div>
+        <div class="req-act">${l.st==='joined'?`<span class="pill bk-ok">${tr('c.joined')}</span>`:l.tid?`<button class="btn sm" data-act="c-join-copy" data-tid="${esc(l.tid)}" data-id="${esc(l.id)}">${I.copy} ${tr('c.joinLink')}</button>`:''}${l.st?`${l.st==='joined'?'':`<span class="pill bk-ok">${tr('c.contacted')}</span>`}<button class="btn ghost sm" data-act="c-lead-del" data-id="${esc(l.id)}" style="color:var(--pen)">${tr('delete')}</button>`:`<button class="btn sm primary" data-act="c-lead-done" data-id="${esc(l.id)}">${tr('c.markContacted')}</button>`}</div></div>`).join('')}</div>`:`<p class="faint">${tr('c.noLeads')}</p>`}</div>
     <div class="section"><h2>${tr('c.actH')}</h2>${act.length?`<div class="tact">${act.map(e=>`<div class="tact-row"><span class="tact-dot ${e.kind==='entry'?'in':''}"></span><span>${e.kind==='entry'
         ? tr('c.actEntry',{s:esc(e.name||''), t:esc(e.title), teacher:esc(tName(e.tid))})
         : tr(e.st==='revise'?'c.actRevise':'c.actReview',{teacher:`<b>${esc(tName(e.tid))}</b>`, s:esc(e.name||''), t:esc(e.title), band:e.band!=null?fmtBand(e.band):'–'})}</span><span class="small faint">${ago(e.at)}</span></div>`).join('')}</div>`:`<p class="faint">${tr('c.noAct')}</p>`}</div>
@@ -5077,7 +5090,7 @@ function vCentre(){
       return `<div class="req ${s}"><div style="min-width:0"><b>${esc(o?.title||r.title||'–')}</b><div class="small muted">${ago(r.at)}</div>${r.note?`<div class="small req-note">“${esc(r.note)}”</div>`:''}</div><div class="req-act"><span class="pill bk-${s}">${tr('bk.st.'+s)}</span></div></div>`; }).join('')}</div></div>`:''}
     ${tordersSection(true)}
     ${Object.keys(S.myRoster?.students||{}).length?`<div class="section"><h2>${tr('c.myExtra')}</h2><div class="tchips">${Object.entries(S.myRoster.students).map(([uid,x])=>`<span class="lchip ghost">${esc(x.name||'')}${x.lang?' · '+esc(x.lang):''}</span>`).join('')}</div></div>`:''}
-    <div class="section"><h2>${tr('c.myLeads')}</h2>${leads.length?`<div class="list">${leads.map(l=>`<div class="req ${l.st?'ok':'wait'}">${avatar(l.name,l.id)}<div style="min-width:0"><b>${esc(l.name)}</b> · <span class="num">${esc(l.contact)}</span><div class="small muted">${[l.lang, l.level==='beginner'?tr('c.beginner'):l.level, l.fmt?tr('pc.'+l.fmt):'', l.quote||''].filter(Boolean).join(' · ')} · ${ago(l.at)}</div>${l.msg?`<div class="small req-note">“${esc(l.msg)}”</div>`:''}</div></div>`).join('')}</div>`:`<p class="faint">${tr('c.noLeads')}</p>`}</div>`;
+    <div class="section"><h2>${tr('c.myLeads')}</h2><p class="small muted" style="margin:-6px 0 12px">${tr('c.joinP')}</p>${leads.length?`<div class="list">${leads.map(l=>`<div class="req ${l.st?'ok':'wait'}">${avatar(l.name,l.id)}<div style="min-width:0"><b>${esc(l.name)}</b> · <span class="num">${contactHtml(l.contact)}</span><div class="small muted">${[l.lang, l.level==='beginner'?tr('c.beginner'):l.level, l.fmt?tr('pc.'+l.fmt):'', l.quote||''].filter(Boolean).join(' · ')} · ${ago(l.at)}</div>${l.msg?`<div class="small req-note">“${esc(l.msg)}”</div>`:''}</div><div class="req-act">${l.st==='joined'?`<span class="pill bk-ok">${tr('c.joined')}</span>`:`<button class="btn sm" data-act="c-join-copy" data-tid="${esc(l.tid)}" data-id="${esc(l.id)}">${I.copy} ${tr('c.joinLink')}</button>`}</div></div>`).join('')}</div>`:`<p class="faint">${tr('c.noLeads')}</p>`}</div>`;
 }
 function openOfferAsk(offerId){
   const o=(S.offers?.items||[]).find(x=>x.id===offerId); if(!o) return;
@@ -6245,7 +6258,7 @@ document.addEventListener('click', async ev => {
     case 'bank-add': { const v=$('#bank-new').value.trim(); if(!v) break; S.prefs=S.prefs||{bank:DEFAULT_BANK.slice()}; S.prefs.bank.unshift(v); await savePrefs(); renderMain(); break; }
     case 'bank-del': S.prefs=S.prefs||{bank:DEFAULT_BANK.slice()}; S.prefs.bank.splice(+b.dataset.i,1); await savePrefs(); renderMain(); break;
     // student
-    case 'setup-save': { const name=$('#setup-name').value.trim(); if(!name){ toast(tr('su.typeName')); break; } const prof={name,level:$('#setup-level').value,joinedAt:Date.now(),updatedAt:Date.now(),index:{}}; const tch=$('#setup-teacher')?.value; if($('#setup-teacher') && !tch){ toast(tr('su.needT')); break; } prof.teacher=tch||MAIN_TID; b.disabled=true; try{ await S.db.doc(`journals/${S.uid}`).set(prof); }catch(e){ b.disabled=false; dbErr(e,'journal'); } break; }
+    case 'setup-save': { const name=$('#setup-name').value.trim(); if(!name){ toast(tr('su.typeName')); break; } const prof={name,level:$('#setup-level').value,joinedAt:Date.now(),updatedAt:Date.now(),index:{}}; const tch=$('#setup-teacher')?.value; if($('#setup-teacher') && !tch){ toast(tr('su.needT')); break; } prof.teacher=tch||MAIN_TID; const jl=LS.get('join-lead',''); if(jl && prof.teacher===LS.get('want-teacher','')) prof.lead=jl; b.disabled=true; try{ await S.db.doc(`journals/${S.uid}`).set(prof); LS.del('join-lead'); LS.del('want-teacher'); }catch(e){ b.disabled=false; dbErr(e,'journal'); } break; }
     case 'new-entry': startEdit({prompt:!!b.dataset.prompt}); break;
     case 'mood': S.edit.mood = S.edit.mood===b.dataset.k? null : b.dataset.k; document.querySelectorAll('.mood').forEach(m=>m.setAttribute('aria-pressed', m.dataset.k===S.edit.mood)); if(!S.edit.eid&&!S.edit.revisionOf) LS.set(draftKey(),S.edit); break;
     case 'submit-entry': submitEntry(); break;
@@ -6448,6 +6461,7 @@ document.addEventListener('click', async ev => {
       const tid = S.role==='staff' ? S.staffTid : tidOf(p);   // the owner writes in the chat of the student's own teacher
       go('chat',{k:'dm', id:uid+'_'+tid, uid}); break; }
     case 'c-leave': openLeave(); break;
+    case 'c-join-copy': { const u=joinUrl(b.dataset.tid, b.dataset.id); try{ await navigator.clipboard.writeText(u); toast(tr('c.joinCopied',{name:esc(tName(b.dataset.tid))}), 7000); }catch(e){ prompt(tr('c.joinLink'), u); } break; }
     case 'c-ch-open': S.mode==='student' ? go('chat',{tid:b.dataset.tid}) : go('chat',{k:b.dataset.k, id:b.dataset.id}); break;
     case 'c-ch-del': { const c=chatCur(); if(c) try{ await S.db.doc((c.kind==='g'?'gchat/':'dm/')+c.id+'/msgs/'+b.dataset.id).delete(); }catch(e){ dbErr(e,'svc'); } break; }
     case 'c-asg': { const sel=document.querySelector('[data-asg-sel="'+CSS.escape(b.dataset.id)+'"]'); b.disabled=true;
