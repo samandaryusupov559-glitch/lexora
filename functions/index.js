@@ -8,10 +8,12 @@
 //  Firestore triggers — new chat messages, visitor questions, trial requests, assignments, lesson start, checked entries,
 //      and tgq/{id}: everything else a teacher announces (noticeboard, tasks, payments, bookings, orders), written by the site.
 //  newsOut (every 15 min) — tells each newspaper reader in Telegram when their issue comes out.
+//  dailyReport (every day 21:00 Tashkent) — tells the owner in Telegram what the bot did today; the owner can also send /report any time.
 //
 // Settings come from functions/.env, written by the GitHub workflow from the repository secrets:
 //   TELEGRAM_TOKEN, SITE_URL, OWNER_EMAIL (and optionally REGION).
-// Server-only collections (no client access in firestore.rules): tgChats/{chatId}, tgMsgs/{chatId_messageId}, tgNews/{issueId}, tgClub/{clubId}.
+// Server-only collections (no client access in firestore.rules): tgChats/{chatId}, tgMsgs/{chatId_messageId}, tgNews/{issueId}, tgClub/{clubId},
+// tgStats/{YYYY-MM-DD} (Tashkent day: counters of what the bot did, read by the daily report).
 // tg/{uid} = {chatId, username, role, tid, owner, at}: the student/teacher can read their own (to know they are linked).
 
 const crypto = require('crypto');
@@ -53,7 +55,7 @@ const T = {
     btnHelp: '❓ Yordam', btnStatus: '📊 Holat', btnMenu: '📋 Menyu',
     helpS: '❓ Lexora boti nima qiladi\n\n💬 Ustozingiz yozgan xabarlar shu yerga keladi. Xabarga “Reply” qilib javob bersangiz, javob Lexora chatiga tushadi.\n🔴 Dars boshlanganda Google Meet havolasi keladi, “Darsga kirish” tugmasini bosing.\n✅ Yozuvingiz tekshirilganda yoki qayta yozishga qaytarilganda xabar keladi.\n\nHech narsa yozish shart emas, xabarlar o‘zi keladi. Buyruqlar: /help yordam, /status ulanish holati, /menu tugmalar.',
     helpT: '❓ Lexora boti nima qiladi\n\n🆕 Sizga biriktirilgan sinov darsi so‘rovlari shu yerga keladi.\n💬 Talabalaringiz xabarlari keladi. “Reply” qilib javob bersangiz, u Lexora chatiga tushadi.\n🌐 Sayt mehmonlarining savollari ham keladi, ularga ham “Reply” bilan javob bering.\n\nBuyruqlar: /help yordam, /status ulanish holati, /menu tugmalar.',
-    helpO: '❓ Lexora boti nima qiladi\n\n🆕 Barcha yangi sinov darsi so‘rovlari shu yerga keladi.\n🌐 Ustoz biriktirilmagan mehmon savollari sizga keladi, “Reply” bilan javob bering.\n💬 O‘z talabalaringiz xabarlari ham shu yerga keladi.\n\nBuyruqlar: /help yordam, /status ulanish holati, /menu tugmalar.',
+    helpO: '❓ Lexora boti nima qiladi\n\n🆕 Barcha yangi sinov darsi so‘rovlari shu yerga keladi.\n🌐 Ustoz biriktirilmagan mehmon savollari sizga keladi, “Reply” bilan javob bering.\n💬 O‘z talabalaringiz xabarlari ham shu yerga keladi.\n📊 Har kuni 21:00 da bot bugungi ishi haqida hisobot yuboradi.\n\nBuyruqlar: /report bugungi hisobot, /help yordam, /status ulanish holati, /menu tugmalar.',
     helpG: '❓ Lexora boti nima qiladi\n\nBot Lexoradagi xabarlarni Telegramga yetkazadi: ustoz xabarlari, dars havolalari, tekshirilgan yozuvlar.\n\nUlash uchun: Lexorani oching va “Telegram’ni ulash” tugmasini bosing. Sinov darsi so‘ragan bo‘lsangiz, so‘rovdagi tugma orqali botga o‘ting.\n\nBuyruqlar: /help yordam, /status ulanish holati, /menu tugmalar.',
     statusOn: '✅ Akkauntingiz ulangan.\nRol: {role}{extra}', statusOff: '⚠️ Akkaunt hali ulanmagan. Lexorada “Telegram’ni ulash” tugmasini bosing.',
     r_student: 'talaba', r_staff: 'ustoz', r_owner: 'egasi', yourTeacher: 'Ustozingiz',
@@ -76,7 +78,7 @@ const T = {
     btnHelp: '❓ Помощь', btnStatus: '📊 Статус', btnMenu: '📋 Меню',
     helpS: '❓ Что умеет бот Lexora\n\n💬 Сообщения вашего преподавателя приходят сюда. Ответьте на сообщение через «Ответить» (Reply), и ответ попадёт в чат Lexora.\n🔴 Когда урок начинается, приходит ссылка Google Meet: нажмите «Войти на урок».\n✅ Приходит уведомление, когда запись проверена или возвращена на переписывание.\n\nПисать ничего не нужно, уведомления приходят сами. Команды: /help помощь, /status статус подключения, /menu кнопки.',
     helpT: '❓ Что умеет бот Lexora\n\n🆕 Сюда приходят заявки на пробный урок, назначенные вам.\n💬 Приходят сообщения ваших учеников. Ответьте через «Ответить» (Reply), и ответ попадёт в чат Lexora.\n🌐 Приходят и вопросы посетителей сайта, отвечайте на них так же.\n\nКоманды: /help помощь, /status статус подключения, /menu кнопки.',
-    helpO: '❓ Что умеет бот Lexora\n\n🆕 Сюда приходят все новые заявки на пробный урок.\n🌐 Вопросы посетителей без назначенного преподавателя приходят вам, отвечайте через «Ответить» (Reply).\n💬 Сообщения ваших учеников тоже приходят сюда.\n\nКоманды: /help помощь, /status статус подключения, /menu кнопки.',
+    helpO: '❓ Что умеет бот Lexora\n\n🆕 Сюда приходят все новые заявки на пробный урок.\n🌐 Вопросы посетителей без назначенного преподавателя приходят вам, отвечайте через «Ответить» (Reply).\n💬 Сообщения ваших учеников тоже приходят сюда.\n📊 Каждый день в 21:00 бот присылает отчёт о том, что сделал за день.\n\nКоманды: /report отчёт за сегодня, /help помощь, /status статус подключения, /menu кнопки.',
     helpG: '❓ Что умеет бот Lexora\n\nБот доставляет в Telegram уведомления Lexora: сообщения преподавателя, ссылки на уроки, проверенные записи.\n\nЧтобы подключить: откройте Lexora и нажмите «Подключить Telegram». Если вы оставили заявку на пробный урок, перейдите в бота по кнопке в заявке.\n\nКоманды: /help помощь, /status статус подключения, /menu кнопки.',
     statusOn: '✅ Аккаунт подключён.\nРоль: {role}{extra}', statusOff: '⚠️ Аккаунт ещё не подключён. Нажмите в Lexora «Подключить Telegram».',
     r_student: 'ученик', r_staff: 'преподаватель', r_owner: 'владелец', yourTeacher: 'Ваш преподаватель',
@@ -99,7 +101,7 @@ const T = {
     btnHelp: '❓ Help', btnStatus: '📊 Status', btnMenu: '📋 Menu',
     helpS: '❓ What the Lexora bot does\n\n💬 Messages from your teacher arrive here. Answer with “Reply” and your answer goes into the Lexora chat.\n🔴 When a lesson starts you get the Google Meet link: press “Join the lesson”.\n✅ You are told when an entry is checked or sent back for rewriting.\n\nYou do not need to type anything, notifications come by themselves. Commands: /help help, /status connection status, /menu buttons.',
     helpT: '❓ What the Lexora bot does\n\n🆕 Trial requests assigned to you arrive here.\n💬 Your students’ messages arrive here. Answer with “Reply” and it goes into the Lexora chat.\n🌐 Questions from site visitors arrive here too, answer them the same way.\n\nCommands: /help help, /status connection status, /menu buttons.',
-    helpO: '❓ What the Lexora bot does\n\n🆕 Every new trial request arrives here.\n🌐 Visitor questions with no teacher assigned come to you, answer with “Reply”.\n💬 Messages from your own students arrive here too.\n\nCommands: /help help, /status connection status, /menu buttons.',
+    helpO: '❓ What the Lexora bot does\n\n🆕 Every new trial request arrives here.\n🌐 Visitor questions with no teacher assigned come to you, answer with “Reply”.\n💬 Messages from your own students arrive here too.\n📊 Every day at 21:00 the bot sends a report of what it did today.\n\nCommands: /report today’s report, /help help, /status connection status, /menu buttons.',
     helpG: '❓ What the Lexora bot does\n\nThe bot brings Lexora notifications to Telegram: teacher messages, lesson links, checked entries.\n\nTo connect: open Lexora and press “Connect Telegram”. If you sent a trial request, use the button in that request to open the bot.\n\nCommands: /help help, /status connection status, /menu buttons.',
     statusOn: '✅ Your account is connected.\nRole: {role}{extra}', statusOff: '⚠️ Your account is not connected yet. Press “Connect Telegram” in Lexora.',
     r_student: 'student', r_staff: 'teacher', r_owner: 'owner', yourTeacher: 'Your teacher',
@@ -125,11 +127,18 @@ async function api(method, body) {
     return j;
   } catch (e) { logger.error('telegram ' + method, e); return { ok: false }; }
 }
+// counters of what the bot did today (tgStats/{Tashkent day}); never lets a failed count break a notification
+const dayKey = (ms = Date.now()) => new Date(ms + 5 * 3600e3).toISOString().slice(0, 10);
+async function bump(field, extra = {}) {
+  try { await db.doc('tgStats/' + dayKey()).set({ [field]: admin.firestore.FieldValue.increment(1), ...extra }, { merge: true }); } catch (e) { logger.warn('stats', e); }
+}
 // send to one chat; `ref` makes a Reply to this message go back into a Lexora chat
 async function sendChat(chatId, text, extra = {}, ref = null) {
   const r = await api('sendMessage', { chat_id: chatId, text: clip(text, 4000), disable_web_page_preview: true, ...extra });
+  if (r.ok) await bump('sent'); else await bump('failed', { lastErr: clip(r.description || 'unknown error', 120), lastErrAt: Date.now() });
   if (r.ok && ref) await db.doc(`tgMsgs/${chatId}_${r.result.message_id}`).set({ ...ref, at: Date.now() });
   if (!r.ok && /blocked|deactivated|chat not found/i.test(r.description || '')) {   // they blocked the bot: forget the link
+    await bump('blocked');
     const c = await db.doc('tgChats/' + chatId).get(); if (c.exists) { await db.doc('tg/' + c.data().uid).delete().catch(() => {}); await c.ref.delete(); }
   }
   return r;
@@ -230,6 +239,7 @@ async function onMessage(msg) {
   if (cmd) {
     if (cmd[1] === 'help') return sendHelp(chatId, lang);
     if (cmd[1] === 'status') return sendStatus(chatId, lang);
+    if (cmd[1] === 'report') { const i = await chatInfo(chatId, lang); if (i.linked && i.tg.owner) return sendReport(chatId); }
     if (cmd[1] === 'menu') { const ml = (await chatInfo(chatId, lang)).lang; return sendChat(chatId, t(ml, 'menu'), menuKb(ml)); }
   }
   const reply = msg.reply_to_message;
@@ -256,6 +266,7 @@ async function linkAccount(chatId, from, code, lang) {
   await db.doc('tg/' + uid).set({ chatId, username: from.username || '', first: from.first_name || '', role, tid, owner, at: Date.now() });
   await db.doc('tgChats/' + chatId).set({ uid, at: Date.now() });
   await ref.delete();
+  await bump('ev_linked');
   { const ul = await langOf(uid) || lang; return sendChat(chatId, t(ul, 'linked'), menuKb(ul)); }
 }
 
@@ -288,11 +299,13 @@ async function answer(chatId, replyTo, text, lang) {
     else if (tgd.owner || (tgd.tid && tgd.tid === d.tid)) { by = 't'; name = await teacherName(tgd.owner ? 'main' : tgd.tid); }
     else return sendChat(chatId, t(lang, 'noReply'));
     await db.collection(`dm/${ref.id}/msgs`).add({ uid, name: clip(name, 80), text: body, at: now, by, via: 'tg' });
+    await bump('ev_reply');
     await th.ref.update({ lastAt: now, lastBy: by, lastText: clip(body.replace(/\s+/g, ' '), 140), [by === 's' ? 'rs' : 'rt']: now });
   } else if (ref.kind === 'g') {
     const ch = await db.doc('gchat/' + ref.id).get(); if (!ch.exists) return sendChat(chatId, t(lang, 'noReply'));
     if (!(tgd.owner || (tgd.tid && tgd.tid === ch.data().tid))) return sendChat(chatId, t(lang, 'noReply'));
     await db.collection(`gchat/${ref.id}/msgs`).add({ uid, name: clip(await teacherName(tgd.owner ? 'main' : tgd.tid), 80), text: body, at: now, by: 't', via: 'tg' });
+    await bump('ev_reply');
     await ch.ref.update({ lastAt: now, lastBy: 't', lastText: clip(body.replace(/\s+/g, ' '), 140), rt: now });
   } else return sendChat(chatId, t(lang, 'noReply'));
   return sendChat(chatId, t(lang, 'sent'));
@@ -303,6 +316,7 @@ async function answer(chatId, replyTo, text, lang) {
 exports.onDmMessage = onDocumentCreated('dm/{id}/msgs/{m}', async ev => {
   const m = ev.data && ev.data.data(); if (!m) return;
   const th = await db.doc('dm/' + ev.params.id).get(); if (!th.exists) return;
+  await bump('ev_dm');
   const d = th.data(), build = lang => ({ text: t(lang, 'msgFrom', { name: m.name || '' }) + '\n' + clip(m.text, 3000) + '\n\n' + t(lang, 'replyHint'), extra: btn(t(lang, 'open'), SITE()) });
   if (m.by === 's') await sendTeacher(d.tid, build, { kind: 'dm', id: ev.params.id }, m.uid);
   else if (m.by === 't') await sendUid(d.uid, build, { kind: 'dm', id: ev.params.id });
@@ -312,6 +326,7 @@ exports.onDmMessage = onDocumentCreated('dm/{id}/msgs/{m}', async ev => {
 exports.onGuestMessage = onDocumentCreated('gchat/{id}/msgs/{m}', async ev => {
   const m = ev.data && ev.data.data(); if (!m || m.by !== 'g') return;
   const ch = await db.doc('gchat/' + ev.params.id).get(); if (!ch.exists) return;
+  await bump('ev_guest');
   const c = ch.data(), build = lang => ({ text: t(lang, 'guest', { name: c.name || '', contact: c.contact || '' }) + '\n' + clip(m.text, 3000) + '\n\n' + t(lang, 'replyHint'), extra: btn(t(lang, 'open'), SITE()) });
   if (c.tid) await sendTeacher(c.tid, build, { kind: 'g', id: ev.params.id }); else await sendOwner(build, { kind: 'g', id: ev.params.id });
 });
@@ -321,6 +336,7 @@ const leadText = (lang, key, l) => t(lang, key, { name: l.name || '', contact: l
 
 exports.onLeadCreated = onDocumentCreated('leads/{id}', async ev => {
   const l = ev.data && ev.data.data(); if (!l) return;
+  await bump('ev_lead');
   await sendOwner(lang => ({ text: leadText(lang, 'lead', l), extra: btn(t(lang, 'open'), SITE()) }));
   if (l.tid && l.tid !== 'main') await sendTeacher(l.tid, lang => ({ text: leadText(lang, 'lead', l), extra: btn(t(lang, 'open'), SITE()) }));
 });
@@ -328,6 +344,7 @@ exports.onLeadCreated = onDocumentCreated('leads/{id}', async ev => {
 // a visitor applies to teach: tell the owner
 exports.onApplication = onDocumentCreated('applications/{id}', async ev => {
   const a = ev.data && ev.data.data(); if (!a) return;
+  await bump('ev_app');
   await sendOwner(lang => ({ text: t(lang, 'app', { name: clip(a.name, 80), contact: clip(a.contact, 80), langs: (a.langs || []).join(', '), years: a.years || 0,
     levels: a.levels ? ' · ' + clip(a.levels, 60) : '', bio: a.bio ? '\n“' + clip(a.bio, 400) + '”' : '' }), extra: btn(t(lang, 'open'), SITE()) }));
 });
@@ -335,6 +352,7 @@ exports.onApplication = onDocumentCreated('applications/{id}', async ev => {
 // a request is given to a teacher: tell the teacher, and send the person their sign-up link if they pressed Start
 exports.onLeadUpdated = onDocumentUpdated('leads/{id}', async ev => {
   const a = ev.data.before.data() || {}, b = ev.data.after.data() || {};
+  if (b.tid && b.tid !== a.tid) await bump('ev_assigned');
   if (b.tid && b.tid !== a.tid) await sendTeacher(b.tid, lang => ({ text: leadText(lang, 'assigned', b), extra: btn(t(lang, 'open'), SITE()) }));
   if (b.tid && b.tgChat && b.st !== 'joined' && b.tgSent !== b.tid && (b.tid !== a.tid || b.tgChat !== a.tgChat)) await sendInvite(b, ev.params.id);
 });
@@ -344,6 +362,7 @@ exports.onLiveFor = onDocumentWritten('liveFor/{uid}', async ev => {
   const a = (ev.data.before && ev.data.before.data()) || {}, b = (ev.data.after && ev.data.after.data()) || {};
   for (const [tid, v] of Object.entries(b)) {
     if (!v || !v.on || (a[tid] && a[tid].at === v.at) || (v.until || 0) < Date.now()) continue;
+    await bump('ev_live');
     await sendUid(ev.params.uid, lang => ({ text: t(lang, 'live', { name: v.name || '', label: v.label ? '\n' + v.label : '' }), extra: okUrl(v.url) ? btn(t(lang, 'join'), v.url) : btn(t(lang, 'open'), SITE()) }));
   }
 });
@@ -352,6 +371,7 @@ exports.onLiveFor = onDocumentWritten('liveFor/{uid}', async ev => {
 exports.onReview = onDocumentWritten('feedback/{uid}/reviews/{eid}', async ev => {
   const a = (ev.data.before && ev.data.before.data()) || {}, b = (ev.data.after && ev.data.after.data()) || null;
   if (!b || (b.status !== 'reviewed' && b.status !== 'revise') || a.status === b.status) return;
+  await bump('ev_review');
   const j = await db.doc('journals/' + ev.params.uid).get(), title = (j.exists && j.data().index && j.data().index[ev.params.eid] && j.data().index[ev.params.eid].title) || '…';
   await sendUid(ev.params.uid, lang => ({ text: t(lang, b.status === 'revise' ? 'revise' : 'checked', { title }), extra: btn(t(lang, 'open'), SITE()) }));
 });
@@ -384,6 +404,7 @@ exports.onClubVideo = onDocumentWritten({ document: 'club/{id}', timeoutSeconds:
   const v = b.video || {}, was = a.video || {};
   if (!v.on || (v.until || 0) < Date.now() || (was.on && was.at === v.at)) return;
   const l = ev.params.id.split('_')[0];
+  await bump('ev_clubVideo');
   for (const uid of await clubPeople(l, v.by)) await sendUid(uid, lang => ({ text: t(lang, 'clubLive', { lang: langLabel(lang, l), name: v.byName || '' }), extra: okUrl(v.url) ? btn(t(lang, 'join2'), v.url) : btn(t(lang, 'openClub'), SITE() + '#club') }));
 });
 // a club message: at most one ping per club every 30 minutes, so a lively chat doesn't flood anyone
@@ -394,6 +415,7 @@ exports.onClubMsg = onDocumentCreated({ document: 'club/{id}/msgs/{m}', timeoutS
   const ok = await db.runTransaction(async tx => { const s = await tx.get(mark); if (s.exists && now - (s.data().at || 0) < CLUB_QUIET) return false; tx.set(mark, { at: now }); return true; });
   if (!ok) return;
   const l = ev.params.id.split('_')[0];
+  await bump('ev_clubMsg');
   for (const uid of await clubPeople(l, m.uid)) await sendUid(uid, lang => ({ text: t(lang, 'clubMsg', { lang: langLabel(lang, l), name: clip(m.name, 80), text: clip(m.text, 300) }), extra: btn(t(lang, 'openClub'), SITE() + '#club') }));
 });
 
@@ -418,6 +440,7 @@ exports.onNotice = onDocumentCreated({ document: 'tgq/{id}', timeoutSeconds: 300
   const n = ev.data && ev.data.data(); if (!n) return;
   try {
     const who = await senderOf(n.by); if (!who) return;
+    await bump('ev_notice');
     const msg = n.msg || {}, bt = n.btn || {}, url = okUrl(n.href) ? n.href : SITE();
     const uids = [...new Set((Array.isArray(n.uids) ? n.uids : []).filter(u => typeof u === 'string' && /^[\w-]{1,128}$/.test(u)))].slice(0, 1000);
     for (const uid of uids) {
@@ -451,9 +474,53 @@ exports.newsOut = onSchedule({ schedule: 'every 15 minutes', timeZone: 'Asia/Tas
     const ps = await db.doc('passes/' + m[1]).get(), until = +((ps.exists && ps.data().news && ps.data().news.until) || 0);
     if (until < x.releaseAt) continue;
     await mark.set({ at: now });   // marked first: a reader never gets the same issue twice
+    await bump('ev_news');
     await sendUid(m[1], lang => ({ text: newsText(lang, name, m[2], x.stories), extra: btn(NEWS[L(lang)].read, SITE()) }));
   }
 });
 
+/* ---------------- the owner's daily report ---------------- */
+// Counters come from tgStats/{day} (see bump); who is linked comes from tg/ and journals/.
+const R = {
+  uz: { title: '📊 Lexora boti · {day}', sent: '✉️ Yuborilgan xabarlar: {n}', failed: '❌ Yetkazilmadi: {n}', blocked: '🚫 Botni bloklaganlar: {n}', last: 'Oxirgi xato: {e}',
+    none: 'Bugun hodisa bo‘lmadi.', events: 'Bugungi hodisalar:',
+    ev: { dm: '💬 Chat xabarlari', guest: '🌐 Sayt mehmonlari savollari', lead: '🆕 Sinov darsi so‘rovlari', assigned: '📌 Ustozga biriktirilgan so‘rovlar', app: '👩‍🏫 O‘qituvchilik arizalari',
+      live: '🔴 Dars havolasi olgan talabalar', review: '✅ Tekshirilgan yozuvlar', clubVideo: '🎙 Speaking club video', clubMsg: '💬 Speaking club xabarlari', notice: '📣 Ustoz e’lonlari', news: '📰 Gazeta sonlari', reply: '↩️ Telegramdan chatga javoblar', linked: '🔗 Yangi ulanishlar' },
+    linked: '👥 Telegram ulangan: {n} (talaba {s}, ustoz {t})', unlinked: '⚠️ Telegram ulamagan talabalar: {n}{names}' },
+  ru: { title: '📊 Бот Lexora · {day}', sent: '✉️ Отправлено сообщений: {n}', failed: '❌ Не доставлено: {n}', blocked: '🚫 Заблокировали бота: {n}', last: 'Последняя ошибка: {e}',
+    none: 'Сегодня событий не было.', events: 'События за сегодня:',
+    ev: { dm: '💬 Сообщения в чате', guest: '🌐 Вопросы посетителей сайта', lead: '🆕 Заявки на пробный урок', assigned: '📌 Заявки, назначенные преподавателю', app: '👩‍🏫 Заявки преподавателей',
+      live: '🔴 Ученики, получившие ссылку на урок', review: '✅ Проверенные записи', clubVideo: '🎙 Speaking club (видео)', clubMsg: '💬 Speaking club (сообщения)', notice: '📣 Объявления преподавателей', news: '📰 Выпуски газеты', reply: '↩️ Ответы из Telegram в чат', linked: '🔗 Новые подключения' },
+    linked: '👥 Подключено к Telegram: {n} (учеников {s}, преподавателей {t})', unlinked: '⚠️ Ученики без Telegram: {n}{names}' },
+  en: { title: '📊 Lexora bot · {day}', sent: '✉️ Messages sent: {n}', failed: '❌ Not delivered: {n}', blocked: '🚫 Blocked the bot: {n}', last: 'Last error: {e}',
+    none: 'No events today.', events: 'Today’s events:',
+    ev: { dm: '💬 Chat messages', guest: '🌐 Site visitor questions', lead: '🆕 Trial requests', assigned: '📌 Requests assigned to a teacher', app: '👩‍🏫 Teacher applications',
+      live: '🔴 Students who got a lesson link', review: '✅ Entries checked', clubVideo: '🎙 Speaking club video', clubMsg: '💬 Speaking club messages', notice: '📣 Teacher announcements', news: '📰 Newspaper issues', reply: '↩️ Replies from Telegram into chat', linked: '🔗 New connections' },
+    linked: '👥 Connected to Telegram: {n} (students {s}, teachers {t})', unlinked: '⚠️ Students not on Telegram: {n}{names}' },
+};
+async function reportText(lang, day) {
+  const x = R[L(lang)], f = (s, v) => s.replace(/\{(\w+)\}/g, (_, k) => (v[k] == null ? '' : v[k]));
+  const s = ((await db.doc('tgStats/' + day).get()).data()) || {}, n = k => s[k] || 0;
+  const out = [f(x.title, { day }), '', f(x.sent, { n: n('sent') })];
+  if (n('failed')) out.push(f(x.failed, { n: n('failed') }));
+  if (n('blocked')) out.push(f(x.blocked, { n: n('blocked') }));
+  if (n('failed') && s.lastErr) out.push(f(x.last, { e: s.lastErr }));
+  const evs = Object.keys(x.ev).filter(k => n('ev_' + k));
+  out.push('', evs.length ? x.events : x.none, ...evs.map(k => x.ev[k] + ': ' + n('ev_' + k)));
+  const [tgs, js] = await Promise.all([db.collection('tg').get(), db.collection('journals').select('name').get()]);
+  const linked = new Set(tgs.docs.map(d => d.id)), students = tgs.docs.filter(d => d.data().role === 'student').length, staff = tgs.docs.filter(d => d.data().role === 'staff').length;
+  const missing = js.docs.filter(d => !linked.has(d.id)).map(d => (d.data() || {}).name || d.id);
+  out.push('', f(x.linked, { n: tgs.docs.length, s: students, t: staff }));
+  if (missing.length) out.push(f(x.unlinked, { n: missing.length, names: '\n' + missing.slice(0, 15).map(m => '• ' + clip(m, 40)).join('\n') + (missing.length > 15 ? '\n…' : '') }));
+  return out.join('\n');
+}
+// to one owner chat, or to every linked owner chat; written straight to Telegram so the report itself is not counted
+async function sendReport(chatId) {
+  const day = dayKey(), targets = chatId ? [{ chatId, uid: (await db.doc('tgChats/' + chatId).get()).data().uid }]
+    : (await db.collection('tg').where('owner', '==', true).get()).docs.map(d => ({ chatId: d.data().chatId, uid: d.id }));
+  for (const tg of targets) await api('sendMessage', { chat_id: tg.chatId, text: clip(await reportText(await langOf(tg.uid), day), 4000), disable_web_page_preview: true });
+}
+exports.dailyReport = onSchedule({ schedule: 'every day 21:00', timeZone: 'Asia/Tashkent', timeoutSeconds: 120 }, async () => { await sendReport(); });
+
 // for tests
-exports._t = { t, leadText, joinUrl, hookSecret, setupKey, newsText };
+exports._t = { t, leadText, joinUrl, hookSecret, setupKey, newsText, reportText, dayKey };

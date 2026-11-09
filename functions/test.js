@@ -6,19 +6,22 @@ const snap = (path) => ({ id: path.split('/').pop(), exists: store.has(path), da
 function doc(path) {
   return { id: path.split('/').pop(), path,
     get: async () => snap(path),
-    set: async (d, o) => { store.set(path, o && o.merge ? { ...(store.get(path) || {}), ...d } : { ...d }); },
+    set: async (d, o) => { const cur = (o && o.merge && store.get(path)) || {}, out = { ...cur };
+      for (const [k, v] of Object.entries(d)) out[k] = v && v.__inc ? (cur[k] || 0) + v.__inc : v;
+      store.set(path, o && o.merge ? out : { ...d }); },
     update: async (d) => { if (!store.has(path)) throw new Error('no doc ' + path); store.set(path, { ...store.get(path), ...d }); },
     delete: async () => { store.delete(path); } };
 }
 function collection(path) {
   const OPS = { '==': (a, b) => a === b, '<=': (a, b) => a <= b, '<': (a, b) => a < b, '>': (a, b) => a > b, '>=': (a, b) => a >= b };
   const list = fs => [...store.keys()].filter(k => k.slice(0, k.lastIndexOf('/')) === path && fs.every(([f, op, v]) => OPS[op]((store.get(k) || {})[f], v))).map(snap);
-  const query = fs => ({ where: (f, op, v) => query([...fs, [f, op, v]]), get: async () => { const docs = list(fs); return { docs, empty: !docs.length }; } });
+  const query = fs => ({ select: () => query(fs), where: (f, op, v) => query([...fs, [f, op, v]]), get: async () => { const docs = list(fs); return { docs, empty: !docs.length }; } });
   return { doc: id => doc(path + '/' + (id || 'auto' + (++autoId))), add: async d => { const p = path + '/auto' + (++autoId); store.set(p, { ...d }); return doc(p); }, ...query([]) };
 }
 const fakeDb = { doc, collection, runTransaction: async fn => fn({ get: r => r.get(), set: (r, d) => r.set(d) }) };
 const users = { s1: { email: 'aziza@x.com', emailVerified: false }, own: { email: 'samandaryusupov559@gmail.com', emailVerified: true }, dil: { email: 'dil@x.com', emailVerified: true } };
-const fakeAdmin = { initializeApp() {}, firestore: () => fakeDb, auth: () => ({ getUser: async uid => { if (!users[uid]) throw new Error('no user'); return users[uid]; } }) };
+const fakeFirestore = () => fakeDb; fakeFirestore.FieldValue = { increment: n => ({ __inc: n }) };
+const fakeAdmin = { initializeApp() {}, firestore: fakeFirestore, auth: () => ({ getUser: async uid => { if (!users[uid]) throw new Error('no user'); return users[uid]; } }) };
 const load = Module._load;
 Module._load = function (req, ...rest) { return req === 'firebase-admin' ? fakeAdmin : load.call(this, req, ...rest); };
 let msgId = 100;
@@ -170,6 +173,22 @@ const ev = (params, after, before) => ({ params, data: before === undefined ? { 
   ok('paying reader gets the headlines', sent.length === 1 && sent[0].chat_id === 11 && /Rain in Tashkent/.test(sent[0].text) && /gazetangiz keldi/.test(sent[0].text));
   sent.length = 0; await bot.newsOut.run({});
   ok('the same issue is never sent twice', sent.length === 0);
+
+  console.log('Owner report');
+  const day = bot._t.dayKey(), stats = store.get('tgStats/' + day) || {};
+  ok('every message the bot sent was counted today', stats.sent > 10 && stats.ev_review >= 1 && stats.ev_notice >= 2 && stats.ev_clubVideo >= 1 && stats.ev_news === 1);
+  store.set('tg/own', { chatId: 77, role: 'owner', tid: 'main', owner: true }); store.set('tgChats/77', { uid: 'own' });
+  store.set('journals/s9', { name: 'Zarina', teacher: 'main' });
+  store.set('tgStats/' + day, { ...stats, failed: 2, blocked: 1, lastErr: 'Forbidden: bot was blocked by the user' });
+  const txt = await bot._t.reportText('uz', day);
+  ok('report shows messages, failures, events and who is not linked', /Yuborilgan xabarlar: \d+/.test(txt) && /Yetkazilmadi: 2/.test(txt) && /bloklaganlar: 1/.test(txt) && /Oxirgi xato: Forbidden/.test(txt) && /Gazeta sonlari: 1/.test(txt) && /ulamagan talabalar: [1-9]/.test(txt) && /Zarina/.test(txt) && /Telegram ulangan: \d+/.test(txt));
+  sent.length = 0; await call(tgMsg(77, '/report'));
+  ok('the owner can ask for the report with /report', sent.length === 1 && sent[0].chat_id === 77 && /Lexora boti/.test(sent[0].text));
+  sent.length = 0; await call(tgMsg(11, '/report'));
+  ok('a student cannot get the report', !sent.some(x => /Yuborilgan xabarlar/.test(x.text || '')));
+  sent.length = 0; await bot.dailyReport.run({});
+  ok('the 21:00 report goes to the owner', sent.some(x => x.chat_id === 77 && /Lexora boti/.test(x.text)));
+  store.delete('tg/own'); store.delete('tgChats/77'); store.delete('journals/s9');
 
   console.log(`\n${pass} passed, ${fail} failed`); process.exit(fail ? 1 : 0);
 })().catch(e => { console.error(e); process.exit(1); });
