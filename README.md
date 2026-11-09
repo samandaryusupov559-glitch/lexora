@@ -105,6 +105,26 @@ Bu xatlarni butunlay spamdan chiqarishning eng ishonchli yo'li o'z domeningiz (m
 
 **Lexora xabarnomalari** sizning Gmail'ingizdan ketadi. Oddiy Gmail kuniga taxminan 100 ta xat yuboradi, limit tugasa qolganlari yuborilmaydi. E'lonlar sahifasidagi Email kartasida bugun yana nechta xat yuborish mumkinligi ko'rinadi. Keraksiz xat turlarini o'sha yerda o'chirib qo'ying.
 
+## Telegram bot
+
+Bot xabarnomalarni Telegram'ga yuboradi: ustoz va o'quvchi xabarlari (javobni Telegram'dan yozsa bo'ladi), dars boshlangani va Meet havolasi, tekshirilgan yozuvlar, yangi sinov so'rovlari, mehmon savollari. Sinov so'rovini qoldirgan odam botda Start'ni bossa, ustoz biriktirilishi bilan unga ro'yxatdan o'tish havolasi o'zi boradi. Bot joylangach, o'quvchilar Lexoradan foydalanishdan oldin Telegram'ni ulashi shart.
+
+Bot Firebase Cloud Functions'da (`functions/`) ishlaydi va GitHub orqali o'zi joylanadi. `firestore.rules` ham har merge'da o'zi joylanadi, uni qo'lda qo'yish shart emas.
+
+**Bir martalik sozlash:**
+
+1. **Bot yarating.** Telegram'da @BotFather'ga `/newbot` deb yozing, nom va username bering. U bergan tokenni hech kimga yubormang.
+2. **Joylash huquqini bering.** Firebase → ⚙️ **Project settings → Service accounts** bo'limida **Manage service account permissions** havolasini bosing. Ochilgan Google Cloud IAM sahifasida `firebase-adminsdk-…@daybook-4497a.iam.gserviceaccount.com` qatoridagi qalamni bosing, **Add another role → Owner** ni tanlab, saqlang.
+3. **Kalitni oling.** Firebase'dagi o'sha **Service accounts** sahifasida **Generate new private key** ni bosing. JSON fayl yuklanadi.
+4. **GitHub'ga qo'ying.** Lexora repozitoriysida **Settings → Secrets and variables → Actions → New repository secret** orqali ikkita secret qo'shing:
+   - `FIREBASE_SERVICE_ACCOUNT`: 3-qadamdagi JSON faylning butun matni
+   - `TELEGRAM_TOKEN`: @BotFather bergan token
+5. **Ishga tushiring.** **Actions → Firebase (bot + rules) → Run workflow** ni bosing. Birinchi marta 3–5 daqiqa davom etadi. Oxirida bot Telegram'ga o'zi ulanadi va Lexorada "Telegram'ni ulash" tugmasi paydo bo'ladi.
+
+Birinchi joylash ba'zan Google xizmatlari endi yoqilayotgani uchun xato bilan tugaydi. Bir necha daqiqa kutib, **Run workflow** ni yana bosing.
+
+Narxi: Blaze tarifining bepul ulushi (oyiga 2 mln chaqiruv) Lexora uchun yetarli, konteyner saqlash uchun oyiga bir necha sent olinadi. Bot kodining sinovi: `cd functions && npm install && npm test`.
+
 ## Foydalanish
 
 1. Saytga birinchi bo'lib **o'zingiz** kiring: **Teacher sign-in** tugmasini bosing, `TEACHER_EMAIL` dagi emailni yozing va kelgan havolani o'sha qurilmada oching. O'qituvchi sahifasi ochiladi.

@@ -1,0 +1,72 @@
+# Deploys the Telegram bot (functions/) and firestore.rules to Firebase after every merge into main.
+# Needs two repository secrets (Settings → Secrets and variables → Actions), see README "Telegram bot":
+#   FIREBASE_SERVICE_ACCOUNT — the JSON key of a service account that may deploy to the project
+#   TELEGRAM_TOKEN           — the token @BotFather gave for the bot
+# Without TELEGRAM_TOKEN only the rules are deployed; without FIREBASE_SERVICE_ACCOUNT nothing is.
+name: Firebase (bot + rules)
+
+on:
+  push:
+    branches: [main]
+    paths: ['functions/**', 'firestore.rules', 'firebase.json', '.firebaserc', '.github/workflows/firebase.yml']
+  workflow_dispatch:
+
+concurrency: firebase-deploy
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      PROJECT: daybook-4497a
+      REGION: europe-west1
+      SITE_URL: https://samandaryusupov559-glitch.github.io/lexora/
+      OWNER_EMAIL: samandaryusupov559@gmail.com
+      HAS_SA: ${{ secrets.FIREBASE_SERVICE_ACCOUNT != '' }}
+      HAS_BOT: ${{ secrets.TELEGRAM_TOKEN != '' }}
+    steps:
+      - name: Secrets missing
+        if: env.HAS_SA != 'true'
+        run: echo "::warning::Add the FIREBASE_SERVICE_ACCOUNT secret to deploy (README → Telegram bot). Nothing was deployed."
+
+      - uses: actions/checkout@v4
+        if: env.HAS_SA == 'true'
+
+      - uses: actions/setup-node@v4
+        if: env.HAS_SA == 'true'
+        with: { node-version: 20 }
+
+      - name: Install and test the bot
+        if: env.HAS_SA == 'true' && env.HAS_BOT == 'true'
+        working-directory: functions
+        run: npm ci && npm test
+
+      - name: Bot settings
+        if: env.HAS_SA == 'true' && env.HAS_BOT == 'true'
+        env:
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+        run: printf 'TELEGRAM_TOKEN=%s\nSITE_URL=%s\nOWNER_EMAIL=%s\nREGION=%s\n' "$TELEGRAM_TOKEN" "$SITE_URL" "$OWNER_EMAIL" "$REGION" > functions/.env
+
+      - uses: google-github-actions/auth@v2
+        if: env.HAS_SA == 'true'
+        with:
+          credentials_json: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+
+      - name: Deploy
+        if: env.HAS_SA == 'true'
+        run: |
+          WHAT=firestore:rules
+          if [ "$HAS_BOT" = "true" ]; then WHAT=functions,firestore:rules; fi
+          npx -y firebase-tools@13 deploy --only "$WHAT" --project "$PROJECT" --force --non-interactive
+
+      - name: Connect the bot to Telegram
+        if: env.HAS_SA == 'true' && env.HAS_BOT == 'true'
+        env:
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+        run: |
+          KEY=$(printf '%s' "$TELEGRAM_TOKEN:setup" | sha256sum | cut -d' ' -f1)
+          URL="https://$REGION-$PROJECT.cloudfunctions.net/telegram"
+          for i in 1 2 3 4 5; do
+            if curl -fsS "$URL?setup=$KEY&hook=$URL"; then echo; echo "Bot connected."; exit 0; fi
+            echo "not ready yet, waiting…"; sleep 20
+          done
+          exit 1

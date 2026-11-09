@@ -480,6 +480,16 @@ service cloud.firestore {
         allow delete: if isTeacher();
       }
     }
+    // ---------- Telegram bot ----------
+    // A one-time code the site makes when someone presses "Connect Telegram"; only the bot (server) reads it.
+    match /tglink/{code} {
+      allow create: if signedIn() && code.size() >= 20 && code.size() <= 60
+        && request.resource.data.keys().hasOnly(['uid', 'at']) && request.resource.data.uid == request.auth.uid && request.resource.data.at is int;
+    }
+    // Written by the bot when the person presses Start; they may see and remove their own link.
+    match /tg/{uid} {
+      allow read, delete: if isMe(uid) || isTeacher();
+    }
     // Services the centre offers its teachers. Teachers read them; only the owner changes them.
     match /centre/{doc} {
       allow read: if isTeacher() || isStaff();
