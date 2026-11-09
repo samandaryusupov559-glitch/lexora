@@ -33,7 +33,7 @@ jobs:
 
       - uses: actions/setup-node@v4
         if: env.HAS_SA == 'true'
-        with: { node-version: 20 }
+        with: { node-version: 22 }
 
       - name: Install and test the bot
         if: env.HAS_SA == 'true' && env.HAS_BOT == 'true'
@@ -56,7 +56,7 @@ jobs:
         run: |
           WHAT=firestore:rules
           if [ "$HAS_BOT" = "true" ]; then WHAT=functions,firestore:rules; fi
-          npx -y firebase-tools@13 deploy --only "$WHAT" --project "$PROJECT" --force --non-interactive
+          npx -y firebase-tools@latest deploy --only "$WHAT" --project "$PROJECT" --force --non-interactive
 
       - name: Connect the bot to Telegram
         if: env.HAS_SA == 'true' && env.HAS_BOT == 'true'
