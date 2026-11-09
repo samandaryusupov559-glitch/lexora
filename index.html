@@ -1619,8 +1619,8 @@ function renderMain0(){
   const fn = {inbox:vInbox, students:vStudents, student:vStudent, insights:vInsights, prompt:vPrompt, bank:vBank, review:vReview, ledger:vLedger, board:vBoard, bookings:vBookings, market:vMarket, learn:vLearn, book:vBook, rating:()=>S.mode==='teacher'?vRatingT():vRatingS(),
               home:vHome, write:vWrite, entry:vEntry, mistakes:vMistakes, words:vWords, setup:vSetup, pay:vPay,
               news:vNews, newsEdit:vNewsEdit, study:vStudy, services:vServices, set:vSet, setEdit:vSetEdit, team:vTeam, me:vMe, centre:vCentre, teachers:vStuTeachers, groups:vGroups, club:vClub, library:vLibrary, chat:vChat}[v];
-  if(S.mode==='student' && tgNeeded()){ m.innerHTML=vTgGate(); return; }
-  m.innerHTML = (S.mode==='teacher' && v==='inbox' && tgNeeded() ? tgBanner() : '') + (fn ? fn() : '');
+  if(tgNeeded()){ m.innerHTML=vTgGate(); return; }   // everyone (students, teachers, the owner) connects Telegram first
+  m.innerHTML = fn ? fn() : '';
   after[v] && after[v]();
 }
 const after = {
@@ -4732,7 +4732,7 @@ function startCentre(role){
   const col = (path, key, after) => S.unsubs.push(S.db.collection(path).onSnapshot(q=>{ const o={}; q.docs.forEach(d=>{ if(d.exists) o[d.id]=d.data(); }); S[key]=o; after&&after(); refreshAny(); }, quiet));
   const one = (path, key, def, after) => S.unsubs.push(S.db.doc(path).onSnapshot(s=>{ S[key]=s.exists?s.data():def; after&&after(); refreshAny(); }, ()=>{ S[key]=def; }));
   const where1 = (path, f, v, key) => S.unsubs.push(S.db.collection(path).where(f,v).onSnapshot(q=>{ const o={}; q.docs.forEach(d=>{ if(d.exists) o[d.id]=d.data(); }); S[key]=o; refreshAny(); }, quiet));
-  one('site/pricing','pricing',null); one('site/bot','bot',null); S.myTg=undefined; one('tg/'+S.uid,'myTg',null);
+  one('site/pricing','pricing',null); one('site/bot','bot',null); S.myTg=undefined; S.tgLinkUrl=''; one('tg/'+S.uid,'myTg',null, ()=>{ if(S.myTg && S.tgLinkUrl){ S.tgLinkUrl=''; toast(tr('tg.done')); } });
   if(role==='owner'){
     col('leads','leads', asgSoon); col('leaves','leaves', ()=>setTimeout(finishLeaves, 1500)); col('dm','dms'); col('gchat','gchats', asgSoon); one('centre/assign','asgCfg',{}, asgSoon); col('staffReq','sreq'); col('teacherPriv','tpriv'); col('applications','apps');
     col('enroll','enrolls'); col('enrollStatus','enrollSt'); col('roster','rosters'); col('live','lives'); col('torders','torders'); one('site/promo','promo',{});
@@ -5348,25 +5348,30 @@ async function setEnroll(uid, tid, st){
 
 /* ---------- Telegram bot: connecting an account ----------
    site/bot = {username, on} (written by the bot after each deploy); tg/{uid} exists once the person pressed Start.
-   Students must connect before they continue; teachers see a reminder on their inbox. */
+   Everyone who signs in (students, teachers, the owner) must connect before they continue. */
 const botOn = () => !!(S.bot?.on && S.bot?.username);
 const tgNeeded = () => botOn() && S.myTg===null && (S.mode!=='student' || !!S.myProfile);
 const tgUrl = start => `https://t.me/${encodeURIComponent(S.bot.username)}?start=${encodeURIComponent(start)}`;
 function vTgGate(){
+  const T = S.mode==='teacher', why = T ? ['tg.whyT1','tg.whyT2','tg.whyT3'] : ['tg.why1','tg.why2','tg.why3'];
+  const url = S.tgLinkUrl;
   return `<div class="paper tg-gate" style="max-width:560px;margin:20px auto 0"><span class="label">${tr('tg.k')}</span>
     <h1 style="font-family:var(--f-display);font-weight:400;font-size:34px;line-height:1.1;margin-top:6px">${tr('tg.gateH')}</h1>
-    <p class="muted" style="margin-top:10px">${tr('tg.gateP')}</p>
-    <ul class="small muted tq-list" style="margin:12px 0"><li>${tr('tg.why1')}</li><li>${tr('tg.why2')}</li><li>${tr('tg.why3')}</li></ul>
-    <button class="btn pen" data-act="c-tg-link">✈ ${tr('tg.btn')}</button>
-    <p class="small faint" style="margin-top:12px">${tr('tg.after',{bot:'@'+esc(S.bot.username)})}</p></div>`;
+    <p class="muted" style="margin-top:10px">${tr(T?'tg.gatePT':'tg.gateP')}</p>
+    <ul class="small muted tq-list" style="margin:12px 0">${why.map(k=>`<li>${tr(k)}</li>`).join('')}</ul>
+    <ol class="small tq-list" style="margin:14px 0 16px"><li>${tr('tg.s1')}</li><li>${tr('tg.s2')}</li><li>${tr('tg.s3')}</li></ol>
+    <button class="btn pen" data-act="c-tg-link" style="font-size:17px;padding:14px 22px">✈ ${tr(url?'tg.again':'tg.btn')}</button>
+    ${url?`<p class="small" style="margin-top:14px">⏳ ${tr('tg.waiting')}</p>
+      <p class="small faint" style="margin-top:6px">${tr('tg.noOpen')} <a href="${esc(url)}" target="_blank" rel="noopener">${esc(url.replace('https://',''))}</a></p>`
+      :`<p class="small faint" style="margin-top:12px">${tr('tg.after',{bot:'@'+esc(S.bot.username)})}</p>`}
+    <p class="small faint" style="margin-top:14px">${tr('tg.noApp')} <a href="https://telegram.org/apps" target="_blank" rel="noopener">telegram.org/apps</a> · <button class="btn ghost sm" data-act="sign-out" style="padding:2px 8px">${tr('tg.signOut')}</button></p></div>`;
 }
-const tgBanner = () => `<div class="notice info" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:14px"><span>✈ ${tr('tg.bannerP')}</span><button class="btn sm pen" data-act="c-tg-link">${tr('tg.btn')}</button></div>`;
 async function tgLink(){
   if(!botOn() || !S.uid) return;
   const code=secretId()+secretId().slice(0,8), url=tgUrl('u_'+code), w=window.open('', '_blank');
   try{ await S.db.doc('tglink/'+code).set({uid:S.uid, at:Date.now()}); }catch(e){ if(w) w.close(); dbErr(e,'svc'); return; }
-  if(w) w.location.href=url; else location.href=url;
-  toast(tr('tg.wait'), 9000);
+  S.tgLinkUrl=url; if(w) w.location.href=url; else location.href=url;
+  toast(tr('tg.wait'), 9000); refreshAny();
 }
 
 /* ---------- chats ----------

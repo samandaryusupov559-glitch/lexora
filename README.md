@@ -107,7 +107,7 @@ Bu xatlarni butunlay spamdan chiqarishning eng ishonchli yo'li o'z domeningiz (m
 
 ## Telegram bot
 
-Bot Lexoraning barcha xabarnomalarini Telegram'ga yuboradi: e'lonlar, postlar, vazifalar, to'lov/band qilish/buyurtma javoblari, ertalabki gazeta, ustoz va o'quvchi xabarlari (javobni Telegram'dan yozsa bo'ladi), dars boshlangani va Meet havolasi, tekshirilgan yozuvlar, yangi sinov so'rovlari, mehmon savollari. Sinov so'rovini qoldirgan odam botda Start'ni bossa, ustoz biriktirilishi bilan unga ro'yxatdan o'tish havolasi o'zi boradi. Bot joylangach, o'quvchilar Lexoradan foydalanishdan oldin Telegram'ni ulashi shart.
+Bot Lexoraning barcha xabarnomalarini Telegram'ga yuboradi: e'lonlar, postlar, vazifalar, to'lov/band qilish/buyurtma javoblari, ertalabki gazeta, ustoz va o'quvchi xabarlari (javobni Telegram'dan yozsa bo'ladi), dars boshlangani va Meet havolasi, tekshirilgan yozuvlar, yangi sinov so'rovlari, mehmon savollari. Sinov so'rovini qoldirgan odam botda Start'ni bossa, ustoz biriktirilishi bilan unga ro'yxatdan o'tish havolasi o'zi boradi. Bot joylangach, Lexoraga kirgan har kim (o'quvchilar, ustozlar va egasi) foydalanishdan oldin Telegram'ni ulashi shart: sahifada 3 qadamli ko'rsatma va bitta tugma chiqadi, Start bosilgach sahifa o'zi ochiladi.
 
 Botda tugmalar bor: **Lexora** (saytni ochadi), **Yordam** va **Holat**. Buyruqlar: `/help` (bot nima qilishi, rolga qarab: talaba, ustoz, egasi), `/status` (ulanish holati va ustoz), `/menu` (tugmalar). Matnlar uz/ru/en, til Lexoradagi tanlovga qarab chiqadi. Buyruqlar ro'yxati va bot tavsifi har joylashdan keyin Telegram'ga o'zi o'rnatiladi.
 
