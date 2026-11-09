@@ -1026,6 +1026,11 @@ td.nwc.off{color:var(--ink-3);font-size:18px}
 .chat-pick{margin:auto;padding:40px 16px;text-align:center}
 .gch-msgs{min-height:260px;max-height:50vh;border:1px solid var(--line);border-radius:12px;margin:10px 0}
 .gch-in{border:1px solid var(--line);border-radius:12px;padding:8px;margin-bottom:8px}
+.tq{padding:14px 16px;display:flex;flex-direction:column;gap:6px;background:var(--blue-soft);border-color:transparent}
+.tq-price{font-size:22px;font-family:var(--f-display);font-weight:500}
+.tq-list{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:3px}
+.tq-fmt{display:flex;gap:8px;flex-wrap:wrap}
+.ap-pr{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:10px}
 .lib-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:14px}
 .lib{display:flex;gap:14px;padding:16px;align-items:flex-start}
 .lib-ic{font-size:30px;line-height:1;width:48px;height:48px;display:grid;place-items:center;border-radius:14px;background:var(--sheet-2);flex:none}
@@ -4811,6 +4816,22 @@ function openTeacherProfile(tid){
     </div>
     <div class="dlg-foot"><button type="button" class="btn ghost" data-act="dlg-close">${tr('close')}</button>${S.mode==='guest'?`<button type="button" class="btn" data-act="c-gchat" data-tid="${esc(tid)}">${tr('dm.guestBtn')}</button><button type="button" class="btn pen" data-act="c-trial" data-tid="${esc(tid)}">${tr('c.trialWith',{name:esc((t.name||'').split(' ')[0])})}</button>`:''}</div></div>`, {type:'tprof', id:tid});
 }
+// what a visitor will pay: the chosen teacher's price, or the range of the teachers of that language
+function trialQuote(lang, tid, fmt){
+  fmt = PFORMATS.includes(fmt) ? fmt : 'group';
+  const t = tid && S.team?.[tid], teachers = t ? [t] : teamList(false).filter(x=>(x.langs||[]).includes(lang));
+  let lo, hi, len = t ? +t.lessonLen||0 : 0;
+  if(teachers.length){ const r=teachers.map(x=>{ const p=teacherPrice(x, lang, fmt); return p.v ? [p.v,p.v] : [p.lo,p.hi]; }); lo=Math.min(...r.map(x=>x[0])); hi=Math.max(...r.map(x=>x[1])); }
+  else { lo=priceRange(lang, fmt, 'junior').lo; hi=priceRange(lang, fmt, 'senior').hi; }
+  const plain = (lo===hi ? som(lo) : som(lo).replace(' '+tr('lg.som'),'')+' – '+som(hi)) + ' / ' + tr('pc.month');
+  const lesson = lo===hi ? som(r1000(lo/12)) : som(r1000(lo/12)).replace(' '+tr('lg.som'),'')+' – '+som(r1000(hi/12));
+  const note = t ? (teacherPrice(t,lang,fmt).v ? tr('c.qExact',{name:esc(t.name||'')}) : tr('c.qRangeT',{name:esc(t.name||'')}))
+    : teachers.length ? tr('c.qRangeAny',{n:teachers.length}) : tr('c.qNoT');
+  const html = `<div class="row" style="justify-content:space-between;gap:10px;align-items:baseline;flex-wrap:wrap"><span class="label">${tr('c.qH')} · ${esc(langName(lang))} · ${tr('pc.'+fmt)}</span></div>
+    <b class="tq-price num">${esc(plain)}</b>
+    <ul class="tq-list small"><li>${tr('c.qPer',{v:esc(lesson)})}${len?' · '+tr('c.qLen',{len:lenText(len)}):''}</li><li>${tr('c.qFmt.'+fmt)}</li><li>${note}</li><li><b>${tr('c.qFree')}</b></li>${promoOn(S.promo)?`<li>${promoText(S.promo)}</li>`:''}</ul>`;
+  return {lo, hi, plain, html};
+}
 function openTrial(tid){
   const all=teamList(false), langs=[...new Set([...CLUB_LANGS, ...all.flatMap(t=>t.langs||[])])];
   const pre = tid && S.team[tid] ? (S.team[tid].langs||[])[0] : '';
@@ -4820,14 +4841,19 @@ function openTrial(tid){
       <label class="field"><span>${tr('c.fContact')}</span><input class="inp" id="tr-contact" maxlength="120" placeholder="+998 90 123 45 67 / @telegram" required></label>
       <div class="grid2" style="gap:12px"><label class="field"><span>${tr('c.fLang')}</span><select class="inp" id="tr-lang">${langOpts(langs, pre)}</select></label>
         <label class="field"><span>${tr('c.fLevel')}</span><select class="inp" id="tr-level"><option value="">${tr('c.notSure')}</option><option value="0">${tr('c.beginner')}</option>${LEVELS.map(l=>`<option>${l}</option>`).join('')}</select></label></div>
+      <div class="field"><span>${tr('c.fFormat')}</span><div class="seg tq-fmt" role="radiogroup">${PFORMATS.map((f,i)=>`<label class="lchip pick"><input type="radio" name="tr-fmt" value="${f}" ${i===0?'checked':''}> ${tr('pc.'+f)}</label>`).join('')}</div></div>
       <label class="field"><span>${tr('c.fTeacher')}</span><select class="inp" id="tr-tid"><option value="">${tr('c.anyTeacher')}</option>${all.map(t=>`<option value="${esc(t.tid)}" ${t.tid===tid?'selected':''}>${esc(t.name||'')}</option>`).join('')}</select></label>
+      <div class="tq card" id="tr-quote" aria-live="polite"></div>
       <label class="field"><span>${tr('c.fMsg')} <span class="faint">${tr('optional')}</span></span><textarea class="inp" id="tr-msg" rows="3" maxlength="500" placeholder="${tr('c.fMsgPh')}"></textarea></label>
       <p class="lg-err" id="tr-err" role="alert"></p></div>
     <div class="dlg-foot"><button type="button" class="btn ghost" data-act="dlg-close">${tr('cancel')}</button><button type="button" class="btn" data-act="c-gchat" data-tid="${esc(tid||'')}">${tr('dm.guestBtn')}</button><button class="btn pen" id="tr-go">${tr('c.send')}</button></div></form>`, {type:'trial'});
+  const fmtNow = () => document.querySelector('[name=tr-fmt]:checked')?.value||'group';
+  const drawQ = () => { const q=trialQuote($('#tr-lang').value, $('#tr-tid').value, fmtNow()); $('#tr-quote').innerHTML=q.html; return q; };
+  ['#tr-lang','#tr-tid'].forEach(x=>$(x).addEventListener('change', drawQ)); document.querySelectorAll('[name=tr-fmt]').forEach(x=>x.addEventListener('change', drawQ)); drawQ();
   $('#tr-form').addEventListener('submit', async e=>{
     e.preventDefault(); const name=$('#tr-name').value.trim(), contact=$('#tr-contact').value.trim();
     if(!name){ $('#tr-err').textContent=tr('c.needName'); return; } if(contact.length<3){ $('#tr-err').textContent=tr('c.needContact'); return; }
-    const lv=$('#tr-level').value, d={name, contact, lang:$('#tr-lang').value, level: lv==='0'?'beginner':lv, tid:$('#tr-tid').value, msg:$('#tr-msg').value.trim(), at:Date.now()};
+    const lv=$('#tr-level').value, d={name, contact, lang:$('#tr-lang').value, level: lv==='0'?'beginner':lv, tid:$('#tr-tid').value, msg:$('#tr-msg').value.trim(), at:Date.now(), fmt:fmtNow(), quote:drawQ().plain.slice(0,80)};
     const btn=$('#tr-go'); btn.disabled=true;
     try{ await S.db.collection('leads').doc().set(d);
       $('#tr-form').innerHTML=`${dlgHead(tr('c.trialK'), tr('c.thanksH'))}<div class="dlg-body"><p>${tr('c.thanksP',{name:esc(name.split(' ')[0])})}</p></div><div class="dlg-foot"><button type="button" class="btn primary" data-act="dlg-close">${tr('app.ok')}</button></div>`;
@@ -4952,7 +4978,7 @@ function vTeam(){
     ${list.length?`<div class="tlist">${list.map(row).join('')}</div>`:`<div class="empty"><h3>${tr('c.teamEmptyH')}</h3><p>${tr('c.teamEmptyP')}</p></div>`}
     ${appsSection()}${enrollSection()}${pricingSection()}${tordersSection(false)}
     <div class="section"><div class="row" style="justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap"><h2 style="margin:0">${tr('c.leadsH')}</h2>${asgBar()}</div><p class="small muted" style="margin:6px 0 12px">${tr('c.asgP')}</p>${leads.length?`<div class="list">${leads.map(l=>`<div class="req ${l.st?'ok':'wait'}">${avatar(l.name,l.id)}<div style="min-width:0"><b>${esc(l.name)}</b> <span class="faint">·</span> <span class="num">${esc(l.contact)}</span>
-        <div class="small muted">${[l.lang, l.level==='beginner'?tr('c.beginner'):l.level, l.tid?tr('c.forT',{name:esc(tName(l.tid))}):tr('c.anyTeacher')].filter(Boolean).map(x=>x).join(' · ')} · ${ago(l.at)}</div>${l.msg?`<div class="small req-note">“${esc(l.msg)}”</div>`:''}<div style="margin-top:8px">${asgPicker('lead', l.id, l)}</div></div>
+        <div class="small muted">${[l.lang, l.level==='beginner'?tr('c.beginner'):l.level, l.fmt?tr('pc.'+l.fmt):'', l.quote||'', l.tid?tr('c.forT',{name:esc(tName(l.tid))}):tr('c.anyTeacher')].filter(Boolean).map(x=>x).join(' · ')} · ${ago(l.at)}</div>${l.msg?`<div class="small req-note">“${esc(l.msg)}”</div>`:''}<div style="margin-top:8px">${asgPicker('lead', l.id, l)}</div></div>
         <div class="req-act">${l.st?`<span class="pill bk-ok">${tr('c.contacted')}</span><button class="btn ghost sm" data-act="c-lead-del" data-id="${esc(l.id)}" style="color:var(--pen)">${tr('delete')}</button>`:`<button class="btn sm primary" data-act="c-lead-done" data-id="${esc(l.id)}">${tr('c.markContacted')}</button>`}</div></div>`).join('')}</div>`:`<p class="faint">${tr('c.noLeads')}</p>`}</div>
     <div class="section"><h2>${tr('c.actH')}</h2>${act.length?`<div class="tact">${act.map(e=>`<div class="tact-row"><span class="tact-dot ${e.kind==='entry'?'in':''}"></span><span>${e.kind==='entry'
         ? tr('c.actEntry',{s:esc(e.name||''), t:esc(e.title), teacher:esc(tName(e.tid))})
@@ -5005,7 +5031,7 @@ function vCentre(){
       return `<div class="req ${s}"><div style="min-width:0"><b>${esc(o?.title||r.title||'–')}</b><div class="small muted">${ago(r.at)}</div>${r.note?`<div class="small req-note">“${esc(r.note)}”</div>`:''}</div><div class="req-act"><span class="pill bk-${s}">${tr('bk.st.'+s)}</span></div></div>`; }).join('')}</div></div>`:''}
     ${tordersSection(true)}
     ${Object.keys(S.myRoster?.students||{}).length?`<div class="section"><h2>${tr('c.myExtra')}</h2><div class="tchips">${Object.entries(S.myRoster.students).map(([uid,x])=>`<span class="lchip ghost">${esc(x.name||'')}${x.lang?' · '+esc(x.lang):''}</span>`).join('')}</div></div>`:''}
-    <div class="section"><h2>${tr('c.myLeads')}</h2>${leads.length?`<div class="list">${leads.map(l=>`<div class="req ${l.st?'ok':'wait'}">${avatar(l.name,l.id)}<div style="min-width:0"><b>${esc(l.name)}</b> · <span class="num">${esc(l.contact)}</span><div class="small muted">${[l.lang,l.level==='beginner'?tr('c.beginner'):l.level].filter(Boolean).join(' · ')} · ${ago(l.at)}</div>${l.msg?`<div class="small req-note">“${esc(l.msg)}”</div>`:''}</div></div>`).join('')}</div>`:`<p class="faint">${tr('c.noLeads')}</p>`}</div>`;
+    <div class="section"><h2>${tr('c.myLeads')}</h2>${leads.length?`<div class="list">${leads.map(l=>`<div class="req ${l.st?'ok':'wait'}">${avatar(l.name,l.id)}<div style="min-width:0"><b>${esc(l.name)}</b> · <span class="num">${esc(l.contact)}</span><div class="small muted">${[l.lang, l.level==='beginner'?tr('c.beginner'):l.level, l.fmt?tr('pc.'+l.fmt):'', l.quote||''].filter(Boolean).join(' · ')} · ${ago(l.at)}</div>${l.msg?`<div class="small req-note">“${esc(l.msg)}”</div>`:''}</div></div>`).join('')}</div>`:`<p class="faint">${tr('c.noLeads')}</p>`}</div>`;
 }
 function openOfferAsk(offerId){
   const o=(S.offers?.items||[]).find(x=>x.id===offerId); if(!o) return;
@@ -5113,6 +5139,7 @@ function openApply(){
         <label class="field"><span>${tr('c.fLen')}</span><select class="inp" id="ap-len">${LESSON_LENS.map(m=>`<option value="${m}" ${m===80?'selected':''}>${lenText(m)}</option>`).join('')}</select></label></div>
       <label class="field"><span>${tr('c.fYears')}</span><input class="inp" id="ap-years" type="number" min="0" max="60" value="0"></label>
       <div class="notice info ap-lv" style="margin:0" id="ap-lv"></div>
+      <div class="field"><span>${tr('c.apPrH')}</span><p class="small muted" style="margin:0 0 6px" id="ap-pr-p"></p><div class="ap-pr" id="ap-pr"></div></div>
       <label class="field"><span>${tr('c.apBio')}</span><textarea class="inp" id="ap-bio" rows="4" maxlength="1500" placeholder="${tr('c.fBioPh')}"></textarea></label>
       <label class="field"><span>${tr('c.apAch')}</span><textarea class="inp" id="ap-ach" rows="3" maxlength="1500" placeholder="${tr('c.fAchPh')}"></textarea></label>
       <label class="field"><span>${tr('c.apMsg')} <span class="faint">${tr('optional')}</span></span><textarea class="inp" id="ap-msg" rows="2" maxlength="500" placeholder="${tr('c.apMsgPh')}"></textarea></label>
@@ -5120,6 +5147,15 @@ function openApply(){
     <div class="dlg-foot"><button type="button" class="btn ghost" data-act="dlg-close">${tr('cancel')}</button><button class="btn pen" id="ap-go">${tr('c.apSend')}</button></div></form>`, {type:'apply'});
   const lv = () => { const y=Math.max(0,Math.round(+$('#ap-years').value||0)), L=tLevel(expPts(y)); $('#ap-lv').innerHTML=`${tr('c.apLv')} <span class="tlevel lv${L.n}">${stars(L.n)}<b>${L.name}</b></span> <span class="small faint">${tr('c.apLvNote')}</span>`; };
   $('#ap-years').addEventListener('input', lv); lv();
+  // course prices: one box per language and format, inside the range of the level the experience gives
+  const apLangs = () => { const l=[...document.querySelectorAll('.ap-lang:checked')].map(x=>x.value); $('#ap-lang-x').value.split(',').map(x=>x.trim()).filter(Boolean).forEach(x=>{ const v=x[0].toUpperCase()+x.slice(1); if(!l.includes(v)) l.push(v); }); return l; };
+  const apLvl = () => autoLevel(Math.max(0,Math.round(+$('#ap-years').value||0)), 0);
+  const drawPr = () => { const keep={}; document.querySelectorAll('.ap-pin').forEach(i=>{ if(i.value) keep[i.dataset.l+'|'+i.dataset.f]=i.value; });
+    const L=apLangs(), lvl=apLvl(); $('#ap-pr-p').innerHTML=tr('c.apPrP',{lv:`<b>${plName(lvl)}</b>`});
+    $('#ap-pr').innerHTML = L.length ? L.map(l=>PFORMATS.map(f=>{ const r=priceRange(l,f,lvl);
+      return `<label class="field"><span><b>${esc(langName(l))}</b> · ${tr('pc.'+f)}</span><input class="inp num ap-pin" type="number" step="1000" min="${r.lo}" max="${r.hi}" data-l="${esc(l)}" data-f="${f}" value="${esc(keep[l+'|'+f]||'')}" placeholder="${r.lo}"><span class="small faint">${tr('pc.allowed',{lo:som(r.lo), hi:som(r.hi)})}</span></label>`; }).join('')).join('')
+      : `<p class="faint small" style="margin:0">${tr('c.apPrNoLang')}</p>`; };
+  document.querySelectorAll('.ap-lang').forEach(x=>x.addEventListener('change', drawPr)); $('#ap-lang-x').addEventListener('change', drawPr); $('#ap-years').addEventListener('input', drawPr); drawPr();
   $('#ap-file').addEventListener('change', async e=>{ const f=e.target.files[0]; if(!f) return;
     try{ const u=await shrinkPhoto(f); $('#ap-photo').value=u; const img=document.createElement('img'); img.className='tph lg'; img.id='ap-ph'; img.src=u; img.alt=''; $('#ap-ph').replaceWith(img); }catch(err){ toast(tr('c.photoFail')); } });
   $('#ap-form').addEventListener('submit', async e=>{
@@ -5129,9 +5165,14 @@ function openApply(){
     if(!name){ err.textContent=tr('c.needName'); return; } if(contact.length<3){ err.textContent=tr('c.needContact'); return; }
     if(email && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)){ err.textContent=tr('auth.email'); return; }
     if(!langs.length){ err.textContent=tr('c.needLang'); return; }
+    const prices={}, lvl=apLvl(); let pbad='';
+    document.querySelectorAll('.ap-pin').forEach(i=>{ const v=Math.round(+i.value||0); if(!v) return; const r=priceRange(i.dataset.l, i.dataset.f, lvl);
+      if(v<r.lo || v>r.hi){ pbad=pbad||tr('pc.bad',{l:langName(i.dataset.l), f:tr('pc.'+i.dataset.f), lo:som(r.lo), hi:som(r.hi)}); return; } (prices[i.dataset.l]=prices[i.dataset.l]||{})[i.dataset.f]=v; });
+    if(pbad){ err.textContent=pbad; return; }
+    const noPr=langs.find(l=>!prices[l]); if(noPr){ err.textContent=tr('c.apPrNeed',{l:langName(noPr)}); return; }
     const bio=$('#ap-bio').value.trim(); if(bio.length<20){ err.textContent=tr('c.needBio'); return; }
     const d={name, contact, email, photo:$('#ap-photo').value, langs:langs.slice(0,12), levels:$('#ap-levels').value.trim(), years:Math.max(0,Math.min(60,Math.round(+$('#ap-years').value||0))),
-      lessonLen:+$('#ap-len').value, bio, achievements:$('#ap-ach').value.split('\n').map(x=>x.replace(/^[-•*]\s*/,'').trim()).filter(Boolean).slice(0,20), msg:$('#ap-msg').value.trim(), at:Date.now()};
+      lessonLen:+$('#ap-len').value, bio, achievements:$('#ap-ach').value.split('\n').map(x=>x.replace(/^[-•*]\s*/,'').trim()).filter(Boolean).slice(0,20), msg:$('#ap-msg').value.trim(), at:Date.now(), prices};
     const b=$('#ap-go'); b.disabled=true;
     try{ await S.db.collection('applications').doc().set(d);
       $('#ap-form').innerHTML=`${dlgHead(tr('c.apK'), tr('c.thanksH'))}<div class="dlg-body"><p>${tr('c.apThanks',{name:esc(name.split(' ')[0])})}</p></div><div class="dlg-foot"><button type="button" class="btn primary" data-act="dlg-close">${tr('app.ok')}</button></div>`;
@@ -5146,6 +5187,7 @@ function appsSection(){
       <div class="small muted num">${esc(a.contact)}${a.email?' · '+esc(a.email):''} · ${ago(a.at)}</div>
       <div class="tchips" style="margin-top:8px">${(a.langs||[]).map(l=>`<span class="lchip">${esc(l)}</span>`).join('')}${a.levels?`<span class="lchip ghost">${esc(a.levels)}</span>`:''}</div>
       <div class="tkv" style="margin-top:10px"><span><b class="num">${+a.years||0}</b>${tr('c.kYears')}</span><span><b class="num">${lenText(a.lessonLen)||'–'}</b>${tr('c.kLen')}</span></div>
+      ${Object.keys(a.prices||{}).length?`<table class="pc-tbl" style="margin-top:10px"><thead><tr><th></th><th>${tr('pc.group')}</th><th>${tr('pc.ind')}</th></tr></thead><tbody>${Object.entries(a.prices).map(([l,x])=>`<tr><th>${esc(langName(l))}</th><td class="num">${+x?.group?perMonth(+x.group):'–'}</td><td class="num">${+x?.ind?perMonth(+x.ind):'–'}</td></tr>`).join('')}</tbody></table>`:''}
       ${a.bio?`<p class="small" style="margin-top:10px;white-space:pre-line">${esc(a.bio)}</p>`:''}
       ${(a.achievements||[]).length?`<ul class="tach small">${a.achievements.map(x=>`<li>${esc(x)}</li>`).join('')}</ul>`:''}
       ${a.msg?`<p class="small req-note">“${esc(a.msg)}”</p>`:''}</div></div>
@@ -5154,7 +5196,7 @@ function appsSection(){
 }
 async function acceptApp(id){
   const a=S.apps?.[id]; if(!a) return; const tid='t-'+newId();
-  const t={name:a.name, photo:a.photo||'', headline:'', langs:a.langs||[], levels:a.levels||'', years:+a.years||0, lessonLen:+a.lessonLen||60, bio:a.bio||'', achievements:a.achievements||[],
+  const t={name:a.name, photo:a.photo||'', headline:'', langs:a.langs||[], levels:a.levels||'', years:+a.years||0, lessonLen:+a.lessonLen||60, bio:a.bio||'', achievements:a.achievements||[], prices:a.prices||{},
     visible:true, order:Date.now(), stats:{students:0,active:0,reviews:0,gain:0,band:null,score:expPts(a.years)}};
   await S.db.doc('teachers/'+tid).set(t);
   await S.db.doc('teacherPriv/'+tid).set({meet:''});
