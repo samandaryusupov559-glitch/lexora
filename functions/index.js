@@ -34,7 +34,7 @@ const setupKey = () => crypto.createHash('sha256').update(TOKEN() + ':setup').di
 /* ---------------- texts (uz / ru / en) ---------------- */
 const T = {
   uz: {
-    hello: 'Assalomu alaykum! Bu Lexora boti. Lexoradagi “Telegram’ni ulash” tugmasini bosing, shunda xabarlar shu yerga keladi.',
+    hello: 'Assalomu alaykum! Bu Lexora boti. U ustoz xabarlari, dars havolalari va tekshirilgan yozuvlarni Telegramga yetkazadi.\n\nUlash uchun Lexorada “Telegram’ni ulash” tugmasini bosing. Batafsil ma’lumot uchun “Yordam” tugmasini bosing.',
     linked: '✅ Lexora akkauntingiz ulandi. Yangi xabarlar, dars havolalari va tekshiruvlar endi shu yerga keladi.',
     expired: 'Havola eskirgan. Lexoraga qaytib “Telegram’ni ulash” tugmasini yana bosing.',
     leadOk: '✅ So‘rovingiz qabul qilindi. Ustoz biriktirilishi bilan shu yerga xabar beramiz.',
@@ -45,9 +45,17 @@ const T = {
     sent: '✅ Yuborildi.', notLinked: 'Avval Lexoradagi “Telegram’ni ulash” tugmasi orqali akkauntingizni ulang.', noReply: 'Bu xabarga javob yozib bo‘lmaydi. Lexoraning o‘zida yozing.',
     lead: '🆕 Sinov darsi so‘rovi: {name} · {contact}\n{lang}{fmt}{msg}', assigned: '📌 Sizga sinov darsi so‘rovi biriktirildi: {name} · {contact}\n{lang}',
     live: '🔴 {name} darsni boshladi.{label}', checked: '✅ Yozuvingiz tekshirildi: “{title}”.', revise: '✏️ Ustoz “{title}” yozuvini qayta yozishni so‘radi.',
+    btnHelp: '❓ Yordam', btnStatus: '📊 Holat', btnMenu: '📋 Menyu',
+    helpS: '❓ Lexora boti nima qiladi\n\n💬 Ustozingiz yozgan xabarlar shu yerga keladi. Xabarga “Reply” qilib javob bersangiz, javob Lexora chatiga tushadi.\n🔴 Dars boshlanganda Google Meet havolasi keladi, “Darsga kirish” tugmasini bosing.\n✅ Yozuvingiz tekshirilganda yoki qayta yozishga qaytarilganda xabar keladi.\n\nHech narsa yozish shart emas, xabarlar o‘zi keladi. Buyruqlar: /help yordam, /status ulanish holati, /menu tugmalar.',
+    helpT: '❓ Lexora boti nima qiladi\n\n🆕 Sizga biriktirilgan sinov darsi so‘rovlari shu yerga keladi.\n💬 Talabalaringiz xabarlari keladi. “Reply” qilib javob bersangiz, u Lexora chatiga tushadi.\n🌐 Sayt mehmonlarining savollari ham keladi, ularga ham “Reply” bilan javob bering.\n\nBuyruqlar: /help yordam, /status ulanish holati, /menu tugmalar.',
+    helpO: '❓ Lexora boti nima qiladi\n\n🆕 Barcha yangi sinov darsi so‘rovlari shu yerga keladi.\n🌐 Ustoz biriktirilmagan mehmon savollari sizga keladi, “Reply” bilan javob bering.\n💬 O‘z talabalaringiz xabarlari ham shu yerga keladi.\n\nBuyruqlar: /help yordam, /status ulanish holati, /menu tugmalar.',
+    helpG: '❓ Lexora boti nima qiladi\n\nBot Lexoradagi xabarlarni Telegramga yetkazadi: ustoz xabarlari, dars havolalari, tekshirilgan yozuvlar.\n\nUlash uchun: Lexorani oching va “Telegram’ni ulash” tugmasini bosing. Sinov darsi so‘ragan bo‘lsangiz, so‘rovdagi tugma orqali botga o‘ting.\n\nBuyruqlar: /help yordam, /status ulanish holati, /menu tugmalar.',
+    statusOn: '✅ Akkauntingiz ulangan.\nRol: {role}{extra}', statusOff: '⚠️ Akkaunt hali ulanmagan. Lexorada “Telegram’ni ulash” tugmasini bosing.',
+    r_student: 'talaba', r_staff: 'ustoz', r_owner: 'egasi', yourTeacher: 'Ustozingiz',
+    menu: '📋 Menyu: kerakli tugmani tanlang.',
   },
   ru: {
-    hello: 'Здравствуйте! Это бот Lexora. Нажмите в Lexora кнопку «Подключить Telegram», и уведомления будут приходить сюда.',
+    hello: 'Здравствуйте! Это бот Lexora. Он доставляет сообщения преподавателя, ссылки на уроки и проверенные записи.\n\nЧтобы подключить, нажмите в Lexora «Подключить Telegram». Подробности: кнопка «Помощь».',
     linked: '✅ Аккаунт Lexora подключён. Новые сообщения, ссылки на уроки и проверки теперь будут приходить сюда.',
     expired: 'Ссылка устарела. Вернитесь в Lexora и снова нажмите «Подключить Telegram».',
     leadOk: '✅ Заявка принята. Как только назначим преподавателя, напишем сюда.',
@@ -58,9 +66,17 @@ const T = {
     sent: '✅ Отправлено.', notLinked: 'Сначала подключите аккаунт кнопкой «Подключить Telegram» в Lexora.', noReply: 'На это сообщение нельзя ответить. Напишите в самой Lexora.',
     lead: '🆕 Заявка на пробный урок: {name} · {contact}\n{lang}{fmt}{msg}', assigned: '📌 Вам назначена заявка на пробный урок: {name} · {contact}\n{lang}',
     live: '🔴 {name} начал(а) урок.{label}', checked: '✅ Ваша запись проверена: «{title}».', revise: '✏️ Преподаватель просит переписать «{title}».',
+    btnHelp: '❓ Помощь', btnStatus: '📊 Статус', btnMenu: '📋 Меню',
+    helpS: '❓ Что умеет бот Lexora\n\n💬 Сообщения вашего преподавателя приходят сюда. Ответьте на сообщение через «Ответить» (Reply), и ответ попадёт в чат Lexora.\n🔴 Когда урок начинается, приходит ссылка Google Meet: нажмите «Войти на урок».\n✅ Приходит уведомление, когда запись проверена или возвращена на переписывание.\n\nПисать ничего не нужно, уведомления приходят сами. Команды: /help помощь, /status статус подключения, /menu кнопки.',
+    helpT: '❓ Что умеет бот Lexora\n\n🆕 Сюда приходят заявки на пробный урок, назначенные вам.\n💬 Приходят сообщения ваших учеников. Ответьте через «Ответить» (Reply), и ответ попадёт в чат Lexora.\n🌐 Приходят и вопросы посетителей сайта, отвечайте на них так же.\n\nКоманды: /help помощь, /status статус подключения, /menu кнопки.',
+    helpO: '❓ Что умеет бот Lexora\n\n🆕 Сюда приходят все новые заявки на пробный урок.\n🌐 Вопросы посетителей без назначенного преподавателя приходят вам, отвечайте через «Ответить» (Reply).\n💬 Сообщения ваших учеников тоже приходят сюда.\n\nКоманды: /help помощь, /status статус подключения, /menu кнопки.',
+    helpG: '❓ Что умеет бот Lexora\n\nБот доставляет в Telegram уведомления Lexora: сообщения преподавателя, ссылки на уроки, проверенные записи.\n\nЧтобы подключить: откройте Lexora и нажмите «Подключить Telegram». Если вы оставили заявку на пробный урок, перейдите в бота по кнопке в заявке.\n\nКоманды: /help помощь, /status статус подключения, /menu кнопки.',
+    statusOn: '✅ Аккаунт подключён.\nРоль: {role}{extra}', statusOff: '⚠️ Аккаунт ещё не подключён. Нажмите в Lexora «Подключить Telegram».',
+    r_student: 'ученик', r_staff: 'преподаватель', r_owner: 'владелец', yourTeacher: 'Ваш преподаватель',
+    menu: '📋 Меню: выберите нужную кнопку.',
   },
   en: {
-    hello: 'Hello! This is the Lexora bot. Press “Connect Telegram” in Lexora and your notifications will come here.',
+    hello: 'Hello! This is the Lexora bot. It brings you teacher messages, lesson links and checked entries.\n\nTo connect, press “Connect Telegram” in Lexora. For details press “Help”.',
     linked: '✅ Your Lexora account is connected. New messages, lesson links and checked entries will come here.',
     expired: 'This link has expired. Go back to Lexora and press “Connect Telegram” again.',
     leadOk: '✅ Your request is received. We will write here as soon as a teacher is assigned.',
@@ -71,6 +87,14 @@ const T = {
     sent: '✅ Sent.', notLinked: 'First connect your account with “Connect Telegram” in Lexora.', noReply: 'You cannot answer this message here. Please write in Lexora.',
     lead: '🆕 Trial request: {name} · {contact}\n{lang}{fmt}{msg}', assigned: '📌 A trial request was assigned to you: {name} · {contact}\n{lang}',
     live: '🔴 {name} has started the lesson.{label}', checked: '✅ Your entry was checked: “{title}”.', revise: '✏️ Your teacher asks you to rewrite “{title}”.',
+    btnHelp: '❓ Help', btnStatus: '📊 Status', btnMenu: '📋 Menu',
+    helpS: '❓ What the Lexora bot does\n\n💬 Messages from your teacher arrive here. Answer with “Reply” and your answer goes into the Lexora chat.\n🔴 When a lesson starts you get the Google Meet link: press “Join the lesson”.\n✅ You are told when an entry is checked or sent back for rewriting.\n\nYou do not need to type anything, notifications come by themselves. Commands: /help help, /status connection status, /menu buttons.',
+    helpT: '❓ What the Lexora bot does\n\n🆕 Trial requests assigned to you arrive here.\n💬 Your students’ messages arrive here. Answer with “Reply” and it goes into the Lexora chat.\n🌐 Questions from site visitors arrive here too, answer them the same way.\n\nCommands: /help help, /status connection status, /menu buttons.',
+    helpO: '❓ What the Lexora bot does\n\n🆕 Every new trial request arrives here.\n🌐 Visitor questions with no teacher assigned come to you, answer with “Reply”.\n💬 Messages from your own students arrive here too.\n\nCommands: /help help, /status connection status, /menu buttons.',
+    helpG: '❓ What the Lexora bot does\n\nThe bot brings Lexora notifications to Telegram: teacher messages, lesson links, checked entries.\n\nTo connect: open Lexora and press “Connect Telegram”. If you sent a trial request, use the button in that request to open the bot.\n\nCommands: /help help, /status connection status, /menu buttons.',
+    statusOn: '✅ Your account is connected.\nRole: {role}{extra}', statusOff: '⚠️ Your account is not connected yet. Press “Connect Telegram” in Lexora.',
+    r_student: 'student', r_staff: 'teacher', r_owner: 'owner', yourTeacher: 'Your teacher',
+    menu: '📋 Menu: pick a button.',
   },
 };
 const FMT = { uz: { group: 'Guruh', ind: 'Individual' }, ru: { group: 'Группа', ind: 'Индивидуально' }, en: { group: 'Group', ind: 'Individual' } };
@@ -78,6 +102,8 @@ const L = lang => (T[lang] ? lang : 'uz');
 const t = (lang, k, v = {}) => String(T[L(lang)][k] || T.uz[k] || k).replace(/\{(\w+)\}/g, (_, n) => (v[n] == null ? '' : String(v[n])));
 const clip = (s, n) => { s = String(s || ''); return s.length > n ? s.slice(0, n - 1) + '…' : s; };
 const btn = (text, url) => ({ reply_markup: { inline_keyboard: [[{ text, url }]] } });
+// the main menu: open the site, help, connection status
+const menuKb = lang => ({ reply_markup: { inline_keyboard: [[{ text: '🌐 Lexora', url: SITE() }], [{ text: t(lang, 'btnHelp'), callback_data: 'help' }, { text: t(lang, 'btnStatus'), callback_data: 'status' }]] } });
 const okUrl = u => /^https:\/\/[^\s]+$/.test(String(u || ''));
 
 /* ---------------- Telegram API ---------------- */
@@ -100,6 +126,27 @@ async function sendChat(chatId, text, extra = {}, ref = null) {
   return r;
 }
 async function langOf(uid) { try { const c = await db.doc('contacts/' + uid).get(); return L(c.exists ? c.data().lang : 'uz'); } catch (e) { return 'uz'; } }
+async function chatInfo(chatId, fallback) {
+  const c = await db.doc('tgChats/' + chatId).get();
+  if (!c.exists) return { linked: false, lang: fallback };
+  const uid = c.data().uid, g = await db.doc('tg/' + uid).get();
+  if (!g.exists) return { linked: false, lang: fallback };
+  return { linked: true, uid, lang: await langOf(uid), tg: g.data() };
+}
+async function sendHelp(chatId, fallback) {
+  const i = await chatInfo(chatId, fallback), k = !i.linked ? 'helpG' : i.tg.owner ? 'helpO' : i.tg.role === 'staff' ? 'helpT' : 'helpS';
+  return sendChat(chatId, t(i.lang, k), menuKb(i.lang));
+}
+async function sendStatus(chatId, fallback) {
+  const i = await chatInfo(chatId, fallback);
+  if (!i.linked) return sendChat(chatId, t(i.lang, 'statusOff'), menuKb(i.lang));
+  let extra = '';
+  if (i.tg.role === 'student') {
+    try { const j = await db.doc('journals/' + i.uid).get(); if (j.exists && j.data().teacher) extra = '\n' + t(i.lang, 'yourTeacher') + ': ' + await teacherName(j.data().teacher); } catch (e) { /* no teacher yet */ }
+  }
+  return sendChat(chatId, t(i.lang, 'statusOn', { role: t(i.lang, 'r_' + (i.tg.owner ? 'owner' : i.tg.role === 'staff' ? 'staff' : 'student')), extra }), menuKb(i.lang));
+}
+
 async function sendUid(uid, build, ref) {
   const s = await db.doc('tg/' + uid).get(); if (!s.exists) return;
   const lang = await langOf(uid), m = build(lang);
@@ -123,7 +170,8 @@ exports.telegram = onRequest({ cors: false, invoker: 'public' }, async (req, res
     if (req.query.setup && req.query.setup === setupKey()) {           // GitHub calls this after each deploy
       const me = await api('getMe', {});
       const url = /^https:\/\/[\w.-]+\/[\w-]+$/.test(String(req.query.hook || '')) ? String(req.query.hook) : `https://${req.get('host')}/telegram`;
-      const hook = await api('setWebhook', { url, secret_token: hookSecret(), allowed_updates: ['message'], drop_pending_updates: false });
+      const hook = await api('setWebhook', { url, secret_token: hookSecret(), allowed_updates: ['message', 'callback_query'], drop_pending_updates: false });
+      if (hook.ok) await setupMenu();
       if (me.ok) await db.doc('site/bot').set({ username: me.result.username, on: !!hook.ok, at: Date.now() });
       res.status(hook.ok ? 200 : 500).json({ ok: !!hook.ok, bot: me.ok ? me.result.username : null, url });
       return;
@@ -131,9 +179,33 @@ exports.telegram = onRequest({ cors: false, invoker: 'public' }, async (req, res
     res.status(200).send('Lexora bot'); return;
   }
   if (req.get('X-Telegram-Bot-Api-Secret-Token') !== hookSecret()) { res.status(403).send('no'); return; }
-  try { await onMessage(req.body && req.body.message); } catch (e) { logger.error('update failed', e); }
+  try { if (req.body && req.body.callback_query) await onCallback(req.body.callback_query); else await onMessage(req.body && req.body.message); } catch (e) { logger.error('update failed', e); }
   res.status(200).send('ok');   // always 200, or Telegram keeps resending
 });
+
+// the “Menu” list next to the message box, and the bot's profile texts (each language, uz by default)
+const COMMANDS = { uz: [['help', 'Yordam: bot nima qiladi'], ['status', 'Ulanish holati'], ['menu', 'Tugmalar']], ru: [['help', 'Помощь: что умеет бот'], ['status', 'Статус подключения'], ['menu', 'Кнопки']], en: [['help', 'Help: what the bot does'], ['status', 'Connection status'], ['menu', 'Buttons']] };
+const ABOUT = { uz: 'Lexora xabarnomalari: ustoz xabarlari, dars havolalari, tekshirilgan yozuvlar.', ru: 'Уведомления Lexora: сообщения преподавателя, ссылки на уроки, проверенные записи.', en: 'Lexora notifications: teacher messages, lesson links, checked entries.' };
+async function setupMenu() {
+  const list = lang => COMMANDS[lang].map(([command, description]) => ({ command, description }));
+  await api('setMyCommands', { commands: list('uz') });                 // everyone else sees Uzbek
+  await api('setMyShortDescription', { short_description: ABOUT.uz });
+  for (const lang of ['uz', 'ru', 'en']) {
+    await api('setMyCommands', { commands: list(lang), language_code: lang });
+    await api('setMyShortDescription', { short_description: ABOUT[lang], language_code: lang });
+  }
+}
+
+// a pressed menu button
+async function onCallback(q) {
+  if (!q || !q.id) return;
+  await api('answerCallbackQuery', { callback_query_id: q.id });
+  const chat = q.message && q.message.chat;
+  if (!chat || chat.type !== 'private') return;
+  const lang = L((q.from && q.from.language_code || '').slice(0, 2));
+  if (q.data === 'help') return sendHelp(chat.id, lang);
+  if (q.data === 'status') return sendStatus(chat.id, lang);
+}
 
 async function onMessage(msg) {
   if (!msg || !msg.chat || msg.chat.type !== 'private' || typeof msg.text !== 'string') return;
@@ -143,12 +215,18 @@ async function onMessage(msg) {
     const p = st[1] || '';
     if (p.startsWith('u_')) return linkAccount(chatId, msg.from || {}, p.slice(2), lang);
     if (p.startsWith('l_')) return linkLead(chatId, msg.from || {}, p.slice(2), lang);
-    return sendChat(chatId, t(lang, 'hello'), btn(t(lang, 'open'), SITE()));
+    return sendChat(chatId, t(lang, 'hello'), menuKb(lang));
+  }
+  const cmd = text.match(/^\/(\w+)(?:@\w+)?(?:\s|$)/);
+  if (cmd) {
+    if (cmd[1] === 'help') return sendHelp(chatId, lang);
+    if (cmd[1] === 'status') return sendStatus(chatId, lang);
+    if (cmd[1] === 'menu') { const ml = (await chatInfo(chatId, lang)).lang; return sendChat(chatId, t(ml, 'menu'), menuKb(ml)); }
   }
   const reply = msg.reply_to_message;
   if (!reply) {
     const c = await db.doc('tgChats/' + chatId).get();
-    return sendChat(chatId, c.exists ? t(lang, 'noReply') : t(lang, 'notLinked'), btn(t(lang, 'open'), SITE()));
+    return sendChat(chatId, c.exists ? t(lang, 'noReply') : t(lang, 'notLinked'), menuKb(lang));
   }
   return answer(chatId, reply.message_id, text, lang);
 }
@@ -169,7 +247,7 @@ async function linkAccount(chatId, from, code, lang) {
   await db.doc('tg/' + uid).set({ chatId, username: from.username || '', first: from.first_name || '', role, tid, owner, at: Date.now() });
   await db.doc('tgChats/' + chatId).set({ uid, at: Date.now() });
   await ref.delete();
-  return sendChat(chatId, t(await langOf(uid) || lang, 'linked'), btn(t(lang, 'open'), SITE()));
+  { const ul = await langOf(uid) || lang; return sendChat(chatId, t(ul, 'linked'), menuKb(ul)); }
 }
 
 async function linkLead(chatId, from, id, lang) {

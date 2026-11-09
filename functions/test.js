@@ -94,6 +94,29 @@ const ev = (params, after, before) => ({ params, data: before === undefined ? { 
   sent.length = 0; await bot.onLeadUpdated.run(ev({ id: 'L1abcdefghij' }, b2, before));
   ok('the link is not sent twice', !sent.some(x => x.chat_id === 55));
 
+  console.log('Menu, help and buttons');
+  const flat = m => (m.reply_markup ? m.reply_markup.inline_keyboard.flat() : []);
+  sent.length = 0; await call(tgMsg(99, '/start'));
+  ok('/start shows the intro with Open, Help and Status buttons', /Lexora boti/.test(last().text) && flat(last()).some(b => b.url) && flat(last()).some(b => b.callback_data === 'help') && flat(last()).some(b => b.callback_data === 'status'));
+  sent.length = 0; await call(tgMsg(99, '/help'));
+  ok('/help for someone not linked explains how to connect', /ulash/i.test(last().text) && /Telegram’ni ulash/.test(last().text));
+  sent.length = 0; await call(tgMsg(11, '/help@lexora_test_bot'));
+  ok('/help for a student explains Reply and the lesson link', /Reply/.test(last().text) && /Meet/.test(last().text) && !/sinov darsi so‘rovlari/.test(last().text));
+  sent.length = 0; await call(tgMsg(22, '/help')); ok('/help for a teacher mentions assigned requests', /biriktirilgan/.test(last().text));
+  sent.length = 0; await call(tgMsg(33, '/help')); ok('/help for the owner mentions all requests', /Barcha yangi/.test(last().text));
+  sent.length = 0; await call(tgMsg(11, '/status')); ok('/status shows role and teacher', /talaba/.test(last().text) && /Dilso‘z/.test(last().text));
+  sent.length = 0; await call(tgMsg(99, '/status')); ok('/status for someone not linked says so', /ulanmagan/.test(last().text));
+  sent.length = 0; await call(tgMsg(11, '/menu')); ok('/menu sends the buttons', flat(last()).length === 3);
+  sent.length = 0; await call({ callback_query: { id: 'cb1', data: 'help', from: { id: 11, language_code: 'uz' }, message: { chat: { id: 11, type: 'private' }, message_id: 5 } } });
+  ok('a Help button press is answered and sends help', sent.some(x => x.method === 'answerCallbackQuery' && x.callback_query_id === 'cb1') && /Reply/.test(last().text));
+  sent.length = 0; await call({ callback_query: { id: 'cb2', data: 'status', from: { id: 22, language_code: 'uz' }, message: { chat: { id: 22, type: 'private' }, message_id: 6 } } });
+  ok('a Status button press shows the status', /ustoz/.test(last().text));
+  store.set('contacts/s1', { lang: 'ru' }); sent.length = 0; await call(tgMsg(11, '/help'));
+  ok('help follows the language set in Lexora', /Что умеет бот/.test(last().text)); store.set('contacts/s1', { lang: 'uz' });
+  sent.length = 0; await call(tgMsg(11, 'hello')); ok('plain text now also shows the menu buttons', flat(last()).some(b => b.callback_data === 'help'));
+  sent.length = 0; await call(null, {}, { setup: bot._t.setupKey(), hook: 'https://europe-west1-p.cloudfunctions.net/telegram' });
+  ok('setup allows button presses and sets the command list', sent.some(x => x.method === 'setWebhook' && x.allowed_updates.includes('callback_query')) && sent.filter(x => x.method === 'setMyCommands').length >= 3);
+
   console.log('Lessons and checked entries');
   sent.length = 0; await bot.onLiveFor.run(ev({ uid: 's1' }, { 't-dil': { on: true, at: 5, until: Date.now() + 3600e3, url: 'https://meet.google.com/abc-defg-hij', name: 'Dilso‘z', label: 'B1' } }, {}));
   ok('lesson start sends the Meet button', last().chat_id === 11 && last().reply_markup.inline_keyboard[0][0].url.startsWith('https://meet.google.com'));
