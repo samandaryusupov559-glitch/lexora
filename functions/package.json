@@ -3,7 +3,7 @@
   "private": true,
   "description": "Lexora Telegram bot: notifications and replies, on Cloud Functions for Firebase",
   "main": "index.js",
-  "engines": { "node": "20" },
+  "engines": { "node": "22" },
   "scripts": { "test": "node test.js" },
   "dependencies": {
     "firebase-admin": "^12.7.0",
