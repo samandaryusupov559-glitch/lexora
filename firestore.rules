@@ -359,6 +359,89 @@ service cloud.firestore {
       allow read: if isTeacher() || (isStaff() && resource.data.tid == staffTid());
       allow update, delete: if isTeacher();
     }
+    // ---------- chats ----------
+    function chatLast() {
+      return request.resource.data.get('lastText', '') is string && request.resource.data.get('lastText', '').size() <= 160
+        && request.resource.data.get('lastAt', 0) is int;
+    }
+    function chatMsgOk() {
+      return request.resource.data.text is string && request.resource.data.text.size() > 0 && request.resource.data.text.size() <= 1000
+        && request.resource.data.name is string && request.resource.data.name.size() <= 80
+        && request.resource.data.at is int;
+    }
+    function lastByIs(who) {
+      return !('lastBy' in request.resource.data.diff(resource.data).affectedKeys()) || request.resource.data.lastBy == who;
+    }
+    // Visitors chat with the centre before they sign up: gchat/{id}. The id is a long random secret kept in the
+    // visitor's browser, so only that visitor and the centre can open the chat. Only the owner and the assigned teacher list chats.
+    function gchatDoc(id) { return get(/databases/$(database)/documents/gchat/$(id)).data; }
+    match /gchat/{id} {
+      allow get: if true;
+      allow list: if isTeacher() || (isStaff() && resource.data.tid == staffTid());
+      allow create: if id.size() >= 20 && id.size() <= 40
+        && request.resource.data.keys().hasOnly(['name', 'contact', 'lang', 'tid', 'at', 'lastAt', 'lastBy', 'lastText'])
+        && request.resource.data.keys().hasAll(['name', 'contact', 'tid', 'at', 'lastAt', 'lastBy'])
+        && request.resource.data.name is string && request.resource.data.name.size() > 0 && request.resource.data.name.size() <= 80
+        && request.resource.data.contact is string && request.resource.data.contact.size() >= 3 && request.resource.data.contact.size() <= 120
+        && request.resource.data.get('lang', '') is string && request.resource.data.get('lang', '').size() <= 40
+        && request.resource.data.tid is string && request.resource.data.tid.size() <= 40
+        && request.resource.data.at is int && request.resource.data.lastBy == 'g' && chatLast();
+      allow update: if isTeacher()
+        || (isStaff() && resource.data.tid == staffTid() && chatLast()
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['lastAt', 'lastBy', 'lastText', 'rt']) && lastByIs('t'))
+        || (chatLast() && request.resource.data.get('rg', 0) is int
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['lastAt', 'lastBy', 'lastText', 'rg']) && lastByIs('g'));
+      allow delete: if isTeacher();
+      match /msgs/{m} {
+        allow read: if true;   // reachable only through the secret chat id
+        allow create: if chatMsgOk() && exists(/databases/$(database)/documents/gchat/$(id))
+          && ((request.resource.data.by == 'g' && request.resource.data.keys().hasOnly(['name', 'text', 'at', 'by']))
+              || (request.resource.data.by == 't' && signedIn() && request.resource.data.get('uid', '') == request.auth.uid
+                  && request.resource.data.keys().hasOnly(['uid', 'name', 'text', 'at', 'by'])
+                  && (isTeacher() || (isStaff() && gchatDoc(id).get('tid', '') == staffTid()))));
+        allow delete: if isTeacher();
+      }
+    }
+    // A student's private chat with one of their teachers: dm/{uid}_{tid}. It opens only once lessons have started:
+    // the teacher is the student's journal teacher or confirmed for extra lessons. The owner sees every chat.
+    function dmTeaches(uid, tid) {
+      return (exists(/databases/$(database)/documents/journals/$(uid))
+              && get(/databases/$(database)/documents/journals/$(uid)).data.get('teacher', 'main') == tid)
+        || (exists(/databases/$(database)/documents/enrollStatus/$(uid))
+            && get(/databases/$(database)/documents/enrollStatus/$(uid)).data.get(tid, '') == 'ok');
+    }
+    function dmDoc(id) { return get(/databases/$(database)/documents/dm/$(id)).data; }
+    function dmFields() {
+      return request.resource.data.uid is string && request.resource.data.tid is string && request.resource.data.tid.size() <= 40
+        && request.resource.data.get('name', '') is string && request.resource.data.get('name', '').size() <= 80
+        && chatLast();
+    }
+    match /dm/{id} {
+      allow get: if signedIn() && (id.split('_')[0] == request.auth.uid || isTeacher() || (isStaff() && resource.data.tid == staffTid()));
+      allow list: if isTeacher() || (isStaff() && resource.data.tid == staffTid());
+      allow create: if signedIn() && dmFields()
+        && ((request.resource.data.uid == request.auth.uid && id == request.auth.uid + '_' + request.resource.data.tid
+             && request.resource.data.keys().hasOnly(['uid', 'tid', 'name', 'lastAt', 'lastBy', 'lastText', 'rs'])
+             && request.resource.data.get('lastBy', 's') == 's'
+             && dmTeaches(request.auth.uid, request.resource.data.tid))
+            || (isTeacher() && id == request.resource.data.uid + '_' + request.resource.data.tid));
+      allow update: if signedIn() && dmFields()
+        && request.resource.data.uid == resource.data.uid && request.resource.data.tid == resource.data.tid
+        && (isTeacher()
+            || (resource.data.uid == request.auth.uid
+                && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name', 'lastAt', 'lastBy', 'lastText', 'rs']) && lastByIs('s'))
+            || (isStaff() && resource.data.tid == staffTid()
+                && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['lastAt', 'lastBy', 'lastText', 'rt']) && lastByIs('t')));
+      allow delete: if isTeacher();
+      match /msgs/{m} {
+        allow read: if signedIn() && (isTeacher() || id.split('_')[0] == request.auth.uid || (isStaff() && dmDoc(id).tid == staffTid()));
+        allow create: if signedIn() && chatMsgOk() && request.resource.data.uid == request.auth.uid
+          && request.resource.data.keys().hasOnly(['uid', 'name', 'text', 'at', 'by'])
+          && ((request.resource.data.by == 's' && dmDoc(id).uid == request.auth.uid && dmTeaches(request.auth.uid, dmDoc(id).tid))
+              || (request.resource.data.by == 't' && (isTeacher() || (isStaff() && dmDoc(id).tid == staffTid()))));
+        allow delete: if isTeacher();
+      }
+    }
     // Services the centre offers its teachers. Teachers read them; only the owner changes them.
     match /centre/{doc} {
       allow read: if isTeacher() || isStaff();
