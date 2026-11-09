@@ -123,6 +123,10 @@ await t('teacher confirms order', setDoc(doc(T,'orderStatus/alice'),{o1:{st:'pai
 await t('teacher edits shop', setDoc(doc(T,'market/main'),{items:[]}), true);
 await t('teacher reads contacts', getDocs(collection(T,'contacts')), true);
 await t('teacher saves email settings', setDoc(doc(T,'private/mail'),{url:'u',secret:'s',on:{}}), true);
+console.log('Shop files');
+await t('owner saves shop file links', setDoc(doc(T,'marketFiles/main'),{i1:{url:'https://drive.google.com/x'}}), true);
+await t('student cannot read shop file links', getDoc(doc(A,'marketFiles/main')), false);
+await t('student cannot write shop file links', setDoc(doc(A,'marketFiles/main'),{}), false);
 console.log('Telegram notices (tgq)');
 const NQ = by => ({ev:'ann', by, uids:['alice'], msg:{uz:'x', ru:'x', en:'x'}, btn:{uz:'o'}, href:'https://x.y/', at:1});
 await t('teacher queues a Telegram notice', setDoc(doc(T,'tgq/q1'), NQ('teach')), true);

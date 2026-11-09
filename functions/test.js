@@ -16,7 +16,7 @@ function collection(path) {
   const query = fs => ({ where: (f, op, v) => query([...fs, [f, op, v]]), get: async () => { const docs = list(fs); return { docs, empty: !docs.length }; } });
   return { doc: id => doc(path + '/' + (id || 'auto' + (++autoId))), add: async d => { const p = path + '/auto' + (++autoId); store.set(p, { ...d }); return doc(p); }, ...query([]) };
 }
-const fakeDb = { doc, collection };
+const fakeDb = { doc, collection, runTransaction: async fn => fn({ get: r => r.get(), set: (r, d) => r.set(d) }) };
 const users = { s1: { email: 'aziza@x.com', emailVerified: false }, own: { email: 'samandaryusupov559@gmail.com', emailVerified: true }, dil: { email: 'dil@x.com', emailVerified: true } };
 const fakeAdmin = { initializeApp() {}, firestore: () => fakeDb, auth: () => ({ getUser: async uid => { if (!users[uid]) throw new Error('no user'); return users[uid]; } }) };
 const load = Module._load;
@@ -125,6 +125,27 @@ const ev = (params, after, before) => ({ params, data: before === undefined ? { 
   ok('the same lesson is not sent again', sent.length === 0);
   sent.length = 0; await bot.onReview.run(ev({ uid: 's1', eid: 'e1' }, { status: 'reviewed' }, { status: 'inreview' }));
   ok('checked entry is announced with its title', /My weekend/.test(last().text));
+
+  console.log('Teacher applications');
+  sent.length = 0; await bot.onApplication.run(ev({ id: 'a1' }, { name: 'Malika', contact: '@malika', langs: ['English', 'German'], years: 5, bio: 'I teach speaking.' }));
+  ok('owner hears about a new teacher application', sent.length === 1 && sent[0].chat_id === 33 && /Malika/.test(sent[0].text) && /German/.test(sent[0].text));
+  console.log('Speaking clubs');
+  store.set('teachers/t-dil', { name: 'Dilso‘z', langs: ['Russian', 'English'] });
+  store.set('journals/s3', { name: 'Jamshid', teacher: 'main' }); store.set('enrollStatus/s3', { langs: ['Korean'] }); store.set('tg/s3', { chatId: 55, role: 'student' });
+  store.set('journals/s2', { name: 'Bobur', teacher: 'main' }); store.set('contacts/s2', { lang: 'ru' }); store.set('tg/s2', { chatId: 44, role: 'student' });
+  const cv = (id, after, before) => ({ params: { id }, data: { before: { data: () => before }, after: { data: () => after } } });
+  sent.length = 0; await bot.onClubVideo.run(cv('Russian_2026-11-09', { video: { on: true, at: 7, until: Date.now() + 3600e3, url: 'https://meet.google.com/aaa-bbbb-ccc', by: 'dil', byName: 'Dilso‘z' } }, {}));
+  ok('video start reaches only Russian learners (not the teacher who started it)', sent.length === 1 && sent[0].chat_id === 11 && /jonli/.test(sent[0].text) && sent[0].reply_markup.inline_keyboard[0][0].url.includes('meet.google.com'));
+  sent.length = 0; await bot.onClubVideo.run(cv('Russian_2026-11-09', { video: { on: true, at: 7, until: Date.now() + 3600e3 } }, { video: { on: true, at: 7 } }));
+  ok('the same video start is not sent twice', sent.length === 0);
+  const cm = (id, m) => ({ params: { id, m: 'x' }, data: { data: () => m } });
+  sent.length = 0; await bot.onClubMsg.run(cm('English_2026-11-09', { uid: 'own', name: 'Samandar', text: 'Hello guys!', at: 1 }));
+  ok('a club message reaches English learners and teachers, each in their language', sent.length === 4 && sent.some(x => x.chat_id === 44 && /Hello guys/.test(x.text) && /английский/.test(x.text)) && [11, 22, 55].every(c => sent.some(x => x.chat_id === c)) && !sent.some(x => x.chat_id === 33));
+  sent.length = 0; await bot.onClubMsg.run(cm('English_2026-11-09', { uid: 's1', name: 'Aziza', text: 'Fine!', at: 2 }));
+  ok('a busy club pings at most once every 30 minutes', sent.length === 0);
+  sent.length = 0; await bot.onClubMsg.run(cm('Korean_2026-11-09', { uid: 'own', name: 'Samandar', text: '안녕', at: 3 }));
+  ok('extra-lessons learners get their language club', sent.length === 1 && sent[0].chat_id === 55);
+  store.delete('journals/s3'); store.delete('enrollStatus/s3'); store.delete('tg/s3');
 
   console.log('Teacher announcements (tgq)');
   store.set('journals/s2', { name: 'Bobur', teacher: 'main' }); store.set('contacts/s2', { lang: 'ru' }); store.set('tg/s2', { chatId: 44, role: 'student' });
