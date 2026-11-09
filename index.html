@@ -1367,6 +1367,10 @@ class FireCol{
 }
 
 /* ---------------- boot + sign-in ---------------- */
+// a Telegram button can open one page right after sign-in: #club (the speaking club), #services (what the student bought)
+const OPEN_VIEWS = ['club','services'];
+function readOpen(){ const v=location.hash.slice(1); if(!OPEN_VIEWS.includes(v)) return; LS.set('open-view', v); history.replaceState(null, '', location.pathname+location.search); }
+function startView(def, ok=OPEN_VIEWS){ const v=LS.get('open-view',''); LS.del('open-view'); return {name: ok.includes(v) ? v : def}; }
 // an invite link from the centre: #join=<teacher id>.<request id> — the person signs up straight to that teacher
 function readJoin(){
   const m=location.hash.match(/^#join=([\w-]+)(?:\.([\w-]+))?/); if(!m) return false;
@@ -1386,7 +1390,7 @@ function leadSendBtns(l){
 }
 const joinUrl = (tid, leadId) => siteUrl()+'#join='+tid+(leadId?'.'+leadId:'');
 async function boot(){
-  S.joinAsk = readJoin();
+  S.joinAsk = readJoin(); readOpen();
   let cfg=null;
   try{ cfg = await import('./config.js'); }catch(e){}
   const fc = cfg && cfg.firebaseConfig;
@@ -1473,7 +1477,7 @@ function checkNewEntries(){
   S.seenWaiting = now;
 }
 function startTeacher(){
-  S.mode='teacher'; S.role='owner'; S.view={name:'inbox'}; S.loaded={};
+  S.mode='teacher'; S.role='owner'; S.view=startView('inbox',['club']); S.loaded={};
   const onErr = e => { if(e && e.code!=='revoked') toast(tr('live.paused')); };
   S.unsubs.push(S.db.collection('journals').onSnapshot(s=>{ const p={}; s.docs.forEach(d=>{ if(d.exists) p[d.id]=d.data(); }); S.profiles=p; S.loaded.p=true; checkNewEntries(); refresh(); }, onErr));
   S.unsubs.push(S.db.collection('feedback').onSnapshot(s=>{ const f={}; s.docs.forEach(d=>{ if(d.exists) f[d.id]=d.data(); }); S.feedback=f; S.loaded.f=true; checkNewEntries(); refresh(); }, onErr));
@@ -1483,7 +1487,7 @@ function startTeacher(){
   refresh(); renderMain();
 }
 function startStudent(){
-  S.mode='student'; S.role='student'; S.view={name:'home'}; S.loaded={};
+  S.mode='student'; S.role='student'; S.view=startView('home'); S.loaded={};
   const u=S.uid, onErr = e => { if(e && e.code!=='revoked') toast(tr('live.paused')); };
   S.unsubs.push(S.db.doc(`balances/${u}`).onSnapshot(s=>{ S.myBalance = s.exists? s.data(): null; refreshStudent(); }, ()=>{ S.myBalance=null; refreshStudent(); }));
   S.unsubs.push(S.db.doc(`journals/${u}`).onSnapshot(s=>{ S.myProfile = s.exists? s.data(): null; if(S.myProfile===null && S.view.name!=='setup') S.view={name:'setup'}; else if(S.myProfile && S.view.name==='setup') S.view={name:'home'}; refreshStudent(); }, onErr));
@@ -2285,16 +2289,20 @@ function openClaim(){
    market/main holds what the teacher sells (everyone signed in reads it).
    orders/{uid} is the student's own list of orders; orderStatus/{uid} (teacher only) says whether
    the money arrived and holds the teacher's message, e.g. the link to a PDF. */
-const MK_KINDS = ['book','material','course','other'];
-const MK_IC = {book:'book', material:'pen', course:'spark', other:'bag'};
+const MK_KINDS = ['book','video','audio','material','course','other'];
+const MK_IC = {book:'book', video:'video', audio:'globe', material:'pen', course:'spark', other:'bag'};
+// A file sold in the Shop (book, video, audio): the link lives in marketFiles/main, which only the owner reads;
+// when the owner confirms the payment it is copied into that student's orderStatus, so only buyers get it.
+const MK_FILE_ACCEPT = '.pdf,.epub,.doc,.docx,.ppt,.pptx,.zip,audio/*,video/*';
 const MK_MAX_QTY = 20;
 function startMarket(role){
-  S.market={items:[]}; S.orders={}; S.ostat={}; S.myOrders=null; S.myOStat={};
+  S.market={items:[]}; S.orders={}; S.ostat={}; S.mkFiles={}; S.myOrders=null; S.myOStat={};
   const perm = e => { if(e && e.code==='permission-denied'){ S.permErr=true; refreshAny(); } };
   S.unsubs.push(S.db.doc('market/main').onSnapshot(s=>{ const d=s.exists?s.data():{}; S.market={items:d.items||[]}; refreshAny(); }, perm));
   if(role==='teacher'){
     S.unsubs.push(S.db.collection('orders').onSnapshot(q=>{ const o={}; q.docs.forEach(d=>{ if(d.exists) o[d.id]=d.data(); }); S.orders=o; refreshAny(); }, perm));
     S.unsubs.push(S.db.collection('orderStatus').onSnapshot(q=>{ const o={}; q.docs.forEach(d=>{ if(d.exists) o[d.id]=d.data(); }); S.ostat=o; refreshAny(); }, perm));
+    if(S.role==='owner') S.unsubs.push(S.db.doc('marketFiles/main').onSnapshot(s=>{ S.mkFiles=s.exists?s.data():{}; refreshAny(); }, ()=>{ S.mkFiles={}; }));
   } else {
     const u=S.uid;
     S.unsubs.push(S.db.doc(`orders/${u}`).onSnapshot(s=>{ S.myOrders=s.exists?s.data():null; refreshAny(); }, ()=>{}));
@@ -2307,7 +2315,7 @@ const ordSt = o => (o && o.st) || 'wait';
 const linkify = t => esc(t||'').replace(/https:\/\/[^\s<>"']+/g, u => `<a href="${u}" target="_blank" rel="noopener noreferrer">${u}</a>`);
 function allOrders(){
   const out=[];
-  for(const [uid,c] of Object.entries(S.orders)) for(const it of (c.items||[])){ const s=S.ostat[uid]?.[it.id]; out.push({...it, uid, name:S.profiles[uid]?.name||c.name||'?', st:ordSt(s), msg:s?.msg||''}); }
+  for(const [uid,c] of Object.entries(S.orders)) for(const it of (c.items||[])){ const s=S.ostat[uid]?.[it.id]; out.push({...it, uid, name:S.profiles[uid]?.name||c.name||'?', st:ordSt(s), msg:s?.msg||'', file:s?.file||''}); }
   const rank={wait:0, paid:1, done:2, no:3};
   return out.sort((a,b)=>rank[a.st]-rank[b.st] || (b.at||0)-(a.at||0));
 }
@@ -2317,7 +2325,7 @@ function mkCard(x, teacher){
   const k=MK_KINDS.includes(x.kind)?x.kind:'other', img=safeLink(x.img), hidden=x.active===false;
   return `<article class="mk-card ${hidden?'off':''}">
     <div class="mk-img k-${k}">${img?`<img src="${esc(img)}" alt="" loading="lazy" referrerpolicy="no-referrer">`:`<span class="mk-ic">${I[MK_IC[k]]}</span>`}<span class="label mk-kind">${tr('mk.k.'+k)}</span></div>
-    <div class="mk-body"><h3>${esc(x.title)}</h3>${x.desc?`<p class="muted small">${esc(x.desc)}</p>`:''}
+    <div class="mk-body"><h3>${esc(x.title)}</h3>${x.file?`<p class="small" style="margin:-2px 0 6px">📥 ${tr('mk.fileBadge')}</p>`:''}${x.desc?`<p class="muted small">${esc(x.desc)}</p>`:''}
       <div class="svc-foot"><b class="num">${priceText(x.price)}</b>
       ${teacher?`<span class="row" style="gap:2px">${hidden?`<span class="pill">${tr('mk.hidden')}</span>`:''}<button class="btn ghost sm" data-act="mk-edit" data-id="${esc(x.id)}">${tr('edit')}</button></span>`
         :`<button class="btn pen sm" data-act="mk-buy" data-id="${esc(x.id)}">${+x.price>0?tr('mk.buy'):tr('mk.get')}</button>`}</div></div></article>`;
@@ -2336,7 +2344,9 @@ function orderRow(o, teacher){
       ${teacher?`<b>${esc(o.name)}</b> <span class="faint">·</span> `:''}<b>${what}</b>${total>0?` <span class="faint">·</span> <b class="num">${som(total)}</b>`:''}
       <div class="small muted">${total>0&&o.method?esc(methodName(o.method))+' · ':''}${esc(ago(o.at))}</div>
       ${o.ref?`<div class="small req-note">${tr('pf.ref2',{ref:esc(o.ref)})}</div>`:''}${o.note?`<div class="small req-note">“${esc(o.note)}”</div>`:''}
-      ${o.msg?`<div class="mk-msg small">${teacher?'':`<b>${tr('mk.fromTeacher')}</b> `}${linkify(o.msg)}</div>`:''}</div>
+      ${o.msg?`<div class="mk-msg small">${teacher?'':`<b>${tr('mk.fromTeacher')}</b> `}${linkify(o.msg)}</div>`:''}
+      ${!teacher&&o.file&&(o.st==='paid'||o.st==='done')&&safeLink(o.file)?`<p style="margin-top:8px"><a class="btn primary sm" href="${esc(o.file)}" target="_blank" rel="noopener noreferrer">📥 ${tr('mk.fileOpen')}</a></p>`:''}
+      ${teacher&&o.file?`<div class="small faint">📥 ${tr('mk.fileSent')}</div>`:''}</div>
     <div class="req-act"><span class="pill mk-${o.st}">${tr('mk.st.'+o.st)}</span>${act}</div></div>`;
 }
 
@@ -2362,6 +2372,11 @@ function openMkItem(id){
       <label class="field"><span>${tr('mk.desc')}</span><textarea class="inp" id="mi-desc" rows="3" placeholder="${tr('mk.descPh')}">${esc(x?.desc||'')}</textarea></label>
       <label class="field"><span>${tr('bk.price')}</span><input class="inp num" id="mi-price" type="number" min="0" step="1000" inputmode="numeric" value="${esc(x?.price??'')}"></label>
       <label class="field"><span>${tr('mk.img')} <span class="faint">${tr('optional')}</span></span><input class="inp" id="mi-img" maxlength="400" placeholder="https://" value="${esc(x?.img||'')}"></label>
+      ${S.role==='owner'?`<div class="field"><span>${tr('mk.fileH')} <span class="faint">${tr('optional')}</span></span>
+        <label class="lib-drop"><input type="file" id="mi-file" accept="${MK_FILE_ACCEPT}" hidden><b>📤 ${tr('c.libPick')}</b><span class="small faint" id="mi-fname">${S.mkFiles?.[x?.id]?.url?'✅ '+esc(S.mkFiles[x.id].name||tr('mk.fileHas')):tr('mk.fileHint')}</span><progress id="mi-prog" max="100" value="0" hidden style="width:100%"></progress></label>
+        <input class="inp" id="mi-flink" style="margin-top:8px" maxlength="400" placeholder="${tr('mk.fileLinkPh')}" value="${esc(S.mkFiles?.[x?.id]?.link?S.mkFiles[x.id].url:'')}">
+        ${S.mkFiles?.[x?.id]?.url?`<label class="row small" style="gap:8px;margin-top:6px"><input type="checkbox" id="mi-fdel"> <span>${tr('mk.fileDel')}</span></label>`:''}
+        <p class="small faint" style="margin-top:6px">${tr('mk.fileP')}</p></div>`:''}
       <label class="row" style="gap:8px"><input type="checkbox" id="mi-active" ${x?.active===false?'':'checked'}> <span>${tr('mk.show')}</span></label>
       <p class="lg-err" id="mi-err" role="alert"></p></div>
     <div class="dlg-foot">${x?`<button type="button" class="btn ghost" data-act="mk-del" data-id="${esc(x.id)}" style="color:var(--pen);margin-right:auto">${tr('delete')}</button>`:''}<button type="button" class="btn ghost" data-act="dlg-close">${tr('cancel')}</button><button class="btn primary">${tr('save')}</button></div></form>`, {type:'mk', id});
@@ -2370,8 +2385,26 @@ function openMkItem(id){
     if(!title){ err.textContent=tr('bk.needTitle'); return; }
     if(img && !safeLink(img)){ err.textContent=tr('pf.badLink'); return; }
     const row={id:id||newId(), kind:$('#mi-kind').value, title, desc:$('#mi-desc').value.trim(), price:Math.max(0,Math.round(+$('#mi-price').value||0)), img, active:$('#mi-active').checked};
+    // the file for buyers: a new upload, a pasted link, or removed
+    const fi=$('#mi-file'), file=fi?.files?.[0], flink=($('#mi-flink')?.value||'').trim(), fdel=$('#mi-fdel')?.checked, had=S.mkFiles?.[row.id];
+    let rec=had||null;
+    if(fi){
+      if(fdel) rec=null;
+      if(file){ const btn=$('#mk-form .btn.primary'), pr=$('#mi-prog'); btn.disabled=true; err.textContent=''; pr.hidden=false; pr.value=0; $('#mi-fname').textContent=tr('c.libUploading');
+        const r=await uploadFile(file, p=>{ pr.value=Math.round(p*100); $('#mi-fname').textContent=tr('c.libPct',{p:Math.round(p*100)}); }); btn.disabled=false;
+        if(!r.ok){ pr.hidden=true; $('#mi-fname').textContent=file.name; err.textContent = r.error==='nocfg'?tr('c.libNoCfgOwner') : r.error==='old'?tr('c.libOld') : r.error==='big'?tr('c.libBig') : tr('c.libUpFail',{e:esc(r.error||'')}); err.scrollIntoView({block:'center'}); return; }
+        rec={url:r.url, name:file.name, at:Date.now()}; }
+      else if(flink && flink!==(had?.link?had.url:'')){ if(!safeLink(flink)){ err.textContent=tr('pf.badLink'); return; } rec={url:flink, name:flink.replace(/^https:\/\//,'').slice(0,60), link:true, at:Date.now()}; }
+      else if(!flink && had?.link && !fdel) rec=null;
+      row.file=!!rec?.url;
+      if((rec?.url||'')!==(had?.url||'')){ try{ const nf={...(S.mkFiles||{})}; if(rec) nf[row.id]=rec; else delete nf[row.id]; await S.db.doc('marketFiles/main').set(nf); S.mkFiles=nf; }catch(e2){ dbErr(e2,'market'); return; } }
+    } else if(x) row.file=!!x.file;
     if(await saveMarket(n=>{ const i=n.items.findIndex(s=>s.id===row.id); i>=0? n.items[i]=row : n.items.push(row); }, tr('bk.saved'))) closeDlg();
   });
+  const mf=$('#mi-file'); if(mf) mf.addEventListener('change', ()=>{ const f=mf.files[0]; if(!f) return;
+    $('#mi-fname').textContent=f.name+' · '+(f.size/1048576).toFixed(1)+' MB'+(f.size>LIB_MAX?' — '+tr('c.libBig'):''); $('#mi-flink').value='';
+    if(!$('#mi-title').value.trim()) $('#mi-title').value=f.name.replace(/\.[^.]+$/,'').replace(/[_-]+/g,' ');
+    $('#mi-kind').value=/^video\//.test(f.type)?'video':/^audio\//.test(f.type)?'audio':'book'; });
 }
 async function setOrderStatus(uid, id, val){
   const cur={...(S.ostat[uid]||{})}; if(val) cur[id]=val; else delete cur[id];
@@ -2387,13 +2420,15 @@ function openOrderOk(uid, id){
   $('#oo-form').addEventListener('submit', async e=>{
     e.preventDefault(); $('#oo-save').disabled=true;
     const msg=$('#oo-msg').value.trim();
-    try{ await setOrderStatus(uid, id, {st:'paid', msg, at:nowTs()}); closeDlg(); notify('order',[uid],()=>({subject:tr('em.ordOk',{item:it?.title||''}), kicker:tr('em.ordK'), lines:[msg]})); toast(tr('bk.saved')); }catch(e2){ $('#oo-save').disabled=false; dbErr(e2,'market'); }
+    const file=it?.file ? (S.mkFiles?.[it.id]?.url||'') : '';
+    try{ await setOrderStatus(uid, id, {st:'paid', msg, at:nowTs(), ...(file?{file}:{})}); closeDlg();
+      notify('order',[uid],()=>({subject:tr('em.ordOk',{item:it?.title||''}), kicker:tr('em.ordK'), lines:[msg, file?tr('mk.fileReady'):''], ...(file?{href:file, btn:'📥 '+tr('mk.fileOpen')}:{})})); toast(tr('bk.saved')); }catch(e2){ $('#oo-save').disabled=false; dbErr(e2,'market'); }
   });
 }
 
 /* student */
 function vMarketS(){
-  const items=S.market.items.filter(x=>x.active!==false), mine=(S.myOrders?.items||[]).slice().sort((a,b)=>(b.at||0)-(a.at||0)).map(o=>{ const s=S.myOStat?.[o.id]; return {...o, st:ordSt(s), msg:s?.msg||''}; });
+  const items=S.market.items.filter(x=>x.active!==false), mine=(S.myOrders?.items||[]).slice().sort((a,b)=>(b.at||0)-(a.at||0)).map(o=>{ const s=S.myOStat?.[o.id]; return {...o, st:ordSt(s), msg:s?.msg||'', file:s?.file||''}; });
   const pm=pmShopS(), pmMine=myPassOrders().slice(0,6);
   return `<div class="page-head"><div><h1>${tr('mk.h')}</h1><p>${tr('mk.stuP')}</p></div></div>${rulesNote()}
   ${pm}
@@ -2404,7 +2439,7 @@ function vMarketS(){
 const myServiceCount = () => (hasNews()?1:0)+(hasStudy()?1:0)+Object.values(S.myTorders||{}).filter(o=>o.st==='ok').length+(S.myOrders?.items||[]).filter(o=>ordSt(S.myOStat?.[o.id])==='paid').length;
 function vServices(){
   const P=pmInfo(), po=myPassOrders(), now=Date.now();
-  const orders=(S.myOrders?.items||[]).slice().sort((a,b)=>(b.at||0)-(a.at||0)).map(o=>{ const st=S.myOStat?.[o.id]; return {...o, st:ordSt(st), msg:st?.msg||''}; });
+  const orders=(S.myOrders?.items||[]).slice().sort((a,b)=>(b.at||0)-(a.at||0)).map(o=>{ const st=S.myOStat?.[o.id]; return {...o, st:ordSt(st), msg:st?.msg||'', file:st?.file||''}; });
   const cards=[];
   const one = (kind, on, until, pend, title, line, open) => `<article class="svc sv-own ${on?'on':''}"><span class="label">${kind==='news'?tr('nw.tag'):tr('st.tag')}</span><h3>${title}</h3><p class="muted small">${line}</p>
     <div class="svc-foot"><span class="small ${on?'':'faint'}">${on?tr('st.activeTill',{d:esc(dayMonth(until))}):pend?tr('pm.pending'):until?tr('st.ended',{d:esc(dayMonth(until))}):''}</span>
@@ -4768,7 +4803,7 @@ async function staffTidFor(user){
   try{ const s=await S.db.doc('staff/'+user.email.toLowerCase()).get(); return s.exists ? (s.data().tid||null) : null; }catch(e){ return null; }
 }
 function startStaff(tid){
-  S.mode='teacher'; S.role='staff'; S.staffTid=tid; S.view={name:'inbox'}; S.loaded={}; S.profiles={}; S.feedback={};
+  S.mode='teacher'; S.role='staff'; S.staffTid=tid; S.view=startView('inbox',['club']); S.loaded={}; S.profiles={}; S.feedback={};
   S.plans={}; S.svc={services:[],slots:[]}; S.mail={url:'',secret:'',on:{}}; S.contacts={}; S.bookings={}; S.bstat={}; S.claims={}; S.cstat={};
   const onErr = e => { if(e && e.code!=='revoked') toast(tr('live.paused')); };
   const fbUn={}, seen=new Set();

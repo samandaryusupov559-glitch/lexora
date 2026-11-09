@@ -11,7 +11,7 @@
 //
 // Settings come from functions/.env, written by the GitHub workflow from the repository secrets:
 //   TELEGRAM_TOKEN, SITE_URL, OWNER_EMAIL (and optionally REGION).
-// Server-only collections (no client access in firestore.rules): tgChats/{chatId}, tgMsgs/{chatId_messageId}, tgNews/{issueId}.
+// Server-only collections (no client access in firestore.rules): tgChats/{chatId}, tgMsgs/{chatId_messageId}, tgNews/{issueId}, tgClub/{clubId}.
 // tg/{uid} = {chatId, username, role, tid, owner, at}: the student/teacher can read their own (to know they are linked).
 
 const crypto = require('crypto');
@@ -47,6 +47,7 @@ const T = {
     msgFrom: '💬 {name}:', guest: '🌐 Sayt mehmoni {name} ({contact}):', replyHint: '↩ Javob berish uchun shu xabarga “Reply” qiling.',
     sent: '✅ Yuborildi.', notLinked: 'Avval Lexoradagi “Telegram’ni ulash” tugmasi orqali akkauntingizni ulang.', noReply: 'Bu xabarga javob yozib bo‘lmaydi. Lexoraning o‘zida yozing.',
     app: '👩‍🏫 Yangi o‘qituvchilik arizasi: {name} · {contact}\n{langs} · {years} yil tajriba{levels}{bio}',
+    clubLive: '🎙 {lang} speaking club hozir jonli! {name} video suhbatni boshladi.', clubMsg: '💬 {lang} speaking club: {name}\n{text}', join2: '🎥 Qo‘shilish', openClub: '💬 Clubni ochish',
     lead: '🆕 Sinov darsi so‘rovi: {name} · {contact}\n{lang}{fmt}{msg}', assigned: '📌 Sizga sinov darsi so‘rovi biriktirildi: {name} · {contact}\n{lang}',
     live: '🔴 {name} darsni boshladi.{label}', checked: '✅ Yozuvingiz tekshirildi: “{title}”.', revise: '✏️ Ustoz “{title}” yozuvini qayta yozishni so‘radi.',
     btnHelp: '❓ Yordam', btnStatus: '📊 Holat', btnMenu: '📋 Menyu',
@@ -69,6 +70,7 @@ const T = {
     msgFrom: '💬 {name}:', guest: '🌐 Посетитель сайта {name} ({contact}):', replyHint: '↩ Чтобы ответить, сделайте «Ответить» (Reply) на это сообщение.',
     sent: '✅ Отправлено.', notLinked: 'Сначала подключите аккаунт кнопкой «Подключить Telegram» в Lexora.', noReply: 'На это сообщение нельзя ответить. Напишите в самой Lexora.',
     app: '👩‍🏫 Новая заявка преподавателя: {name} · {contact}\n{langs} · опыт {years} лет{levels}{bio}',
+    clubLive: '🎙 Speaking club ({lang}) сейчас в эфире! {name} начал(а) видеочат.', clubMsg: '💬 Speaking club ({lang}): {name}\n{text}', join2: '🎥 Присоединиться', openClub: '💬 Открыть клуб',
     lead: '🆕 Заявка на пробный урок: {name} · {contact}\n{lang}{fmt}{msg}', assigned: '📌 Вам назначена заявка на пробный урок: {name} · {contact}\n{lang}',
     live: '🔴 {name} начал(а) урок.{label}', checked: '✅ Ваша запись проверена: «{title}».', revise: '✏️ Преподаватель просит переписать «{title}».',
     btnHelp: '❓ Помощь', btnStatus: '📊 Статус', btnMenu: '📋 Меню',
@@ -91,6 +93,7 @@ const T = {
     msgFrom: '💬 {name}:', guest: '🌐 Site visitor {name} ({contact}):', replyHint: '↩ Reply to this message to answer.',
     sent: '✅ Sent.', notLinked: 'First connect your account with “Connect Telegram” in Lexora.', noReply: 'You cannot answer this message here. Please write in Lexora.',
     app: '👩‍🏫 New teacher application: {name} · {contact}\n{langs} · {years} years of experience{levels}{bio}',
+    clubLive: '🎙 The {lang} speaking club is live now! {name} started the video chat.', clubMsg: '💬 {lang} speaking club: {name}\n{text}', join2: '🎥 Join', openClub: '💬 Open the club',
     lead: '🆕 Trial request: {name} · {contact}\n{lang}{fmt}{msg}', assigned: '📌 A trial request was assigned to you: {name} · {contact}\n{lang}',
     live: '🔴 {name} has started the lesson.{label}', checked: '✅ Your entry was checked: “{title}”.', revise: '✏️ Your teacher asks you to rewrite “{title}”.',
     btnHelp: '❓ Help', btnStatus: '📊 Status', btnMenu: '📋 Menu',
@@ -351,6 +354,47 @@ exports.onReview = onDocumentWritten('feedback/{uid}/reviews/{eid}', async ev =>
   if (!b || (b.status !== 'reviewed' && b.status !== 'revise') || a.status === b.status) return;
   const j = await db.doc('journals/' + ev.params.uid).get(), title = (j.exists && j.data().index && j.data().index[ev.params.eid] && j.data().index[ev.params.eid].title) || '…';
   await sendUid(ev.params.uid, lang => ({ text: t(lang, b.status === 'revise' ? 'revise' : 'checked', { title }), extra: btn(t(lang, 'open'), SITE()) }));
+});
+
+/* ---------------- speaking clubs ---------------- */
+// club/{lang}_{day}: {topic, video:{on,url,at,until,by,byName}}; club/{id}/msgs/{m}: {uid,name,text,at,mod}
+// Everyone who studies or teaches that language (same test as firestore.rules) hears about it in Telegram.
+const LANG_NAMES = { uz: { English: 'Ingliz tili', Russian: 'Rus tili', German: 'Nemis tili', Turkish: 'Turk tili', Korean: 'Koreys tili', Chinese: 'Xitoy tili', Japanese: 'Yapon tili', Spanish: 'Ispan tili' },
+  ru: { English: 'английский', Russian: 'русский', German: 'немецкий', Turkish: 'турецкий', Korean: 'корейский', Chinese: 'китайский', Japanese: 'японский', Spanish: 'испанский' } };
+const langLabel = (lang, l) => (LANG_NAMES[L(lang)] && LANG_NAMES[L(lang)][l]) || l;
+async function clubPeople(langName, exceptUid) {
+  const tl = {}, teacherLangs = async tid => {
+    if (!(tid in tl)) { const d = await db.doc('teachers/' + tid).get(), l = (d.exists && d.data().langs) || []; tl[tid] = l.length ? l : ['English']; }
+    return tl[tid];
+  };
+  const out = [], q = await db.collection('tg').get();
+  for (const d of q.docs) {
+    const g = d.data(), uid = d.id; if (uid === exceptUid || g.owner) continue;
+    if (g.role === 'staff') { if ((await teacherLangs(g.tid)).includes(langName)) out.push(uid); continue; }
+    const j = await db.doc('journals/' + uid).get();
+    if (j.exists && (await teacherLangs(j.data().teacher || 'main')).includes(langName)) { out.push(uid); continue; }
+    const e = await db.doc('enrollStatus/' + uid).get();
+    if (e.exists && (e.data().langs || []).includes(langName)) out.push(uid);
+  }
+  return out;
+}
+// a teacher starts the club video chat
+exports.onClubVideo = onDocumentWritten({ document: 'club/{id}', timeoutSeconds: 300 }, async ev => {
+  const a = (ev.data.before && ev.data.before.data()) || {}, b = (ev.data.after && ev.data.after.data()) || {};
+  const v = b.video || {}, was = a.video || {};
+  if (!v.on || (v.until || 0) < Date.now() || (was.on && was.at === v.at)) return;
+  const l = ev.params.id.split('_')[0];
+  for (const uid of await clubPeople(l, v.by)) await sendUid(uid, lang => ({ text: t(lang, 'clubLive', { lang: langLabel(lang, l), name: v.byName || '' }), extra: okUrl(v.url) ? btn(t(lang, 'join2'), v.url) : btn(t(lang, 'openClub'), SITE() + '#club') }));
+});
+// a club message: at most one ping per club every 30 minutes, so a lively chat doesn't flood anyone
+const CLUB_QUIET = 30 * 60e3;
+exports.onClubMsg = onDocumentCreated({ document: 'club/{id}/msgs/{m}', timeoutSeconds: 300 }, async ev => {
+  const m = ev.data && ev.data.data(); if (!m || !m.text) return;
+  const mark = db.doc('tgClub/' + ev.params.id), now = Date.now();
+  const ok = await db.runTransaction(async tx => { const s = await tx.get(mark); if (s.exists && now - (s.data().at || 0) < CLUB_QUIET) return false; tx.set(mark, { at: now }); return true; });
+  if (!ok) return;
+  const l = ev.params.id.split('_')[0];
+  for (const uid of await clubPeople(l, m.uid)) await sendUid(uid, lang => ({ text: t(lang, 'clubMsg', { lang: langLabel(lang, l), name: clip(m.name, 80), text: clip(m.text, 300) }), extra: btn(t(lang, 'openClub'), SITE() + '#club') }));
 });
 
 /* ---------------- teacher announcements (tgq) ---------------- */

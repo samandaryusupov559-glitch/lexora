@@ -156,6 +156,10 @@ service cloud.firestore {
       allow read: if isMe(uid) || isTeacher();
       allow write: if isTeacher();
     }
+    // Links to the files sold in the Shop. Only the owner sees them; a buyer gets their link in orderStatus.
+    match /marketFiles/{doc} {
+      allow read, write: if isTeacher();
+    }
     // A student's email address for notifications. The student may only save their own sign-in
     // email, so nobody can make the teacher's Gmail write to a stranger.
     match /contacts/{uid} {
