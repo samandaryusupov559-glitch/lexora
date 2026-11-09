@@ -123,5 +123,13 @@ await t('teacher confirms order', setDoc(doc(T,'orderStatus/alice'),{o1:{st:'pai
 await t('teacher edits shop', setDoc(doc(T,'market/main'),{items:[]}), true);
 await t('teacher reads contacts', getDocs(collection(T,'contacts')), true);
 await t('teacher saves email settings', setDoc(doc(T,'private/mail'),{url:'u',secret:'s',on:{}}), true);
+console.log('Telegram notices (tgq)');
+const NQ = by => ({ev:'ann', by, uids:['alice'], msg:{uz:'x', ru:'x', en:'x'}, btn:{uz:'o'}, href:'https://x.y/', at:1});
+await t('teacher queues a Telegram notice', setDoc(doc(T,'tgq/q1'), NQ('teach')), true);
+await t('teacher cannot sign a notice as someone else', setDoc(doc(T,'tgq/q2'), NQ('alice')), false);
+await t('student cannot queue a notice', setDoc(doc(A,'tgq/q3'), NQ('alice')), false);
+await t('unverified owner email cannot queue a notice', setDoc(doc(FAKE,'tgq/q4'), NQ('fake')), false);
+await t('nobody reads the queue', getDoc(doc(T,'tgq/q1')), false);
+await t('notice with extra fields is refused', setDoc(doc(T,'tgq/q5'), {...NQ('teach'), html:'<b>'}), false);
 console.log(`\n${pass} passed, ${fail} failed`);
 await env.cleanup(); process.exit(fail?1:0);

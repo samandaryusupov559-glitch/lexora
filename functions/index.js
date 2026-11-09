@@ -5,17 +5,20 @@
 //      /start l_<id>    links a trial request (leads/<id>) so the bot can tell the person when a teacher is assigned
 //      a Reply to a chat notification goes back into that Lexora chat
 //      ?setup=<key>     (called by GitHub after each deploy) points Telegram at this function and saves the bot name
-//  Firestore triggers — new chat messages, visitor questions, trial requests, assignments, lesson start, checked entries.
+//  Firestore triggers — new chat messages, visitor questions, trial requests, assignments, lesson start, checked entries,
+//      and tgq/{id}: everything else a teacher announces (noticeboard, tasks, payments, bookings, orders), written by the site.
+//  newsOut (every 15 min) — tells each newspaper reader in Telegram when their issue comes out.
 //
 // Settings come from functions/.env, written by the GitHub workflow from the repository secrets:
 //   TELEGRAM_TOKEN, SITE_URL, OWNER_EMAIL (and optionally REGION).
-// Server-only collections (no client access in firestore.rules): tgChats/{chatId}, tgMsgs/{chatId_messageId}.
+// Server-only collections (no client access in firestore.rules): tgChats/{chatId}, tgMsgs/{chatId_messageId}, tgNews/{issueId}.
 // tg/{uid} = {chatId, username, role, tid, owner, at}: the student/teacher can read their own (to know they are linked).
 
 const crypto = require('crypto');
 const { setGlobalOptions } = require('firebase-functions/v2');
 const { onRequest } = require('firebase-functions/v2/https');
 const { onDocumentCreated, onDocumentWritten, onDocumentUpdated } = require('firebase-functions/v2/firestore');
+const { onSchedule } = require('firebase-functions/v2/scheduler');
 const { logger } = require('firebase-functions');
 const admin = require('firebase-admin');
 
@@ -340,5 +343,63 @@ exports.onReview = onDocumentWritten('feedback/{uid}/reviews/{eid}', async ev =>
   await sendUid(ev.params.uid, lang => ({ text: t(lang, b.status === 'revise' ? 'revise' : 'checked', { title }), extra: btn(t(lang, 'open'), SITE()) }));
 });
 
+/* ---------------- teacher announcements (tgq) ---------------- */
+// The site writes tgq/{id} = {ev, uids, msg:{uz,ru,en}, btn:{uz,ru,en}, href, by, at}; the rules let only the owner and staff
+// teachers create it, with by = their own uid. A staff teacher's message reaches only their own students.
+async function senderOf(uid) {
+  let user; try { user = await admin.auth().getUser(uid); } catch (e) { return null; }
+  const email = String(user.email || '').toLowerCase();
+  if (!email || !user.emailVerified) return null;
+  if (email === OWNER()) return { owner: true };
+  const sf = await db.doc('staff/' + email).get();
+  return sf.exists && sf.data().tid ? { tid: sf.data().tid } : null;
+}
+async function teaches(tid, uid) {
+  const j = await db.doc('journals/' + uid).get();
+  if (j.exists && (j.data().teacher || 'main') === tid) return true;
+  const e = await db.doc('enrollStatus/' + uid).get();
+  return e.exists && e.data()[tid] === 'ok';
+}
+exports.onNotice = onDocumentCreated({ document: 'tgq/{id}', timeoutSeconds: 300 }, async ev => {
+  const n = ev.data && ev.data.data(); if (!n) return;
+  try {
+    const who = await senderOf(n.by); if (!who) return;
+    const msg = n.msg || {}, bt = n.btn || {}, url = okUrl(n.href) ? n.href : SITE();
+    const uids = [...new Set((Array.isArray(n.uids) ? n.uids : []).filter(u => typeof u === 'string' && /^[\w-]{1,128}$/.test(u)))].slice(0, 1000);
+    for (const uid of uids) {
+      if (!who.owner && !(await teaches(who.tid, uid))) continue;
+      await sendUid(uid, lang => ({ text: String(msg[lang] || msg.uz || msg.en || ''), extra: btn(String(bt[lang] || t(lang, 'open')), url) }));
+    }
+  } finally { await ev.data.ref.delete().catch(() => {}); }
+});
+
+/* ---------------- the daily newspaper ---------------- */
+// newsDays/{uid}_{YYYY-MM-DD} = {releaseAt, stories:[{h}], on, …}; passes/{uid}.news.until says who has paid.
+const NEWS = {
+  uz: { subj: '📰 {name} · {day}: gazetangiz keldi', title: 'Bugungi son chiqdi', line: 'Maqolalarni o‘qing, testlarni yeching va bugungi mavzu haqida kundaligingizga yozing.', read: '📰 O‘qish', loc: 'uz-UZ' },
+  ru: { subj: '📰 {name} · {day}: ваша газета пришла', title: 'Сегодняшний выпуск вышел', line: 'Прочитайте статьи, решите тесты и напишите в дневник на тему дня.', read: '📰 Читать', loc: 'ru-RU' },
+  en: { subj: '📰 {name} · {day}: your paper is here', title: 'Today’s issue is out', line: 'Read the stories, do the quizzes and write about today’s topic in your journal.', read: '📰 Read', loc: 'en-GB' },
+};
+const weekday = (lang, date) => { try { const s = new Date(date + 'T12:00:00Z').toLocaleDateString(NEWS[L(lang)].loc, { weekday: 'long', timeZone: 'UTC' }); return s.charAt(0).toUpperCase() + s.slice(1); } catch (e) { return date; } };
+const newsText = (lang, name, date, stories) => { const N = NEWS[L(lang)];
+  return N.subj.replace('{name}', name).replace('{day}', weekday(lang, date)) + '\n\n' + N.title + '\n' + (stories || []).map(s => '• ' + clip(s && s.h, 200)).join('\n') + '\n\n' + N.line; };
+exports.newsOut = onSchedule({ schedule: 'every 15 minutes', timeZone: 'Asia/Tashkent', timeoutSeconds: 300 }, async () => {
+  const now = Date.now();
+  const q = await db.collection('newsDays').where('releaseAt', '<=', now).where('releaseAt', '>', now - 6 * 3600e3).get();
+  if (q.empty) return;
+  const pm = await db.doc('premium/main').get(), P = (pm.exists && pm.data().news) || {};
+  if (P.on === false) return;
+  const name = P.name || 'The Lexora Daily';
+  for (const d of q.docs) {
+    const x = d.data(), m = d.id.match(/^(.+)_(\d{4}-\d{2}-\d{2})$/);
+    if (!m || x.on === false || !(x.stories || []).length) continue;
+    const mark = db.doc('tgNews/' + d.id); if ((await mark.get()).exists) continue;
+    const ps = await db.doc('passes/' + m[1]).get(), until = +((ps.exists && ps.data().news && ps.data().news.until) || 0);
+    if (until < x.releaseAt) continue;
+    await mark.set({ at: now });   // marked first: a reader never gets the same issue twice
+    await sendUid(m[1], lang => ({ text: newsText(lang, name, m[2], x.stories), extra: btn(NEWS[L(lang)].read, SITE()) }));
+  }
+});
+
 // for tests
-exports._t = { t, leadText, joinUrl, hookSecret, setupKey };
+exports._t = { t, leadText, joinUrl, hookSecret, setupKey, newsText };
