@@ -1373,6 +1373,17 @@ function readJoin(){
   LS.set('want-teacher', m[1]); if(m[2]) LS.set('join-lead', m[2]); else LS.del('join-lead');
   history.replaceState(null, '', location.pathname+location.search); return true;
 }
+// a ready message for a trial request: Telegram opens the chat with the text typed in, SMS opens the phone's messages
+function leadMsgText(l){ return tr('c.msgTpl',{name:(l.name||'').split(' ')[0], teacher:tName(l.tid), link:joinUrl(l.tid, l.id)}); }
+function leadSendBtns(l){
+  if(!l.tid || l.st==='joined') return '';
+  const x=String(l.contact||'').trim(), t=encodeURIComponent(leadMsgText(l)), tg=x.match(/^@?([A-Za-z][\w]{3,31})$/);
+  let d=x.replace(/\D/g,''); if(d.length===9) d='998'+d;
+  const out=[];
+  if(tg && !/^\d/.test(tg[1])) out.push(`<a class="btn sm pen" href="https://t.me/${esc(tg[1])}?text=${t}" target="_blank" rel="noopener">✈ ${tr('c.msgTg')}</a>`);
+  else if(d.length>=11){ out.push(`<a class="btn sm pen" href="https://t.me/+${d}?text=${t}" target="_blank" rel="noopener">✈ ${tr('c.msgTg')}</a>`); out.push(`<a class="btn sm" href="sms:+${d}?&body=${t}">${tr('c.msgSms')}</a>`); }
+  return out.join('');
+}
 const joinUrl = (tid, leadId) => siteUrl()+'#join='+tid+(leadId?'.'+leadId:'');
 async function boot(){
   S.joinAsk = readJoin();
@@ -5038,7 +5049,7 @@ function vTeam(){
     ${appsSection()}${enrollSection()}${pricingSection()}${tordersSection(false)}
     <div class="section"><div class="row" style="justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap"><h2 style="margin:0">${tr('c.leadsH')}</h2>${asgBar()}</div><p class="small muted" style="margin:6px 0 12px">${tr('c.asgP')} ${tr('c.joinP')}</p>${leads.length?`<div class="list">${leads.map(l=>`<div class="req ${l.st?'ok':'wait'}">${avatar(l.name,l.id)}<div style="min-width:0"><b>${esc(l.name)}</b> <span class="faint">·</span> <span class="num">${contactHtml(l.contact)}</span>
         <div class="small muted">${[l.lang, l.level==='beginner'?tr('c.beginner'):l.level, l.fmt?tr('pc.'+l.fmt):'', l.quote||'', l.tid?tr('c.forT',{name:esc(tName(l.tid))}):tr('c.anyTeacher')].filter(Boolean).map(x=>x).join(' · ')} · ${ago(l.at)}</div>${l.msg?`<div class="small req-note">“${esc(l.msg)}”</div>`:''}<div style="margin-top:8px">${asgPicker('lead', l.id, l)}</div></div>
-        <div class="req-act">${l.st==='joined'?`<span class="pill bk-ok">${tr('c.joined')}</span>`:l.tid?`<button class="btn sm" data-act="c-join-copy" data-tid="${esc(l.tid)}" data-id="${esc(l.id)}">${I.copy} ${tr('c.joinLink')}</button>`:''}${l.st?`${l.st==='joined'?'':`<span class="pill bk-ok">${tr('c.contacted')}</span>`}<button class="btn ghost sm" data-act="c-lead-del" data-id="${esc(l.id)}" style="color:var(--pen)">${tr('delete')}</button>`:`<button class="btn sm primary" data-act="c-lead-done" data-id="${esc(l.id)}">${tr('c.markContacted')}</button>`}</div></div>`).join('')}</div>`:`<p class="faint">${tr('c.noLeads')}</p>`}</div>
+        <div class="req-act">${leadSendBtns(l)}${l.st==='joined'?`<span class="pill bk-ok">${tr('c.joined')}</span>`:l.tid?`<button class="btn sm" data-act="c-join-copy" data-tid="${esc(l.tid)}" data-id="${esc(l.id)}">${I.copy} ${tr('c.joinLink')}</button>`:''}${l.st?`${l.st==='joined'?'':`<span class="pill bk-ok">${tr('c.contacted')}</span>`}<button class="btn ghost sm" data-act="c-lead-del" data-id="${esc(l.id)}" style="color:var(--pen)">${tr('delete')}</button>`:`<button class="btn sm primary" data-act="c-lead-done" data-id="${esc(l.id)}">${tr('c.markContacted')}</button>`}</div></div>`).join('')}</div>`:`<p class="faint">${tr('c.noLeads')}</p>`}</div>
     <div class="section"><h2>${tr('c.actH')}</h2>${act.length?`<div class="tact">${act.map(e=>`<div class="tact-row"><span class="tact-dot ${e.kind==='entry'?'in':''}"></span><span>${e.kind==='entry'
         ? tr('c.actEntry',{s:esc(e.name||''), t:esc(e.title), teacher:esc(tName(e.tid))})
         : tr(e.st==='revise'?'c.actRevise':'c.actReview',{teacher:`<b>${esc(tName(e.tid))}</b>`, s:esc(e.name||''), t:esc(e.title), band:e.band!=null?fmtBand(e.band):'–'})}</span><span class="small faint">${ago(e.at)}</span></div>`).join('')}</div>`:`<p class="faint">${tr('c.noAct')}</p>`}</div>
@@ -5090,7 +5101,7 @@ function vCentre(){
       return `<div class="req ${s}"><div style="min-width:0"><b>${esc(o?.title||r.title||'–')}</b><div class="small muted">${ago(r.at)}</div>${r.note?`<div class="small req-note">“${esc(r.note)}”</div>`:''}</div><div class="req-act"><span class="pill bk-${s}">${tr('bk.st.'+s)}</span></div></div>`; }).join('')}</div></div>`:''}
     ${tordersSection(true)}
     ${Object.keys(S.myRoster?.students||{}).length?`<div class="section"><h2>${tr('c.myExtra')}</h2><div class="tchips">${Object.entries(S.myRoster.students).map(([uid,x])=>`<span class="lchip ghost">${esc(x.name||'')}${x.lang?' · '+esc(x.lang):''}</span>`).join('')}</div></div>`:''}
-    <div class="section"><h2>${tr('c.myLeads')}</h2><p class="small muted" style="margin:-6px 0 12px">${tr('c.joinP')}</p>${leads.length?`<div class="list">${leads.map(l=>`<div class="req ${l.st?'ok':'wait'}">${avatar(l.name,l.id)}<div style="min-width:0"><b>${esc(l.name)}</b> · <span class="num">${contactHtml(l.contact)}</span><div class="small muted">${[l.lang, l.level==='beginner'?tr('c.beginner'):l.level, l.fmt?tr('pc.'+l.fmt):'', l.quote||''].filter(Boolean).join(' · ')} · ${ago(l.at)}</div>${l.msg?`<div class="small req-note">“${esc(l.msg)}”</div>`:''}</div><div class="req-act">${l.st==='joined'?`<span class="pill bk-ok">${tr('c.joined')}</span>`:`<button class="btn sm" data-act="c-join-copy" data-tid="${esc(l.tid)}" data-id="${esc(l.id)}">${I.copy} ${tr('c.joinLink')}</button>`}</div></div>`).join('')}</div>`:`<p class="faint">${tr('c.noLeads')}</p>`}</div>`;
+    <div class="section"><h2>${tr('c.myLeads')}</h2><p class="small muted" style="margin:-6px 0 12px">${tr('c.joinP')}</p>${leads.length?`<div class="list">${leads.map(l=>`<div class="req ${l.st?'ok':'wait'}">${avatar(l.name,l.id)}<div style="min-width:0"><b>${esc(l.name)}</b> · <span class="num">${contactHtml(l.contact)}</span><div class="small muted">${[l.lang, l.level==='beginner'?tr('c.beginner'):l.level, l.fmt?tr('pc.'+l.fmt):'', l.quote||''].filter(Boolean).join(' · ')} · ${ago(l.at)}</div>${l.msg?`<div class="small req-note">“${esc(l.msg)}”</div>`:''}</div><div class="req-act">${leadSendBtns(l)}${l.st==='joined'?`<span class="pill bk-ok">${tr('c.joined')}</span>`:`<button class="btn sm" data-act="c-join-copy" data-tid="${esc(l.tid)}" data-id="${esc(l.id)}">${I.copy} ${tr('c.joinLink')}</button>`}</div></div>`).join('')}</div>`:`<p class="faint">${tr('c.noLeads')}</p>`}</div>`;
 }
 function openOfferAsk(offerId){
   const o=(S.offers?.items||[]).find(x=>x.id===offerId); if(!o) return;
@@ -6461,7 +6472,7 @@ document.addEventListener('click', async ev => {
       const tid = S.role==='staff' ? S.staffTid : tidOf(p);   // the owner writes in the chat of the student's own teacher
       go('chat',{k:'dm', id:uid+'_'+tid, uid}); break; }
     case 'c-leave': openLeave(); break;
-    case 'c-join-copy': { const u=joinUrl(b.dataset.tid, b.dataset.id); try{ await navigator.clipboard.writeText(u); toast(tr('c.joinCopied',{name:esc(tName(b.dataset.tid))}), 7000); }catch(e){ prompt(tr('c.joinLink'), u); } break; }
+    case 'c-join-copy': { const l=S.leads?.[b.dataset.id], u=l ? leadMsgText({...l, id:b.dataset.id}) : joinUrl(b.dataset.tid, b.dataset.id); try{ await navigator.clipboard.writeText(u); toast(tr('c.joinCopied',{name:esc(tName(b.dataset.tid))}), 7000); }catch(e){ prompt(tr('c.joinLink'), u); } break; }
     case 'c-ch-open': S.mode==='student' ? go('chat',{tid:b.dataset.tid}) : go('chat',{k:b.dataset.k, id:b.dataset.id}); break;
     case 'c-ch-del': { const c=chatCur(); if(c) try{ await S.db.doc((c.kind==='g'?'gchat/':'dm/')+c.id+'/msgs/'+b.dataset.id).delete(); }catch(e){ dbErr(e,'svc'); } break; }
     case 'c-asg': { const sel=document.querySelector('[data-asg-sel="'+CSS.escape(b.dataset.id)+'"]'); b.disabled=true;
