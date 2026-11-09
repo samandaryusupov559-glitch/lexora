@@ -250,7 +250,7 @@ service cloud.firestore {
     }
     // "Become a teacher" applications from visitors. Anyone may send one; only the owner reads them.
     match /applications/{id} {
-      allow create: if request.resource.data.keys().hasOnly(['name', 'contact', 'email', 'photo', 'langs', 'levels', 'years', 'lessonLen', 'bio', 'achievements', 'msg', 'at'])
+      allow create: if request.resource.data.keys().hasOnly(['name', 'contact', 'email', 'photo', 'langs', 'levels', 'years', 'lessonLen', 'bio', 'achievements', 'msg', 'at', 'prices'])
         && request.resource.data.keys().hasAll(['name', 'contact', 'langs', 'years', 'at'])
         && request.resource.data.name is string && request.resource.data.name.size() > 0 && request.resource.data.name.size() <= 80
         && request.resource.data.contact is string && request.resource.data.contact.size() >= 3 && request.resource.data.contact.size() <= 120
@@ -263,6 +263,7 @@ service cloud.firestore {
         && request.resource.data.get('bio', '') is string && request.resource.data.get('bio', '').size() <= 1500
         && request.resource.data.get('achievements', []) is list && request.resource.data.get('achievements', []).size() <= 20
         && request.resource.data.get('msg', '') is string && request.resource.data.get('msg', '').size() <= 500
+        && request.resource.data.get('prices', {}) is map && request.resource.data.get('prices', {}).size() <= 12
         && request.resource.data.at is int;
       allow read, update, delete: if isTeacher();
     }
@@ -367,7 +368,9 @@ service cloud.firestore {
     }
     // Trial-lesson requests from visitors. Anyone may send one; only the owner and the chosen teacher read it.
     match /leads/{id} {
-      allow create: if request.resource.data.keys().hasOnly(['name', 'contact', 'lang', 'level', 'tid', 'msg', 'at'])
+      allow create: if request.resource.data.keys().hasOnly(['name', 'contact', 'lang', 'level', 'tid', 'msg', 'at', 'fmt', 'quote'])
+        && request.resource.data.get('fmt', '') in ['', 'group', 'ind']
+        && request.resource.data.get('quote', '') is string && request.resource.data.get('quote', '').size() <= 80
         && request.resource.data.keys().hasAll(['name', 'contact', 'at'])
         && request.resource.data.name is string && request.resource.data.name.size() > 0 && request.resource.data.name.size() <= 80
         && request.resource.data.contact is string && request.resource.data.contact.size() >= 3 && request.resource.data.contact.size() <= 120
