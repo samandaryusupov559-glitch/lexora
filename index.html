@@ -5964,7 +5964,7 @@ function openLibEdit(id){
   const langs = S.role==='staff' ? myLangs() : [...new Set([...CLUB_LANGS, ...CLANGS, ...Object.values(S.lib||{}).map(y=>y.lang).filter(Boolean)])];
   showDlg(`<form id="lb-form" novalidate>${dlgHead(tr('c.libH'), id?esc(x.title):tr('c.libAdd'))}<div class="dlg-body">
     <div class="grid2" style="gap:12px"><label class="field"><span>${tr('c.fLang')}</span><select class="inp" id="lb-lang">${langOpts(langs, x.lang)}</select></label>
-      <label class="field"><span>${tr('c.fLevel')}</span><select class="inp" id="lb-level">${LIB_LEVELS.map(l=>`<option value="${l}" ${l===x.level?'selected':''}>${l==='all'?tr('c.libAllLv'):l}</option>`).join('')}</select></label></div>
+      <label class="field"><span>${tr('c.libLevel')}</span><select class="inp" id="lb-level">${LIB_LEVELS.map(l=>`<option value="${l}" ${l===x.level?'selected':''}>${l==='all'?tr('c.libAllLv'):l}</option>`).join('')}</select></label></div>
     <label class="field"><span>${tr('c.libKind')}</span><select class="inp" id="lb-kind">${LIB_KINDS.map(k=>`<option value="${k}" ${k===x.kind?'selected':''}>${libIcon(k)} ${tr('c.lib.'+k)}</option>`).join('')}</select></label>
     <label class="field"><span>${tr('c.oTitle')}</span><input class="inp" id="lb-title" maxlength="120" value="${esc(x.title||'')}" placeholder="${tr('c.libTitlePh')}"></label>
     ${id?'':`<label class="lib-drop"><input type="file" id="lb-file" accept=".pdf,.epub,.doc,.docx,.ppt,.pptx,audio/*,video/*" hidden><b>📤 ${tr('c.libPick')}</b><span class="small faint" id="lb-fname">${tr('c.libPickHint')}</span><progress id="lb-prog" max="100" value="0" hidden style="width:100%"></progress></label>
@@ -5983,7 +5983,7 @@ function openLibEdit(id){
     if(!title){ err.textContent=tr('c.needTitle'); return; }
     if(file){ const btn=$('#lb-form .btn.primary'), pr=$('#lb-prog'); btn.disabled=true; err.textContent=''; $('#lb-fname').textContent=tr('c.libUploading'); pr.hidden=false; pr.value=0;
       const r=await uploadFile(file, p=>{ pr.value=Math.round(p*100); $('#lb-fname').textContent=tr('c.libPct',{p:Math.round(p*100)}); }); btn.disabled=false;
-      if(!r.ok){ err.textContent = r.error==='nocfg'?tr(S.role==='owner'?'c.libNoCfgOwner':'c.libNoCfg') : r.error==='old'?tr('c.libOld') : r.error==='big'?tr('c.libBig') : tr('c.libUpFail',{e:esc(r.error||'')}); $('#lb-fname').textContent=file.name; return; }
+      if(!r.ok){ err.textContent = r.error==='nocfg'?tr(S.role==='owner'?'c.libNoCfgOwner':'c.libNoCfg') : r.error==='old'?tr('c.libOld') : r.error==='big'?tr('c.libBig') : tr('c.libUpFail',{e:esc(r.error||'')}); $('#lb-fname').textContent=file.name; pr.hidden=true; err.scrollIntoView({block:'center', behavior:'smooth'}); return; }
       url=r.url; }
     if(!/^https:\/\//.test(url)){ err.textContent=tr(fi?'c.libNeedFile':'c.libBadUrl'); return; }
     const d={lang:$('#lb-lang').value, level:$('#lb-level').value, kind:$('#lb-kind').value, title, url, desc:$('#lb-desc').value.trim(),
