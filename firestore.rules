@@ -47,13 +47,24 @@ service cloud.firestore {
     // The student picks a teacher when they start; only the owner can move them to another teacher.
     match /journals/{uid} {
       allow read: if isMe(uid) || isTeacher() || (isStaff() && resource.data.teacher == staffTid());
-      allow create, delete: if isMe(uid) || isTeacher();
+      // a new journal always names its teacher, so nobody lands with the owner by default
+      allow create: if isTeacher() || (isMe(uid) && request.resource.data.get('teacher', '') is string && request.resource.data.get('teacher', '').size() > 0);
+      // the student leaves, or their teacher removes them: they start again by choosing a teacher
+      allow delete: if isMe(uid) || isTeacher() || teachesJournal(uid);
       allow update: if isTeacher()
         || (isMe(uid) && request.resource.data.get('teacher', 'main') == resource.data.get('teacher', 'main'));
       match /entries/{eid} {
         allow read: if isMe(uid) || isTeacher() || teachesJournal(uid);
         allow write: if isMe(uid) || isTeacher();
+        allow delete: if teachesJournal(uid);
       }
+    }
+    // A student who left or was removed: the owner's page deletes the rest of their data, then this note.
+    match /leaves/{uid} {
+      allow create, update: if (isMe(uid) || teachesJournal(uid))
+        && request.resource.data.keys().hasOnly(['at', 'by', 'name']) && request.resource.data.at is int
+        && request.resource.data.by in ['s', 't'] && request.resource.data.name is string && request.resource.data.name.size() <= 80;
+      allow read, delete: if isTeacher();
     }
 
     // Teacher's feedback: the student may read their own, only the teacher writes.
@@ -447,7 +458,11 @@ service cloud.firestore {
              && request.resource.data.keys().hasOnly(['uid', 'tid', 'name', 'lastAt', 'lastBy', 'lastText', 'rs'])
              && request.resource.data.get('lastBy', 's') == 's'
              && dmTeaches(request.auth.uid, request.resource.data.tid))
-            || (isTeacher() && id == request.resource.data.uid + '_' + request.resource.data.tid));
+            || (isTeacher() && id == request.resource.data.uid + '_' + request.resource.data.tid)
+            // a teacher writes first to their own student
+            || (isStaff() && request.resource.data.tid == staffTid() && id == request.resource.data.uid + '_' + request.resource.data.tid
+                && request.resource.data.keys().hasOnly(['uid', 'tid', 'name', 'lastAt', 'lastBy', 'lastText', 'rt'])
+                && request.resource.data.lastBy == 't' && dmTeaches(request.resource.data.uid, staffTid())));
       allow update: if signedIn() && dmFields()
         && request.resource.data.uid == resource.data.uid && request.resource.data.tid == resource.data.tid
         && (isTeacher()

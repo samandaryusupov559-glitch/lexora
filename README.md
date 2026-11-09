@@ -90,6 +90,21 @@ Qoidalar yangilanmaguncha tegishli sahifalarda shu haqda ogohlantirish chiqadi.
 
 Bu bo'limlar ishlashi uchun yangi `firestore.rules` ni Firebase'ga qo'ying (yuqoridagi "Yangilash" bo'limi). Tekshiruvlar: `tests/chat.test.mjs`, `tests/langs.test.mjs`.
 
+## Xatlar spamga tushmasligi uchun
+
+**Firebase xatlari** (email tasdiqlash, parolni tiklash, kirish havolasi) `noreply@daybook-4497a.firebaseapp.com` manzilidan keladi va ko'pincha spamga tushadi. Bir martalik sozlash:
+
+1. Firebase → ⚙️ **Project settings → General → Public-facing name**: `Lexora` deb yozing. Shunda xat sarlavhasida "daybook-4497a" o'rniga "Lexora" chiqadi.
+2. **Authentication → Templates**: har bir shablonda (Email address verification, Password reset, Email link sign-in) qalam belgisini bosing:
+   - **Sender name**: `Lexora`
+   - **Reply to**: o'z Gmail manzilingiz
+   - **Subject**: qisqa va aniq, masalan `Lexora: emailingizni tasdiqlang`
+3. O'quvchilardan birinchi xatni Spam papkasida ochib, **"Spam emas"** tugmasini bosishini so'rang.
+
+Bu xatlarni butunlay spamdan chiqarishning eng ishonchli yo'li o'z domeningiz (masalan `lexora.uz`). Uni **Authentication → Templates → Customize domain** orqali ulaysiz va Firebase bergan DNS yozuvlarini qo'shasiz.
+
+**Lexora xabarnomalari** sizning Gmail'ingizdan ketadi. Oddiy Gmail kuniga taxminan 100 ta xat yuboradi, limit tugasa qolganlari yuborilmaydi. E'lonlar sahifasidagi Email kartasida bugun yana nechta xat yuborish mumkinligi ko'rinadi. Keraksiz xat turlarini o'sha yerda o'chirib qo'ying.
+
 ## Foydalanish
 
 1. Saytga birinchi bo'lib **o'zingiz** kiring: **Teacher sign-in** tugmasini bosing, `TEACHER_EMAIL` dagi emailni yozing va kelgan havolani o'sha qurilmada oching. O'qituvchi sahifasi ochiladi.
