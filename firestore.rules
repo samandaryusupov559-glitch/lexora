@@ -333,6 +333,75 @@ service cloud.firestore {
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['done'])
         && request.resource.data.done is map;
     }
+    // ---------- tests ----------
+    // exams/{id}: the questions (with the answers). Teachers write; a student may read a published test
+    // that is free or that the owner has opened for them (examAccess). examList/main is the catalogue without questions.
+    function examPath(id) { return /databases/$(database)/documents/exams/$(id); }
+    function hasExam(id) {
+      return exists(/databases/$(database)/documents/examAccess/$(request.auth.uid))
+        && get(/databases/$(database)/documents/examAccess/$(request.auth.uid)).data.get('ids', {}).get(id, null) != null;
+    }
+    function canTake(id) {
+      return signedIn() && exists(examPath(id)) && get(examPath(id)).data.get('on', false) == true
+        && (get(examPath(id)).data.get('price', 0) == 0 || hasExam(id));
+    }
+    match /exams/{id} {
+      allow read: if isTeacher() || (isStaff() && resource.data.tid == staffTid())
+        || (signedIn() && resource.data.on == true && (resource.data.get('price', 0) == 0 || hasExam(id)));
+      allow create: if isTeacher() || (isStaff() && request.resource.data.tid == staffTid());
+      allow update: if isTeacher() || (isStaff() && resource.data.tid == staffTid() && request.resource.data.tid == staffTid());
+      allow delete: if isTeacher() || (isStaff() && resource.data.tid == staffTid());
+    }
+    match /examList/{doc} {
+      allow read: if signedIn();
+      allow write: if isTeacher() || isStaff();
+    }
+    // Paid tests (IELTS, SAT…): the student sends "I paid", the owner opens the test.
+    match /examAccess/{uid} {
+      allow read: if isMe(uid) || isTeacher();
+      allow write: if isTeacher();
+    }
+    match /examOrders/{uid} {
+      allow read: if isMe(uid) || isTeacher();
+      allow write: if isTeacher()
+        || (isMe(uid)
+            && request.resource.data.keys().hasOnly(['name', 'items'])
+            && request.resource.data.items is list
+            && request.resource.data.items.size() <= 50);
+    }
+    // One attempt per student and test. It starts now (the clock is checked), and answers are accepted
+    // once, until the time is up (plus two minutes for a slow connection). The teacher may delete it for a retake.
+    match /examRuns/{rid} {
+      allow read: if isTeacher() || isStaff() || (signedIn() && resource.data.uid == request.auth.uid);
+      allow create: if signedIn()
+        && rid == request.auth.uid + '_' + request.resource.data.examId
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.keys().hasOnly(['uid', 'examId', 'name', 'mins', 'startedAt'])
+        && request.resource.data.startedAt is int
+        && math.abs(request.resource.data.startedAt - request.time.toMillis()) < 120000
+        && canTake(request.resource.data.examId)
+        && request.resource.data.mins == get(examPath(request.resource.data.examId)).data.mins;
+      allow update: if signedIn()
+        && resource.data.uid == request.auth.uid
+        && !('submittedAt' in resource.data)
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['answers', 'score', 'n', 'submittedAt'])
+        && request.resource.data.answers is list
+        && request.resource.data.score is int && request.resource.data.n is int
+        && request.resource.data.score >= 0 && request.resource.data.score <= request.resource.data.n
+        && request.resource.data.submittedAt is int
+        && math.abs(request.resource.data.submittedAt - request.time.toMillis()) < 120000
+        && request.time.toMillis() <= resource.data.startedAt + (resource.data.mins * 60 + 120) * 1000;
+      allow delete: if isTeacher();
+    }
+    // 1–5 marks: teachers mark students (stCrit), students rate their teachers (tCrit, owner only).
+    match /stCrit/{uid} {
+      allow read: if isMe(uid) || isTeacher() || isStaff();
+      allow write: if isTeacher() || isStaff();
+    }
+    match /tCrit/{uid} {
+      allow read: if isMe(uid) || isTeacher();
+      allow write: if isMe(uid) && request.resource.data.keys().size() <= 20;
+    }
     // A teacher's groups (for starting a lesson for a group).
     match /groups/{tid} {
       allow read, write: if isTeacher() || (isStaff() && staffTid() == tid);

@@ -1186,6 +1186,55 @@ main.enter .dash > :nth-child(2),main.enter .dash-stats > :nth-child(2){animatio
 main.enter .dash > :nth-child(3),main.enter .dash-stats > :nth-child(3){animation-delay:.12s}
 main.enter .dash > :nth-child(4),main.enter .dash-stats > :nth-child(4){animation-delay:.18s}
 @media (max-width:820px){.dash{grid-template-columns:minmax(0,1fr)}.dash-stats{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.rank-how{padding:18px 20px}
+/* tests */
+.ex-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px}
+.ex-card{padding:18px 20px;display:flex;flex-direction:column;gap:8px}
+.ex-card h3{font-family:var(--f-display);font-weight:600;font-size:21px;line-height:1.2;margin:0;overflow-wrap:break-word}
+.ex-foot{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:auto;padding-top:10px;border-top:1px solid var(--line)}
+.ex-price{font-weight:700}
+.ex-cert{background:var(--sheet-3);color:var(--ink)}
+.ex-ielts,.ex-sat{background:var(--pen-soft);color:var(--pen)}
+.ex-national{background:var(--blue-soft);color:var(--blue)}
+.ex-run-head{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;padding-bottom:14px;margin-bottom:14px;border-bottom:1px solid var(--line)}
+.ex-run-head h1{font-family:var(--f-display);font-weight:600;font-size:clamp(24px,3vw,34px);line-height:1.1;overflow-wrap:break-word;min-width:0}
+.ex-timer{display:flex;flex-direction:column;align-items:flex-end;padding:8px 16px;border-radius:var(--r-sm);background:var(--hero);color:var(--on-hero);flex:none}
+.ex-timer b{font-family:var(--f-num);font-weight:700;font-size:26px;line-height:1.1;font-variant-numeric:tabular-nums}
+.ex-timer.late{background:var(--coral);color:var(--on-coral)}
+.ex-qs{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:12px;counter-reset:exq}
+.ex-q{padding:18px 20px;counter-increment:exq}
+.ex-qt{font-weight:600;font-size:18px;margin-bottom:12px}
+.ex-qt::before{content:counter(exq) ". ";color:var(--ink-3)}
+.ex-opts{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:8px}
+.ex-opt{display:flex;align-items:center;gap:10px;padding:11px 14px;border:1px solid var(--line);border-radius:var(--r-sm);background:var(--sheet);cursor:pointer;transition:border-color .15s var(--ease),background-color .15s var(--ease)}
+label.ex-opt:hover{border-color:var(--ink-3)}
+.ex-opt input{width:18px;height:18px;accent-color:var(--ink);margin:0;flex:none}
+.ex-opt:has(input:checked){border-color:var(--ink);background:var(--blue-soft)}
+.ex-opt:has(input:focus-visible){outline:2px solid var(--focus);outline-offset:2px}
+.ex-opt.right{border-color:var(--ok);background:var(--ok-soft);color:var(--ok);font-weight:600}
+.ex-opt.wrong{border-color:var(--pen);background:var(--pen-soft);color:var(--pen);text-decoration:line-through}
+.ex-q.no{border-color:color-mix(in srgb,var(--pen) 35%,var(--line))}
+.ex-timer-mini{display:inline-flex;align-items:baseline;gap:6px;padding:6px 12px;border-radius:8px;background:var(--hero);color:var(--on-hero)}
+.ex-timer-mini b{font-family:var(--f-num);font-weight:700;font-size:18px}
+.ex-timer-mini.late{background:var(--coral);color:var(--on-coral)}
+.ex-submit #ex-answered{margin-right:auto}
+.ex-row > b:not(.rank-pts){grid-column:auto}
+.ex-submit{position:sticky;bottom:12px;z-index:5;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-top:16px;padding:12px 16px;border:1px solid var(--line);border-radius:var(--r);background:var(--sheet)}
+.ex-score{display:flex;align-items:center;gap:28px;flex-wrap:wrap;padding:22px 24px}
+.ex-score > b{font-family:var(--f-display);font-weight:600;font-size:56px;line-height:1}
+.ex-score > b span{font-size:22px;color:var(--ink-3);margin-left:6px}
+.ex-row{grid-template-columns:38px auto 1fr auto auto}
+.cr-row{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;padding:8px 0;border-top:1px solid var(--line)}
+.cr-row:first-of-type{border-top:0}
+.cr-row > span{font-weight:600}
+.cr-stars{display:flex;gap:6px}
+.cr-star{position:relative;cursor:pointer}
+.cr-star input{position:absolute;opacity:0;inset:0;margin:0;cursor:pointer}
+.cr-star span{display:grid;place-items:center;width:38px;height:38px;border:1px solid var(--line);border-radius:10px;font-weight:700;background:var(--sheet);transition:background-color .15s var(--ease),border-color .15s var(--ease),transform .15s var(--ease)}
+.cr-star:hover span{border-color:var(--ink-3)}
+.cr-star input:checked + span{background:var(--ink);border-color:var(--ink);color:var(--on-ink);transform:scale(1.06)}
+.cr-star input:focus-visible + span{outline:2px solid var(--focus);outline-offset:2px}
+@media (max-width:560px){.ex-score > b{font-size:44px}.ex-row{grid-template-columns:34px auto 1fr auto}.ex-row > .muted{display:none}}
 /* homework */
 .hw-card{padding:18px 20px;display:flex;flex-direction:column;gap:10px}
 .hw-card.is-done{background:var(--sheet-2)}
@@ -1521,7 +1570,22 @@ function seedDemo(db){
   lst.filter(x=>x.journalId).forEach(x=>db.m.set('balances/'+x.journalId, balanceDoc({...x,end:''}, ex.payments, ym)));
   seedPremium(db);
   const col = c => Object.fromEntries([...db.m.keys()].filter(k=>k.startsWith(c+'/') && k.split('/').length===2).map(k=>[k.split('/')[1], db.m.get(k)]));
-  db.m.set('board/rating', publicRating(buildRating({profiles:col('journals'), feedback:col('feedback'), plans:col('plans'), bookings:col('bookings'), bstat:col('bookingStatus'), slots:db.m.get('board/services').slots, bonus:{}, scores:col('passScores')}), true, {}));
+  { const qsMath=[{q:'2x + 6 = 14. What is x?', o:['3','4','5','7'], a:1},{q:'What is 15% of 200?', o:['15','20','30','35'], a:2},{q:'A square has a side of 6 cm. What is its area?', o:['24 cm²','30 cm²','36 cm²','12 cm²'], a:2},{q:'Which number is prime?', o:['21','27','29','33'], a:2},{q:'(-3)² equals', o:['-9','6','9','-6'], a:2}];
+    const qsIelts=[{q:'Choose the word closest in meaning to "rapid".', o:['slow','quick','calm','late'], a:1},{q:'"The figures rose ___ 2010 and 2015."', o:['among','within','between','during'], a:2},{q:'Which sentence is correct?', o:['She have finished.','She has finished.','She finish.','She finishing.'], a:1}];
+    const qsSat=[{q:'If f(x) = 3x − 2, what is f(4)?', o:['10','12','14','8'], a:0},{q:'The mean of 4, 8 and x is 7. What is x?', o:['7','8','9','10'], a:2}];
+    const ex=[{id:'ex-math', tid:'main', title:'Mathematics: national certificate mock 1', cert:'national', subject:'Mathematics', mins:20, price:0, on:true, qs:qsMath, at:ts(3)},
+      {id:'ex-ielts', tid:'main', title:'IELTS Reading mock A', cert:'ielts', subject:'English', mins:60, price:50000, on:true, qs:qsIelts, at:ts(2)},
+      {id:'ex-sat', tid:'main', title:'SAT Math practice 1', cert:'sat', subject:'Mathematics', mins:35, price:50000, on:true, qs:qsSat, at:ts(1)}];
+    const items={}; for(const x of ex){ db.m.set('exams/'+x.id, x); items[x.id]={title:x.title, cert:x.cert, subject:x.subject, mins:x.mins, n:x.qs.length, price:x.price, on:x.on, tid:x.tid}; }
+    db.m.set('examList/main', {items});
+    db.m.set('examRuns/ex-timur_ex-math', {uid:'ex-timur', examId:'ex-math', name:'Timur (example)', mins:20, startedAt:ts(1), answers:[1,2,2,0,2], score:4, n:5, submittedAt:ts(1)+11*60000});
+    db.m.set('examRuns/ex-madina_ex-math', {uid:'ex-madina', examId:'ex-math', name:'Madina (example)', mins:20, startedAt:ts(1), answers:[1,2,2,2,2], score:5, n:5, submittedAt:ts(1)+16*60000});
+    db.m.set('examOrders/ex-timur', {name:'Timur (example)', items:[{id:'xo1', examId:'ex-ielts', method:'click', ref:'last digits 4821', price:50000, at:ts(0.05)}]});
+    db.m.set('stCrit/ex-aziza', {main:{c:{attend:5, hw:4, active:5, behav:5, progress:4}, at:ts(2)}});
+    db.m.set('stCrit/ex-timur', {main:{c:{attend:4, hw:3, active:4, behav:5, progress:4}, at:ts(2)}});
+    db.m.set('tCrit/ex-timur', {main:{c:{clear:5, prep:5, kind:5, time:4, useful:5}, at:ts(1)}});
+    db.m.set('board/exams', {at:ts(1), list:{'ex-math':{title:'Mathematics: national certificate mock 1', rows:[{uid:'ex-madina', name:'Madina', score:5, n:5, ms:16*60000},{uid:'ex-timur', name:'Timur', score:4, n:5, ms:11*60000}]}}}); }
+  db.m.set('board/rating', publicRating(buildRating({profiles:col('journals'), feedback:col('feedback'), plans:col('plans'), bookings:col('bookings'), bstat:col('bookingStatus'), slots:db.m.get('board/services').slots, bonus:{}, scores:col('passScores'), runs:col('examRuns'), crit:col('stCrit')}), true, {}));
 }
 
 /* ---------------- state ---------------- */
@@ -1733,19 +1797,19 @@ function renderNav(){
   if(S.role==='staff'){
     const waiting = allEntries().filter(e=>e.status==='submitted').length;
     document.title = (waiting?`(${waiting}) `:'')+'Lexora · '+tr('title.teacher');
-    n.innerHTML = navBtn('inbox',tr('nav.inbox'),'inbox',waiting) + navBtn('chat',tr('dm.nav'),'chat',chatUnreadT()) + navBtn('students',tr('nav.students'),'people',Object.keys(S.profiles).length,true) + navBtn('me',tr('c.meH'),'team') + navBtn('groups',tr('c.grpH'),'people') + navBtn('homework',tr('hw.nav'),'hw') + navBtn('club',tr('c.clubNav'),'bulb',clubVideoOn()?'●':0) + navBtn('library',tr('c.libNav'),'book') + navBtn('centre',tr('c.centreH'),'spark',Object.values(S.leads||{}).filter(l=>!l.st).length+pendingTorders()) + navBtn('bank',tr('nav.bank'),'bank') + `<div class="nav-foot">${tr('c.navFootStaff')}</div>`;
+    n.innerHTML = navBtn('inbox',tr('nav.inbox'),'inbox',waiting) + navBtn('chat',tr('dm.nav'),'chat',chatUnreadT()) + navBtn('students',tr('nav.students'),'people',Object.keys(S.profiles).length,true) + navBtn('me',tr('c.meH'),'team') + navBtn('groups',tr('c.grpH'),'people') + navBtn('homework',tr('hw.nav'),'hw') + navBtn('exams',tr('ex.nav'),'cards',S.role==='owner'?exOrderRows().length:0) + navBtn('club',tr('c.clubNav'),'bulb',clubVideoOn()?'●':0) + navBtn('library',tr('c.libNav'),'book') + navBtn('centre',tr('c.centreH'),'spark',Object.values(S.leads||{}).filter(l=>!l.st).length+pendingTorders()) + navBtn('bank',tr('nav.bank'),'bank') + `<div class="nav-foot">${tr('c.navFootStaff')}</div>`;
     return;
   }
   if(S.mode==='teacher'){
     const waiting = allEntries().filter(e=>e.status==='submitted').length;
     document.title = (waiting?`(${waiting}) `:'')+'Lexora · '+tr('title.teacher');
-    n.innerHTML = navBtn('inbox',tr('nav.inbox'),'inbox',waiting) + navBtn('chat',tr('dm.nav'),'chat',chatUnreadT()) + navBtn('students',tr('nav.students'),'people',myStudentIds().length,true) + navBtn('team',tr('c.teamH'),'team',newLeads()+pendingStaffReq()+pendingApps()+pendingEnrolls()+pendingTorders()) + (S.team?.[MAIN_TID]?navBtn('me',tr('c.meH'),'pen'):'') + navBtn('groups',tr('c.grpH'),'people') + navBtn('homework',tr('hw.nav'),'hw') + navBtn('club',tr('c.clubNav'),'bulb',clubVideoOn()?'●':0) + navBtn('library',tr('c.libNav'),'book') + navBtn('ledger',tr('nav.ledger'),'coin',pendingClaims()||lgOwing(),!pendingClaims()) + navBtn('bookings',tr('nav.book'),'spark',pendingRequests()) + navBtn('market',tr('nav.shop'),'bag',pendingOrders()+pendingPasses()) + navBtn('rating',tr('rt.h'),'trophy') + navBtn('board',tr('nav.board'),'flag') + navBtn('insights',tr('nav.insights'),'chart') + navBtn('prompt',tr('nav.prompt'),'bulb') + navBtn('bank',tr('nav.bank'),'bank') +
+    n.innerHTML = navBtn('inbox',tr('nav.inbox'),'inbox',waiting) + navBtn('chat',tr('dm.nav'),'chat',chatUnreadT()) + navBtn('students',tr('nav.students'),'people',myStudentIds().length,true) + navBtn('team',tr('c.teamH'),'team',newLeads()+pendingStaffReq()+pendingApps()+pendingEnrolls()+pendingTorders()) + (S.team?.[MAIN_TID]?navBtn('me',tr('c.meH'),'pen'):'') + navBtn('groups',tr('c.grpH'),'people') + navBtn('homework',tr('hw.nav'),'hw') + navBtn('exams',tr('ex.nav'),'cards',S.role==='owner'?exOrderRows().length:0) + navBtn('club',tr('c.clubNav'),'bulb',clubVideoOn()?'●':0) + navBtn('library',tr('c.libNav'),'book') + navBtn('ledger',tr('nav.ledger'),'coin',pendingClaims()||lgOwing(),!pendingClaims()) + navBtn('bookings',tr('nav.book'),'spark',pendingRequests()) + navBtn('market',tr('nav.shop'),'bag',pendingOrders()+pendingPasses()) + navBtn('rating',tr('rt.h'),'trophy') + navBtn('board',tr('nav.board'),'flag') + navBtn('insights',tr('nav.insights'),'chart') + navBtn('prompt',tr('nav.prompt'),'bulb') + navBtn('bank',tr('nav.bank'),'bank') +
       `<div class="nav-foot">${tr('nav.foot')}</div>`;
   } else {
     const unseen = studentEntries().filter(e=>e.isNew).length;
     document.title = (unseen?`(${unseen}) `:'')+'Lexora · '+tr('title.student');
     const owe = S.myBalance && S.myBalance.left>0;
-    n.innerHTML = navBtn('home',tr('nav.home'),'home',unseen) + navBtn('chat',tr('dm.nav'),'chat',chatUnreadS()) + navBtn('write',tr('nav.write'),'pen') + navBtn('homework',tr('hw.nav'),'hw',hwOpenCount()) + navBtn('mistakes',tr('nav.mistakes'),'flag') + navBtn('words',tr('nav.words'),'book',(S.myFeedback?.vocab||[]).length,true) + navBtn('learn',tr('nav.learn'),'bulb',(S.board?.posts||[]).length,true) + navBtn('teachers',tr('c.navTeachers'),'team',Object.values(S.myLiveFor||{}).some(isLive)?'●':(promoOn(S.promo)?'%':0)) + navBtn('club',tr('c.clubNav'),'bulb',clubVideoOn()?'●':0) + navBtn('library',tr('c.libNav'),'book') + navBtn('book',tr('nav.book'),'spark') + (S.rating?.on!==false && (S.rating?.list||[]).length ? navBtn('rating',tr('rt.h'),'trophy') : '') + navBtn('services',tr('nav.services'),'cards',myServiceCount(),true) + navBtn('market',tr('nav.shop'),'bag') + (S.myBalance? navBtn('pay',tr('nav.pay'),'coin',owe?'!':0,false) : '');
+    n.innerHTML = navBtn('home',tr('nav.home'),'home',unseen) + navBtn('chat',tr('dm.nav'),'chat',chatUnreadS()) + navBtn('write',tr('nav.write'),'pen') + navBtn('homework',tr('hw.nav'),'hw',hwOpenCount()) + navBtn('exams',tr('ex.nav'),'cards') + navBtn('mistakes',tr('nav.mistakes'),'flag') + navBtn('words',tr('nav.words'),'book',(S.myFeedback?.vocab||[]).length,true) + navBtn('learn',tr('nav.learn'),'bulb',(S.board?.posts||[]).length,true) + navBtn('teachers',tr('c.navTeachers'),'team',Object.values(S.myLiveFor||{}).some(isLive)?'●':(promoOn(S.promo)?'%':0)) + navBtn('club',tr('c.clubNav'),'bulb',clubVideoOn()?'●':0) + navBtn('library',tr('c.libNav'),'book') + navBtn('book',tr('nav.book'),'spark') + (S.rating?.on!==false && (S.rating?.list||[]).length ? navBtn('rating',tr('rt.h'),'trophy') : '') + navBtn('services',tr('nav.services'),'cards',myServiceCount(),true) + navBtn('market',tr('nav.shop'),'bag') + (S.myBalance? navBtn('pay',tr('nav.pay'),'coin',owe?'!':0,false) : '');
   }
 }
 
@@ -1815,7 +1879,7 @@ function renderMain0(){
   if(S.mode==='student' && S.myProfile===undefined){ m.innerHTML=`<div class="loading">${tr('load.student')}</div>`; return; }
   const fn = {inbox:vInbox, students:vStudents, student:vStudent, insights:vInsights, prompt:vPrompt, bank:vBank, review:vReview, ledger:vLedger, board:vBoard, bookings:vBookings, market:vMarket, learn:vLearn, book:vBook, rating:()=>S.mode==='teacher'?vRatingT():vRatingS(),
               home:vHome, write:vWrite, entry:vEntry, mistakes:vMistakes, words:vWords, setup:vSetup, pay:vPay,
-              news:vNews, newsEdit:vNewsEdit, study:vStudy, services:vServices, set:vSet, setEdit:vSetEdit, team:vTeam, me:vMe, centre:vCentre, teachers:vStuTeachers, groups:vGroups, homework:vHomework, club:vClub, library:vLibrary, chat:vChat}[v];
+              news:vNews, newsEdit:vNewsEdit, study:vStudy, services:vServices, set:vSet, setEdit:vSetEdit, team:vTeam, me:vMe, centre:vCentre, teachers:vStuTeachers, groups:vGroups, homework:vHomework, exams:vExams, exam:vExam, club:vClub, library:vLibrary, chat:vChat}[v];
   if(tgNeeded()){ m.innerHTML=vTgGate(); return; }   // everyone (students, teachers, the owner) connects Telegram first
   m.innerHTML = fn ? fn() : '';
   after[v] && after[v]();
@@ -1823,6 +1887,7 @@ function renderMain0(){
 const after = {
   news:()=>{ if($('#nw-wx')) nwFillWeather(); nwArmTimer(); },
   newsEdit:()=>{ if($('#nw-wx')) nwFillWeather(); },
+  exam:()=>exTick(),
   set:()=>{ tsTick(); setTimeout(()=>{ const i=$('#qz-in'); if(i && !i.disabled && !matchMedia('(hover:none)').matches) i.focus(); },30); },
   setEdit:()=>steCount(),
 };
@@ -1910,7 +1975,7 @@ function vStudent(){
   const lgs = S.lg.students.find(x=>x.journalId===sid), lgL = lgs ? lgCalc(lgs, curYM()) : null;
   return `<button class="btn ghost sm" data-act="go" data-v="students">${I.back} ${tr('nav.students')}</button>
     <div class="page-head" style="margin-top:10px"><div class="row">${avatar(p.name,sid)}<div><h1>${esc(p.name)}</h1><p>${tr('stu.meta',{l:esc(p.level||'–'), d:p.joinedAt? dloc(new Date(p.joinedAt),{day:'numeric',month:'long'}):'–'})}</p></div></div>
-    <span class="row" style="gap:6px;flex-wrap:wrap"><button class="btn sm pen" data-act="c-dm-new" data-uid="${esc(sid)}">${I.chat} ${tr('dm.write')}</button>${lgs?`<button class="btn sm" data-act="lg-open" data-id="${esc(lgs.id)}">${I.coin} <span class="pill lg-${lgL.status}">${tr('lg.st.'+lgL.status)}</span>${lgL.left>0?`<span class="num">${tr('lg.left')} ${money(lgL.left)}</span>`:''}</button>`:''}</span></div>
+    <span class="row" style="gap:6px;flex-wrap:wrap"><button class="btn sm pen" data-act="c-dm-new" data-uid="${esc(sid)}">${I.chat} ${tr('dm.write')}</button><button class="btn sm" data-act="cr-st" data-uid="${esc(sid)}">★ ${S.stCrit?.[sid]?.[myTid()]?tr('cr.stAgain',{v:critAvg({x:S.stCrit[sid][myTid()]}).toFixed(1)}):tr('cr.stBtn')}</button>${lgs?`<button class="btn sm" data-act="lg-open" data-id="${esc(lgs.id)}">${I.coin} <span class="pill lg-${lgL.status}">${tr('lg.st.'+lgL.status)}</span>${lgL.left>0?`<span class="num">${tr('lg.left')} ${money(lgL.left)}</span>`:''}</button>`:''}</span></div>
     <div class="stats"><div class="stat"><b>${st.entries}</b><span>${tr('k.entries')}</span></div><div class="stat"><b>${st.words.toLocaleString()}</b><span>${tr('k.words')}</span></div><div class="stat"><b>${fmtBand(st.latest)}</b><span>${tr('k.latest')}</span></div><div class="stat"><b>${st.waiting}</b><span>${tr('k.waiting')}</span></div></div>
     <div class="grid2 section"><div class="card"><h3>${tr('stu.trend')}</h3>${bandChart(st.pts)}</div><div class="card"><h3>${tr('stu.recur')}</h3>${errorBars(st.errs)}</div></div>
     ${S.role==='staff'?'':teacherPick(sid)}${S.role==='staff'?'':planEditor(sid)}
@@ -4484,15 +4549,15 @@ function openAsk(slotId){
 /* ---------------- rating ----------------
    The teacher's page works out everyone's points and publishes only first names and points to
    board/rating, so students can see where they are without seeing each other's work. */
-const RATE = {entry:10, word:50, task:5, band:10, lesson:15, quiz:1};
+const RATE = {entry:10, word:50, task:5, band:10, lesson:15, quiz:1, exam:2, crit:10};
 function ratingPoints(d){
   // d: {entries, words, tasks, band, lessons, bonus}
-  const parts = {entries:d.entries*RATE.entry, words:Math.floor(d.words/RATE.word), tasks:d.tasks*RATE.task, band:Math.round((d.band||0)*RATE.band), lessons:d.lessons*RATE.lesson, quiz:(d.quiz||0)*RATE.quiz, bonus:d.bonus||0};
+  const parts = {entries:d.entries*RATE.entry, words:Math.floor(d.words/RATE.word), tasks:d.tasks*RATE.task, band:Math.round((d.band||0)*RATE.band), lessons:d.lessons*RATE.lesson, quiz:(d.quiz||0)*RATE.quiz, exam:(d.exam||0)*RATE.exam, crit:Math.round((d.crit||0)*RATE.crit), bonus:d.bonus||0};
   return {...parts, total:Object.values(parts).reduce((a,b)=>a+b,0)};
 }
 const shortName = n => { const w=String(n||'').trim().split(/\s+/).filter(Boolean), L=(w.length>1?w[w.length-1]:'').match(/\p{L}/u); return w.length ? (L ? `${w[0]} ${L[0].toUpperCase()}.` : w[0]) : '?'; };
 // works on plain data so the example class can use it too
-function buildRating({profiles, feedback, plans, bookings, bstat, slots, bonus, scores}){
+function buildRating({profiles, feedback, plans, bookings, bstat, slots, bonus, scores, runs, crit}){
   const slotById=Object.fromEntries((slots||[]).map(x=>[x.id,x])), today=todayStr();
   return Object.entries(profiles).map(([uid,p])=>{
     const idx=Object.values(p.index||{}), fb=feedback[uid]||{};
@@ -4500,7 +4565,8 @@ function buildRating({profiles, feedback, plans, bookings, bstat, slots, bonus, 
     const done=plans[uid]?.done||{}, items=plans[uid]?.items||[];
     const lessons=(bookings[uid]?.items||[]).filter(r=>bstat[uid]?.[r.id]==='ok' && slotById[r.slotId] && slotById[r.slotId].date<=today).length;
     const sc=(scores||{})[uid]||{}, quiz=Object.values(sc.news||{}).reduce((a,day)=>a+Object.values(day||{}).reduce((x,r)=>x+(+r?.s||0),0),0)+Object.values(sc.study||{}).reduce((a,r)=>a+(+r?.best||0),0);
-    const d={quiz, entries:idx.length, words:idx.reduce((a,e)=>a+(e.words||0),0), tasks:items.filter(i=>done[i.id]).length, band:marked.length?marked[marked.length-1][1].overall:0, lessons, bonus:+(bonus||{})[uid]||0};
+    const exam=Object.values(runs||{}).filter(r=>r.uid===uid && r.submittedAt).reduce((a,r)=>a+(+r.score||0),0), critV=critAvg((crit||{})[uid]);
+    const d={quiz, exam, crit:critV, entries:idx.length, words:idx.reduce((a,e)=>a+(e.words||0),0), tasks:items.filter(i=>done[i.id]).length, band:marked.length?marked[marked.length-1][1].overall:0, lessons, bonus:+(bonus||{})[uid]||0};
     return {uid, name:p.name||'', ...d, pts:ratingPoints(d)};
   }).sort((a,b)=>b.pts.total-a.pts.total || a.name.localeCompare(b.name));
 }
@@ -4520,17 +4586,17 @@ async function ratingSync(){
   syncLast.rating=Date.now();
   try{ await S.db.doc('board/rating').set({...want, at:Date.now()}); }catch(e){ /* old rules: shown on the Rating page */ }
 }
-const teacherRating = () => buildRating({profiles:S.profiles, feedback:S.feedback, plans:S.plans||{}, bookings:S.bookings||{}, bstat:S.bstat||{}, slots:S.svc?.slots||[], bonus:S.rating?.bonus, scores:S.pScores||{}});
+const teacherRating = () => buildRating({profiles:S.profiles, feedback:S.feedback, plans:S.plans||{}, bookings:S.bookings||{}, bstat:S.bstat||{}, slots:S.svc?.slots||[], bonus:S.rating?.bonus, scores:S.pScores||{}, runs:S.exRuns||{}, crit:S.stCrit||{}});
 const medal = i => i<3 ? `<span class="medal m${i+1}">${i+1}</span>` : `<span class="rank-n num">${i+1}</span>`;
 function vRatingT(){
   const rows=teacherRating(), on=S.rating?.on!==false;
   return `<div class="page-head"><div><h1>${tr('rt.h')}</h1><p>${tr('rt.pT')}</p></div>
     <label class="switch-row"><input type="checkbox" data-act="rt-on" ${on?'checked':''}> ${tr('rt.show')}</label></div>${rulesNote()}
     ${rows.length?`<div class="rank-list">${rows.map((r,i)=>`<div class="rank-row ${i<3?'top':''}">${medal(i)}${avatar(r.name,r.uid)}<div style="min-width:0"><b>${esc(r.name||tr('stu.unnamed'))}</b>
-      <div class="small muted rank-parts">${tr('rt.parts',{e:r.entries,t:r.tasks,l:r.lessons,b:fmtBand(r.band||null)})}${r.quiz?` · ${tr('rt.quizN',{n:r.quiz})}`:''}${r.bonus?` · <span style="color:var(--pen)">${tr('rt.bonusN',{n:(r.bonus>0?'+':'')+r.bonus})}</span>`:''}</div></div>
+      <div class="small muted rank-parts">${tr('rt.parts',{e:r.entries,t:r.tasks,l:r.lessons,b:fmtBand(r.band||null)})}${r.quiz?` · ${tr('rt.quizN',{n:r.quiz})}`:''}${r.exam?` · ${tr('rt.examN',{n:r.exam})}`:''}${r.crit?` · ${tr('rt.critN',{n:r.crit.toFixed(1)})}`:''}${r.bonus?` · <span style="color:var(--pen)">${tr('rt.bonusN',{n:(r.bonus>0?'+':'')+r.bonus})}</span>`:''}</div></div>
       <span class="row rank-bonus" style="gap:4px"><button class="btn ghost sm" data-act="rt-bonus" data-uid="${esc(r.uid)}" data-n="-5" aria-label="−5">−5</button><button class="btn ghost sm" data-act="rt-bonus" data-uid="${esc(r.uid)}" data-n="5" aria-label="+5">+5</button></span>
       <b class="rank-pts num">${r.pts.total}<span>${tr('rt.pts')}</span></b></div>`).join('')}</div>`:`<div class="empty"><h3>${tr('stu.emptyH')}</h3></div>`}
-    <div class="card section rank-how"><h3>${tr('rt.howH')}</h3><ul class="small muted">${['entry','word','task','band','lesson','quiz'].map(k=>`<li>${tr('rt.how.'+k,{n:RATE[k]})}</li>`).join('')}<li>${tr('rt.how.bonus')}</li></ul></div>`;
+    <div class="card section rank-how"><h3>${tr('rt.howH')}</h3><ul class="small muted">${['entry','word','task','band','lesson','quiz','exam','crit'].map(k=>`<li>${tr('rt.how.'+k,{n:RATE[k]})}</li>`).join('')}<li>${tr('rt.how.bonus')}</li></ul></div>${teacherCritHtml()}`;
 }
 function myRank(){
   const R=S.rating; if(!R || R.on===false || !(R.list||[]).length) return null;
@@ -4542,7 +4608,7 @@ function vRatingS(){
   if(!R || R.on===false || !(R.list||[]).length) return head+`<div class="empty"><h3>${tr('rt.none')}</h3></div>`;
   return head+`${me?`<div class="rank-me"><span class="label">${tr('rt.you')}</span><b class="num">#${me.i+1}</b><span>${tr('rt.of',{n:me.n})} · <b class="num">${me.pts}</b> ${tr('rt.pts')}</span></div>`:''}
     <div class="rank-list">${R.list.map((r,i)=>`<div class="rank-row ${i<3?'top':''} ${r.uid===S.uid?'me':''}">${medal(i)}${avatar(r.name,r.uid)}<b style="min-width:0">${esc(r.name)}${r.uid===S.uid?` <span class="pill">${tr('rt.youTag')}</span>`:''}</b><b class="rank-pts num">${r.pts}<span>${tr('rt.pts')}</span></b></div>`).join('')}</div>
-    <div class="card section rank-how"><h3>${tr('rt.howH')}</h3><ul class="small muted">${['entry','word','task','band','lesson','quiz'].map(k=>`<li>${tr('rt.how.'+k,{n:RATE[k]})}</li>`).join('')}<li>${tr('rt.how.bonus')}</li></ul></div>`;
+    <div class="card section rank-how"><h3>${tr('rt.howH')}</h3><ul class="small muted">${['entry','word','task','band','lesson','quiz','exam','crit'].map(k=>`<li>${tr('rt.how.'+k,{n:RATE[k]})}</li>`).join('')}<li>${tr('rt.how.bonus')}</li></ul></div>`;
 }
 const rankCard = () => { const me=myRank(); return me ? `<button class="rank-chip section" data-act="go" data-v="rating">${I.trophy}<span>${tr('rt.chip',{i:me.i+1,n:me.n})}</span><b class="num">${me.pts} ${tr('rt.pts')}</b></button>` : ''; };
 async function saveRating(mut){
@@ -4974,7 +5040,7 @@ function startCentre(role){
   if(role==='owner'){
     col('leads','leads', asgSoon); col('leaves','leaves', ()=>setTimeout(finishLeaves, 1500)); col('dm','dms'); col('gchat','gchats', asgSoon); one('centre/assign','asgCfg',{}, asgSoon); col('staffReq','sreq'); col('teacherPriv','tpriv'); col('applications','apps');
     col('enroll','enrolls'); col('enrollStatus','enrollSt'); col('roster','rosters'); col('live','lives'); col('torders','torders'); one('site/promo','promo',{});
-    one('groups/'+MAIN_TID,'myGroups',null); col('homework','hw'); col('hwFor','hwFor'); startClub(); col('library','lib'); one('centre/upload','upCfg',null);
+    one('groups/'+MAIN_TID,'myGroups',null); col('homework','hw'); col('hwFor','hwFor'); col('exams','exams'); one('examList/main','examList',{items:{}}, exBoardSync); col('examOrders','exOrders'); col('examAccess','exAcc'); col('examRuns','exRuns', ()=>{ exBoardSync(); ratingScheduleSync(); }); col('stCrit','stCrit', ratingScheduleSync); col('tCrit','tCrit'); one('board/exams','exBoard',null); startClub(); col('library','lib'); one('centre/upload','upCfg',null);
     col('staff','staffEmails', ()=>{ S.staffMap={}; for(const [em,x] of Object.entries(S.staffEmails||{})) if(x?.tid) S.staffMap[x.tid]=em; });
     one('centre/offers','offers',{items:[]}); one('private/meet','meetDoc',{});
   }
@@ -4982,11 +5048,11 @@ function startCentre(role){
     const t=S.staffTid;
     where1('dm','tid',t,'dms'); where1('gchat','tid',t,'gchats');
     one('centre/offers','offers',{items:[]}); one('staffReq/'+t,'mySreq',null); one('teacherPriv/'+t,'myTPriv',null);
-    one('roster/'+t,'myRoster',null); one('live/'+t,'myLive',null); where1('torders','tid',t,'torders'); one('groups/'+t,'myGroups',null); where1('homework','tid',t,'hw'); col('hwFor','hwFor'); startClub(); startLib(); one('centre/upload','upCfg',null);
+    one('roster/'+t,'myRoster',null); one('live/'+t,'myLive',null); where1('torders','tid',t,'torders'); one('groups/'+t,'myGroups',null); where1('homework','tid',t,'hw'); col('hwFor','hwFor'); where1('exams','tid',t,'exams'); one('examList/main','examList',{items:{}}); col('examRuns','exRuns'); col('stCrit','stCrit'); startClub(); startLib(); one('centre/upload','upCfg',null);
     S.unsubs.push(S.db.collection('leads').where('tid',t).onSnapshot(q=>{ const o={}; q.docs.forEach(d=>{ if(d.exists) o[d.id]=d.data(); }); S.leads=o; refreshAny(); }, quiet));
   }
   if(role==='student'){
-    one('lessons/'+S.uid,'myLessons',null); one('site/promo','promo',null); one('hwFor/'+S.uid,'myHw',null);
+    one('lessons/'+S.uid,'myLessons',null); one('site/promo','promo',null); one('hwFor/'+S.uid,'myHw',null); one('examList/main','examList',{items:{}}); one('examAccess/'+S.uid,'myExAcc',null); one('examOrders/'+S.uid,'myExOrd',null); where1('examRuns','uid',S.uid,'myRuns'); one('board/exams','exBoard',null); one('stCrit/'+S.uid,'myStCrit',null); one('tCrit/'+S.uid,'myTCrit',null);
     one('liveFor/'+S.uid,'myLiveFor',null); startClub(); startLib();
     one('enroll/'+S.uid,'myEnroll',null); one('enrollStatus/'+S.uid,'myEnrollSt',null, studentWatches); where1('torders','uid',S.uid,'myTorders');
     // the chosen teacher's Meet link follows the journal (it can only be read once the journal exists)
@@ -5926,6 +5992,195 @@ function myOrdersSection(){
       <div class="req-act"><span class="pill bk-${s==='done'?'ok':s}">${tr(s==='done'?'c.orderDone':'bk.st.'+s)}</span>${s==='wait'?`<button class="btn ghost sm" data-act="c-ord-x" data-id="${esc(o.id)}">${tr('cancel')}</button>`:''}</div></div>`; }).join('')}</div></div>`;
 }
 
+/* ---------- tests: national certificate, IELTS, SAT and others, taken on a timer ---------- */
+// exams/{id}:        {id, tid, title, cert, subject, mins, price, on, qs:[{q,o:[..],a}], at}   teachers write; students read a published one they may take
+// examList/main:     {items:{[id]:{title, cert, subject, mins, n, price, on, tid}}}           the catalogue without the questions
+// examAccess/{uid}:  {ids:{[examId]:at}}       paid tests the owner has opened for the student
+// examOrders/{uid}:  {name, items:[{id, examId, method, ref, price, at}]}   the student's "I paid" requests
+// examRuns/{uid}_{examId}: {uid, examId, name, mins, startedAt, answers, score, n, submittedAt}   one attempt; the rules close it when time is up
+// board/exams:       {at, list:{[examId]:{title, rows:[{uid, name, score, n, ms}]}}}   the leaderboards students see
+// stCrit/{uid}:      {[tid]:{c:{attend,hw,active,behav,progress}, at}}   the teacher's 1–5 marks for the student
+// tCrit/{uid}:       {[tid]:{c:{clear,prep,kind,time,useful}, at}}      the student's 1–5 marks for the teacher (the owner sees them)
+const CERTS = ['national','ielts','sat','school','other'];
+const PAID_CERTS = ['ielts','sat'];
+const SUBJECTS = ['English','Mathematics','Physics','Chemistry','Biology','History','Native language','Russian','Geography','Computer science'];
+const ST_CRIT = ['attend','hw','active','behav','progress'];
+const T_CRIT = ['clear','prep','kind','time','useful'];
+const exList = () => Object.entries(S.examList?.items||{}).map(([id,x])=>({id,...x}));
+const exRun = (uid, id) => (S.mode==='student' ? S.myRuns : S.exRuns)?.[uid+'_'+id];
+const exHas = id => !!S.myExAcc?.ids?.[id];
+const exPending = id => (S.myExOrd?.items||[]).some(o=>o.examId===id && !exHas(id));
+const exFmtMs = ms => { const s=Math.max(0,Math.round(ms/1000)); return `${Math.floor(s/60)}:${pad(s%60)}`; };
+const certPill = c => `<span class="pill ex-cert ex-${esc(c)}">${tr('ex.c.'+c)}</span>`;
+function vExams(){ return S.mode==='student' ? vExamsS() : vExamsT(); }
+
+/* teacher */
+function vExamsT(){
+  const all=Object.values(S.exams||{}).filter(x=>S.role==='owner'||x.tid===myTid()).sort((a,b)=>(b.at||0)-(a.at||0));
+  const runs=Object.values(S.exRuns||{}), orders=S.role==='owner'?exOrderRows():[];
+  const card = x => { const done=runs.filter(r=>r.examId===x.id && r.submittedAt);
+    return `<article class="card ex-card"><div class="hw-top"><div style="min-width:0"><div class="hw-meta" style="margin:0 0 6px">${certPill(x.cert)}<span class="small muted">${esc(x.subject||'')}</span></div><h3>${esc(x.title)}</h3>
+      <div class="hw-meta"><span class="small muted num">${tr('ex.meta',{n:(x.qs||[]).length, m:x.mins})}</span><span class="small num">${x.price?som(x.price):tr('ex.free')}</span>${x.on?`<span class="pill bk-ok">${tr('ex.on')}</span>`:`<span class="pill bk-no">${tr('ex.off')}</span>`}</div></div>
+      <div class="row hw-acts"><button class="btn sm" data-act="ex-res" data-id="${esc(x.id)}">${tr('ex.results')} <span class="num faint">${done.length}</span></button><button class="btn ghost sm" data-act="ex-edit" data-id="${esc(x.id)}">${tr('edit')}</button><button class="btn ghost sm del-btn" data-act="ex-del" data-id="${esc(x.id)}">${tr('delete')}</button></div></div></article>`; };
+  return `<div class="page-head"><div><h1>${tr('ex.h')}</h1><p>${tr('ex.pT')}</p></div><button class="btn primary" data-act="ex-edit">+ ${tr('ex.add')}</button></div>
+    ${orders.length?`<div class="section" style="margin-top:0"><h2>${tr('ex.ordH')}</h2><div class="list">${orders.map(o=>`<div class="req"><span class="avwrap">${avatar(o.name,o.uid)}</span><div style="min-width:0"><b>${esc(o.name||'–')}</b> · ${esc(o.title)} · <b class="num">${som(o.price)}</b><div class="small faint">${tr('lg.m.'+(o.method||'card'))}${o.ref?' · '+esc(o.ref):''} · ${ago(o.at)}</div></div>
+      <div class="req-act"><span class="pill bk-wait">${tr('ex.checking')}</span><span class="row" style="gap:6px"><button class="btn ghost sm" data-act="ex-ord-no" data-uid="${esc(o.uid)}" data-oid="${esc(o.id)}">${tr('mk.notReceived')}</button><button class="btn primary sm" data-act="ex-ord-ok" data-uid="${esc(o.uid)}" data-oid="${esc(o.id)}">${tr('ex.open')}</button></span></div></div>`).join('')}</div></div>`:''}
+    ${all.length?`<div class="list section">${all.map(card).join('')}</div>`:`<div class="empty section"><h3>${tr('ex.noneH')}</h3><p>${tr('ex.noneP')}</p></div>`}`;
+}
+function exOrderRows(){
+  const out=[]; for(const [uid,d] of Object.entries(S.exOrders||{})) for(const o of (d.items||[])){ if(S.exAcc?.[uid]?.ids?.[o.examId]) continue; const x=S.examList?.items?.[o.examId]; out.push({...o, uid, name:d.name, title:x?.title||'–'}); }
+  return out.sort((a,b)=>(a.at||0)-(b.at||0));
+}
+function openExam(id){
+  const x=id?clone(S.exams?.[id]):null, e=x||{cert:'national', subject:'English', mins:30, price:0, on:true, qs:[]};
+  showDlg(`<form id="ex-form" novalidate>${dlgHead(tr('ex.h'), id?tr('ex.edit'):tr('ex.add'))}<div class="dlg-body">
+    <label class="field"><span>${tr('ex.fTitle')}</span><input class="inp" id="ex-title" maxlength="120" value="${esc(e.title||'')}" placeholder="${tr('ex.fTitlePh')}" required></label>
+    <div class="grid2" style="gap:12px"><label class="field"><span>${tr('ex.fCert')}</span><select class="inp" id="ex-cert">${CERTS.map(c=>`<option value="${c}" ${e.cert===c?'selected':''}>${tr('ex.c.'+c)}</option>`).join('')}</select></label>
+      <label class="field"><span>${tr('ex.fSubject')}</span><input class="inp" id="ex-subject" list="ex-subjects" maxlength="60" value="${esc(e.subject||'')}"><datalist id="ex-subjects">${SUBJECTS.map(s=>`<option value="${esc(s)}">`).join('')}</datalist></label></div>
+    <div class="grid2" style="gap:12px"><label class="field"><span>${tr('ex.fMins')}</span><input class="inp" type="number" id="ex-mins" min="1" max="300" value="${+e.mins||30}"></label>
+      <label class="field"><span>${tr('ex.fPrice')} <span class="faint">${tr('ex.fPriceHint')}</span></span><input class="inp" type="number" id="ex-price" min="0" step="1000" value="${+e.price||0}"></label></div>
+    <label class="field"><span>${tr('ex.fQs')} <span class="faint" id="ex-qn">${tr('ex.qn',{n:(e.qs||[]).length})}</span></span><textarea class="inp mono" id="ex-qs" rows="12" placeholder="${tr('ex.fQsPh')}">${esc(qsText(e.qs))}</textarea></label>
+    <label class="small row" style="gap:8px;cursor:pointer"><input type="checkbox" id="ex-on" ${e.on!==false?'checked':''}> ${tr('ex.fOn')}</label>
+    <p class="lg-err" id="ex-err" role="alert"></p></div>
+    <div class="dlg-foot"><button type="button" class="btn ghost" data-act="dlg-close">${tr('cancel')}</button><button class="btn primary" id="ex-go">${tr('save')}</button></div></form>`, {type:'exam', id:id||'', wide:true});
+  const qn=()=>{ $('#ex-qn').textContent=tr('ex.qn',{n:parseQs($('#ex-qs').value).filter(q=>q.o).length}); };
+  $('#ex-qs').addEventListener('input', qn);
+  $('#ex-cert').addEventListener('change', e2=>{ const p=$('#ex-price'); if(PAID_CERTS.includes(e2.target.value) && !+p.value) p.value=EX_PRICE; });
+  $('#ex-form').addEventListener('submit', async ev=>{ ev.preventDefault(); const err=$('#ex-err');
+    const title=$('#ex-title').value.trim(), qs=parseQs($('#ex-qs').value).filter(q=>q.o).map(q=>({q:q.q, o:q.o, a:q.a}));
+    if(!title){ err.textContent=tr('hw.needTitle'); return; } if(!qs.length){ err.textContent=tr('ex.needQs'); return; }
+    const d={id:id||newId(), tid:x?.tid||myTid(), title, cert:$('#ex-cert').value, subject:$('#ex-subject').value.trim(), mins:Math.max(1,Math.min(300,+$('#ex-mins').value||30)), price:Math.max(0,Math.round(+$('#ex-price').value||0)), on:$('#ex-on').checked, qs, at:x?.at||Date.now()};
+    $('#ex-go').disabled=true;
+    try{ await S.db.doc('exams/'+d.id).set(d); await S.db.doc('examList/main').set({items:{[d.id]:{title:d.title, cert:d.cert, subject:d.subject, mins:d.mins, n:qs.length, price:d.price, on:d.on, tid:d.tid}}}, {merge:true});
+      S.exams={...(S.exams||{}), [d.id]:d}; closeDlg(); renderMain(); toast(tr('c.saved')); }
+    catch(er){ $('#ex-go').disabled=false; err.textContent=lgErrText(er); } });
+}
+const EX_PRICE = 50000;
+async function exDelete(id){
+  if(!confirm(tr('ex.delAsk'))) return;
+  try{ await S.db.doc('exams/'+id).delete(); const L=clone(S.examList)||{items:{}}; delete L.items[id]; await S.db.doc('examList/main').set(L); S.examList=L; delete S.exams[id]; renderMain(); }catch(er){ dbErr(er,'exam'); }
+}
+function exBoardRows(id){
+  return Object.values(S.mode==='student'?{}:S.exRuns||{}).filter(r=>r.examId===id && r.submittedAt).map(r=>({uid:r.uid, name:r.name||S.profiles?.[r.uid]?.name||'–', score:+r.score||0, n:+r.n||0, ms:Math.max(0,(r.submittedAt||0)-(r.startedAt||0))}))
+    .sort((a,b)=>b.score-a.score || a.ms-b.ms);
+}
+const exBoardHtml = (rows, me) => rows.length ? `<div class="rank-list">${rows.map((r,i)=>`<div class="rank-row ex-row ${i<3?'top':''} ${r.uid===me?'me':''}">${medal(i)}${avatar(r.name,r.uid)}<b style="min-width:0">${esc(r.name)}</b><span class="small muted num">${exFmtMs(r.ms)}</span><b class="rank-pts num">${r.score}<span>/ ${r.n}</span></b></div>`).join('')}</div>` : `<p class="muted">${tr('ex.noRes')}</p>`;
+function openExamResults(id){
+  const x=S.exams?.[id]; if(!x) return; const rows=exBoardRows(id);
+  showDlg(`<div>${dlgHead(tr('ex.results'), esc(x.title))}<div class="dlg-body">${exBoardHtml(rows)}
+    ${rows.length?`<p class="small faint">${tr('ex.retakeP')}</p><div class="tchips">${rows.map(r=>`<button class="lchip pick" data-act="ex-retake" data-rid="${esc(r.uid+'_'+id)}">↺ ${esc(r.name)}</button>`).join('')}</div>`:''}</div>
+    <div class="dlg-foot"><button type="button" class="btn primary" data-act="dlg-close">${tr('close')}</button></div></div>`, {type:'exres', id, wide:true});
+}
+async function exOrderDecide(uid, oid, ok){
+  const d=clone(S.exOrders?.[uid]); const o=(d?.items||[]).find(x=>x.id===oid); if(!o) return;
+  try{
+    if(ok){ const acc=clone(S.exAcc?.[uid])||{ids:{}}; acc.ids={...(acc.ids||{}), [o.examId]:Date.now()}; await S.db.doc('examAccess/'+uid).set(acc); S.exAcc={...(S.exAcc||{}), [uid]:acc}; }
+    d.items=d.items.filter(x=>x.id!==oid); await S.db.doc('examOrders/'+uid).set(d); S.exOrders[uid]=d; renderMain(); toast(ok?tr('ex.opened'):tr('c.saved'));
+  }catch(er){ dbErr(er,'order'); }
+}
+// the owner keeps the students' leaderboards up to date, like the class rating
+let exSyncT=null;
+function exBoardSync(){ clearTimeout(exSyncT); exSyncT=setTimeout(async()=>{
+  if(S.role!=='owner' || !S.exRuns || !S.examList) return;
+  const list={}; for(const [id,x] of Object.entries(S.examList.items||{})){ const rows=exBoardRows(id).slice(0,50).map(r=>({...r, name:shortName(r.name)})); if(rows.length) list[id]={title:x.title, rows}; }
+  const want=JSON.stringify(list); if(want===JSON.stringify(S.exBoard?.list||{})) return;
+  if(!syncAllowed('exboard', S.exBoard?.at)) return; syncLast.exboard=Date.now();
+  try{ await S.db.doc('board/exams').set({list, at:Date.now()}); }catch(e){}
+}, 1200); }
+
+/* student */
+function vExamsS(){
+  const items=exList().filter(x=>x.on), by={}; items.forEach(x=>(by[x.cert]=by[x.cert]||[]).push(x));
+  const card = x => { const r=exRun(S.uid,x.id), paid=x.price>0, open=!paid||exHas(x.id), wait=paid&&!open&&exPending(x.id);
+    const act = r?.submittedAt ? `<button class="btn sm" data-act="ex-view" data-id="${esc(x.id)}">${tr('ex.seeRes')}</button>`
+      : r ? `<button class="btn pen sm" data-act="ex-start" data-id="${esc(x.id)}">${tr('ex.continue')}</button>`
+      : open ? `<button class="btn pen sm" data-act="ex-start" data-id="${esc(x.id)}">${tr('ex.start')}</button>`
+      : wait ? `<span class="pill bk-wait">${tr('ex.checking')}</span>` : `<button class="btn primary sm" data-act="ex-buy" data-id="${esc(x.id)}">${tr('ex.buy')}</button>`;
+    return `<article class="card ex-card"><div class="hw-meta" style="margin:0">${certPill(x.cert)}<span class="small muted">${esc(x.subject||'')}</span></div><h3>${esc(x.title)}</h3>
+      <div class="hw-meta"><span class="small muted num">${tr('ex.meta',{n:x.n||0, m:x.mins})}</span>${r?.submittedAt?`<b class="num">${r.score} / ${r.n}</b>`:''}</div>
+      <div class="ex-foot"><span class="ex-price num">${paid?(open?tr('ex.bought'):som(x.price)):tr('ex.free')}</span>${act}</div></article>`; };
+  return `<div class="page-head"><div><h1>${tr('ex.h')}</h1><p>${tr('ex.pS')}</p></div></div>
+    ${items.length?CERTS.filter(c=>by[c]).map(c=>`<section class="section"><h2>${tr('ex.c.'+c)}</h2><div class="ex-grid">${by[c].map(card).join('')}</div></section>`).join(''):`<div class="empty"><h3>${tr('ex.noneHS')}</h3><p>${tr('ex.nonePS')}</p></div>`}`;
+}
+function openExamBuy(id){
+  const x=S.examList?.items?.[id]; if(!x) return; const ms=S.payInfo.methods||[];
+  const kinds=[...new Set([...ms.map(m=>PAY_KINDS.includes(m.kind)?m.kind:'card'), ...METHODS])];
+  showDlg(`<form id="xb-form" novalidate>${dlgHead(tr('mk.h'), esc(x.title))}<div class="dlg-body"><p class="muted">${tr('ex.buyP',{m:x.mins, n:x.n||0})}</p>
+      <div class="field"><span>${tr('mk.total')}</span><b class="num mk-total">${som(x.price)}</b></div>
+      <div class="field"><span>${tr('pf.how')}</span>${ms.length?`<div class="list pm-list">${ms.map(m=>methodRow(m,false)).join('')}</div>`:`<p class="small faint">${tr('pf.noMethods')}</p>`}</div>
+      <div class="lg-2"><label class="field"><span>${tr('pf.method')}</span><select class="inp" id="xb-method">${kinds.map(k=>`<option value="${k}">${tr('lg.m.'+k)}</option>`).join('')}</select></label>
+        <label class="field"><span>${tr('pf.ref')} <span class="faint">${tr('optional')}</span></span><input class="inp" id="xb-ref" maxlength="80" placeholder="${tr('pf.refPh')}"></label></div>
+      <p class="small faint">${tr('mk.safe')}</p><p class="lg-err" id="xb-err" role="alert"></p></div>
+    <div class="dlg-foot"><button type="button" class="btn ghost" data-act="dlg-close">${tr('cancel')}</button><button class="btn pen" id="xb-save">${tr('mk.paidSend')}</button></div></form>`, {type:'exbuy', id});
+  $('#xb-form').addEventListener('submit', async e=>{ e.preventDefault();
+    const next=clone(S.myExOrd)||{items:[]}; next.items=(next.items||[]).filter(o=>o.examId!==id).slice(-49); next.name=S.myProfile?.name||'';
+    next.items.push({id:newId(), examId:id, method:$('#xb-method').value, ref:$('#xb-ref').value.trim(), price:x.price, at:nowTs()}); $('#xb-save').disabled=true;
+    try{ await S.db.doc('examOrders/'+S.uid).set(next); S.myExOrd=next; closeDlg(); renderMain(); toast(tr('mk.sent')); }catch(er){ $('#xb-save').disabled=false; $('#xb-err').textContent=lgErrText(er); } });
+}
+async function exStart(id){
+  const x=S.examList?.items?.[id]; if(!x) return; let r=exRun(S.uid,id);
+  if(!r){ if(!confirm(tr('ex.startAsk',{m:x.mins}))) return;
+    r={uid:S.uid, examId:id, name:S.myProfile?.name||'', mins:x.mins, startedAt:Date.now()};
+    try{ await S.db.doc('examRuns/'+S.uid+'_'+id).set(r); S.myRuns={...(S.myRuns||{}), [S.uid+'_'+id]:r}; }catch(er){ dbErr(er,'exam'); return; } }
+  let e; try{ const s=await S.db.doc('exams/'+id).get(); e=s.exists?s.data():null; }catch(er){ e=null; }
+  if(!e){ toast(tr('ex.noAccess')); return; }
+  S.run={id, e, r, answers:LS.get('exa:'+S.uid+'_'+id, null) || r.answers || []}; go('exam');
+}
+const exLeft = () => S.run ? S.run.r.startedAt + S.run.r.mins*60000 - Date.now() : 0;
+function vExam(){
+  const R=S.run; if(!R) return `<div class="empty"><h3>${tr('ex.noneHS')}</h3></div>`;
+  if(R.r.submittedAt) return vExamResult();
+  return `<div class="ex-run-head"><div style="min-width:0"><div class="hw-meta" style="margin:0 0 6px">${certPill(R.e.cert)}<span class="small muted">${esc(R.e.subject||'')}</span></div><h1>${esc(R.e.title)}</h1></div>
+      <div class="ex-timer" role="timer" aria-live="off"><span class="small">${tr('ex.left')}</span><b class="num" id="ex-timer">${exFmtMs(exLeft())}</b></div></div>
+    <ol class="ex-qs">${R.e.qs.map((q,i)=>`<li class="card ex-q"><p class="ex-qt">${esc(q.q)}</p><div class="ex-opts" role="radiogroup">${q.o.map((o,j)=>`<label class="ex-opt"><input type="radio" name="exq-${i}" value="${j}" data-act="ex-pick" data-i="${i}" ${R.answers[i]===j?'checked':''}> <span>${esc(o)}</span></label>`).join('')}</div></li>`).join('')}</ol>
+    <div class="ex-submit"><span class="ex-timer-mini" role="timer"><span class="small">${tr('ex.left')}</span> <b class="num" id="ex-timer2">${exFmtMs(exLeft())}</b></span><span class="small muted" id="ex-answered">${tr('ex.answered',{a:R.answers.filter(x=>x!=null).length, n:R.e.qs.length})}</span><button class="btn pen" data-act="ex-submit">${tr('ex.submit')}</button></div>`;
+}
+let exTimer=null;
+function exTick(){ clearInterval(exTimer); exTimer=setInterval(()=>{ if(S.view.name!=='exam' || !S.run || S.run.r.submittedAt){ clearInterval(exTimer); return; }
+  const left=exLeft(); for(const el of [$('#ex-timer'), $('#ex-timer2')]) if(el){ el.textContent=exFmtMs(left); el.parentElement.classList.toggle('late', left<60000); }
+  if(left<=0){ clearInterval(exTimer); exSubmit(true); } }, 500); }
+async function exSubmit(auto){
+  const R=S.run; if(!R || R.r.submittedAt || R.busy) return;
+  if(!auto && R.answers.filter(x=>x!=null).length<R.e.qs.length && !confirm(tr('ex.submitAsk'))) return;
+  R.busy=true; const answers=R.e.qs.map((q,i)=>R.answers[i]??-1), score=R.e.qs.filter((q,i)=>answers[i]===q.a).length;
+  const upd={answers, score, n:R.e.qs.length, submittedAt:Date.now()};
+  try{ await S.db.doc('examRuns/'+S.uid+'_'+R.id).update(upd); Object.assign(R.r, upd); S.myRuns={...(S.myRuns||{}), [S.uid+'_'+R.id]:R.r}; LS.set('exa:'+S.uid+'_'+R.id, null); renderMain(); window.scrollTo({top:0}); }
+  catch(er){ R.busy=false; toast(auto?tr('ex.lateFail'):tr('c.sendFail')); }
+}
+function vExamResult(){
+  const R=S.run, r=R.r, pct=r.n?Math.round(r.score/r.n*100):0, board=S.exBoard?.list?.[R.id]?.rows||[], place=board.findIndex(x=>x.uid===S.uid);
+  return `<div class="page-head"><div><span class="label">${esc(R.e.title)}</span><h1>${tr('ex.yourRes')}</h1></div><button class="btn" data-act="go" data-v="exams">${tr('ex.back')}</button></div>
+    <div class="ex-score card"><b class="num">${r.score}<span>/ ${r.n}</span></b><div><div class="goal" style="max-width:340px"><i style="width:${pct}%"></i></div><p class="muted small" style="margin-top:8px">${tr('ex.pct',{p:pct, t:exFmtMs((r.submittedAt||0)-(r.startedAt||0))})}${place>=0?' · '+tr('ex.place',{i:place+1,n:board.length}):''}</p></div></div>
+    <ol class="ex-qs section">${R.e.qs.map((q,i)=>{ const a=(r.answers||[])[i]; return `<li class="card ex-q ${a===q.a?'ok':'no'}"><p class="ex-qt">${esc(q.q)}</p><div class="ex-opts">${q.o.map((o,j)=>`<span class="ex-opt ${j===q.a?'right':''} ${j===a&&a!==q.a?'wrong':''}">${esc(o)}</span>`).join('')}</div></li>`; }).join('')}</ol>
+    ${board.length?`<section class="section"><h2>${tr('ex.board')}</h2>${exBoardHtml(board, S.uid)}</section>`:''}`;
+}
+async function exView(id){ const r=exRun(S.uid,id); if(!r) return; let e=null; try{ const s=await S.db.doc('exams/'+id).get(); e=s.exists?s.data():null; }catch(er){}
+  if(!e){ toast(tr('ex.noAccess')); return; } S.run={id, e, r, answers:r.answers||[]}; go('exam'); }
+
+/* criteria: teacher → student, student → teacher (1–5 each) */
+function critDlg(kind, who, title, cur){
+  const keys = kind==='st' ? ST_CRIT : T_CRIT;
+  showDlg(`<form id="cr-form" novalidate>${dlgHead(tr(kind==='st'?'cr.stK':'cr.tK'), esc(title))}<div class="dlg-body"><p class="muted small">${tr(kind==='st'?'cr.stP':'cr.tP')}</p>
+    ${keys.map(k=>`<div class="cr-row"><span>${tr('cr.'+k)}</span><div class="cr-stars" role="radiogroup" aria-label="${tr('cr.'+k)}">${[1,2,3,4,5].map(n=>`<label class="cr-star"><input type="radio" name="cr-${k}" value="${n}" ${cur?.[k]===n?'checked':''}><span>${n}</span></label>`).join('')}</div></div>`).join('')}
+    <p class="lg-err" id="cr-err" role="alert"></p></div>
+    <div class="dlg-foot"><button type="button" class="btn ghost" data-act="dlg-close">${tr('cancel')}</button><button class="btn primary">${tr('save')}</button></div></form>`, {type:'crit'});
+  $('#cr-form').addEventListener('submit', async e=>{ e.preventDefault(); const c={};
+    for(const k of keys){ const v=document.querySelector(`[name=cr-${k}]:checked`); if(!v){ $('#cr-err').textContent=tr('cr.needAll'); return; } c[k]=+v.value; }
+    try{ if(kind==='st'){ await S.db.doc('stCrit/'+who).set({[myTid()]:{c, at:Date.now()}}, {merge:true}); S.stCrit={...(S.stCrit||{}), [who]:{...(S.stCrit?.[who]||{}), [myTid()]:{c,at:Date.now()}}}; }
+      else { await S.db.doc('tCrit/'+S.uid).set({[who]:{c, at:Date.now()}}, {merge:true}); S.myTCrit={...(S.myTCrit||{}), [who]:{c,at:Date.now()}}; }
+      closeDlg(); renderMain(); toast(tr('c.saved')); }catch(er){ $('#cr-err').textContent=lgErrText(er); } });
+}
+const critAvg = m => { const v=Object.values(m||{}).map(x=>{ const c=Object.values(x?.c||{}).map(Number).filter(n=>n>=1&&n<=5); return c.length?c.reduce((a,b)=>a+b,0)/c.length:null; }).filter(x=>x!=null); return v.length?v.reduce((a,b)=>a+b,0)/v.length:0; };
+// the owner's view of how students rate each teacher
+function teacherCritHtml(){
+  if(S.role!=='owner') return ''; const by={};
+  for(const m of Object.values(S.tCrit||{})) for(const [tid,x] of Object.entries(m||{})){ (by[tid]=by[tid]||[]).push(x); }
+  const rows=Object.entries(by).map(([tid,l])=>{ const avg=k=>{ const v=l.map(x=>+x?.c?.[k]).filter(n=>n>=1&&n<=5); return v.length?v.reduce((a,b)=>a+b,0)/v.length:0; };
+    const all=T_CRIT.map(avg).filter(Boolean); return {tid, n:l.length, avg:all.length?all.reduce((a,b)=>a+b,0)/all.length:0, parts:T_CRIT.map(k=>[k,avg(k)])}; }).sort((a,b)=>b.avg-a.avg);
+  if(!rows.length) return '';
+  return `<section class="section"><h2>${tr('cr.tBoard')}</h2><div class="rank-list">${rows.map((r,i)=>`<div class="rank-row">${medal(i)}${avatar(tName(r.tid),r.tid)}<div style="min-width:0"><b>${esc(tName(r.tid))}</b><div class="small muted">${r.parts.map(([k,v])=>`${tr('cr.'+k)} ${v?v.toFixed(1):'–'}`).join(' · ')}</div></div><span class="small muted num">${tr('cr.n',{n:r.n})}</span><b class="rank-pts num">${r.avg.toFixed(1)}<span>/ 5</span></b></div>`).join('')}</div></section>`;
+}
+
 /* ---------- the student's dashboard: schedule, teacher, status, to-do ---------- */
 function homeDash(){
   if(S.mode!=='student') return '';
@@ -5937,7 +6192,7 @@ function homeDash(){
       :`<p class="muted small">${tr('dash.noLessons')}</p><button class="btn sm" data-act="go" data-v="teachers">${tr('dash.findLesson')}</button>`}</section>`;
   const teacher = `<section class="dash-tile dash-teacher"><h3>${tr('dash.teacher')}</h3>
     ${t||tid?`<div class="row" style="gap:12px;min-width:0;flex-wrap:nowrap">${t?tPhoto(t,tid):''}<div style="min-width:0"><b class="dash-tname">${esc(t?.name||tName(tid))}</b>${t?.headline?`<span class="small muted dash-hl">${esc(t.headline)}</span>`:''}</div></div>
-      <div class="row" style="gap:8px;margin-top:auto">${meet?`<a class="btn sm" href="${esc(meet)}" target="_blank" rel="noopener">${I.video} ${tr('c.join')}</a>`:''}<button class="btn ghost sm" data-act="go" data-v="chat">${I.chat} ${tr('dash.write')}</button></div>`
+      <div class="row" style="gap:8px;margin-top:auto">${meet?`<a class="btn sm" href="${esc(meet)}" target="_blank" rel="noopener">${I.video} ${tr('c.join')}</a>`:''}<button class="btn ghost sm" data-act="go" data-v="chat">${I.chat} ${tr('dash.write')}</button>${tid?`<button class="btn ghost sm" data-act="cr-t" data-tid="${esc(tid)}">★ ${S.myTCrit?.[tid]?tr('cr.tAgain'):tr('cr.tBtn')}</button>`:''}</div>`
       :`<p class="muted small">${tr('c.noTeacher')}</p>`}</section>`;
   const B=S.myBalance, me=myRank(), lvl=S.myProfile?.level;
   const payTxt = !B ? '' : B.left>0 ? `<span class="owe">${tr('dash.owe',{sum:som(B.left)})}</span>` : tr('dash.paid');
@@ -5945,6 +6200,7 @@ function homeDash(){
       ${lvl?`<div><dt>${tr('dash.level')}</dt><dd>${esc(lvl)}</dd></div>`:''}
       ${me?`<div><dt>${tr('dash.rank')}</dt><dd><button class="dash-link" data-act="go" data-v="rating">${tr('dash.rankV',{i:me.i+1,n:me.n})}</button></dd></div>`:''}
       <div><dt>${tr('k.streak')}</dt><dd class="num">${streak()}</dd></div>
+      ${critAvg(S.myStCrit)?`<div><dt>${tr('cr.mine')}</dt><dd class="num">${critAvg(S.myStCrit).toFixed(1)} <span class="small muted">/ 5</span></dd></div>`:''}
       ${B?`<div><dt>${tr('dash.pay')}</dt><dd><button class="dash-link" data-act="go" data-v="pay">${payTxt}</button></dd></div>`:''}</dl></section>`;
   const hw=myHwItems().filter(h=>!h.done), P=S.myPlan, items=(P?.items||[]).filter(i=>!(P.done||{})[i.id]);
   const todo = `<section class="dash-tile dash-todo"><div class="row" style="justify-content:space-between;gap:8px"><h3>${tr('dash.todo')}</h3>${hw.length+items.length?`<span class="pill bk-wait num">${hw.length+items.length}</span>`:''}</div>
@@ -6747,6 +7003,19 @@ document.addEventListener('click', async ev => {
       toast(tr('task.given',{n:ids.length})); renderMain(); notify('task','all',taskMail(t)); break; }
     case 'task-write': S.edit={eid:null,title:b.dataset.t,body:'',mood:null,date:todayStr()}; go('write'); break;
     case 'plan-del': savePlan(b.dataset.sid, n=>{ n.items=n.items.filter(x=>x.id!==b.dataset.id); delete n.done[b.dataset.id]; }); break;
+    case 'ex-edit': openExam(b.dataset.id||''); break;
+    case 'ex-del': exDelete(b.dataset.id); break;
+    case 'ex-res': openExamResults(b.dataset.id); break;
+    case 'ex-retake': if(confirm(tr('ex.retakeAsk'))){ try{ await S.db.doc('examRuns/'+b.dataset.rid).delete(); if(S.exRuns) delete S.exRuns[b.dataset.rid]; closeDlg(); renderMain(); toast(tr('c.saved')); }catch(er){ dbErr(er,'exam'); } } break;
+    case 'ex-ord-ok': exOrderDecide(b.dataset.uid, b.dataset.oid, true); break;
+    case 'ex-ord-no': exOrderDecide(b.dataset.uid, b.dataset.oid, false); break;
+    case 'ex-buy': openExamBuy(b.dataset.id); break;
+    case 'ex-start': exStart(b.dataset.id); break;
+    case 'ex-view': exView(b.dataset.id); break;
+    case 'ex-pick': if(S.run){ S.run.answers[+b.dataset.i]=+b.value; LS.set('exa:'+S.uid+'_'+S.run.id, S.run.answers); const el=$('#ex-answered'); if(el) el.textContent=tr('ex.answered',{a:S.run.answers.filter(x=>x!=null).length, n:S.run.e.qs.length}); } break;
+    case 'ex-submit': exSubmit(false); break;
+    case 'cr-st': critDlg('st', b.dataset.uid, S.profiles?.[b.dataset.uid]?.name||'', S.stCrit?.[b.dataset.uid]?.[myTid()]?.c); break;
+    case 'cr-t': critDlg('t', b.dataset.tid, tName(b.dataset.tid), S.myTCrit?.[b.dataset.tid]?.c); break;
     case 'hw-edit': openHw(b.dataset.hid||''); break;
     case 'hw-share': openHwShare(b.dataset.hid); break;
     case 'hw-del': hwDelete(b.dataset.hid); break;
