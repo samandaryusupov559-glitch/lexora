@@ -1148,6 +1148,32 @@ dialog.dlg[open]{animation:lx-in .3s var(--ease) both}
 .toast{transform:translateX(-50%)}
 @keyframes lx-toast{from{opacity:0;transform:translate(-50%,12px)}to{opacity:1;transform:translate(-50%,0)}}
 .toast{animation-name:lx-toast}
+/* homework */
+.hw-card{padding:18px 20px;display:flex;flex-direction:column;gap:10px}
+.hw-card.is-done{background:var(--sheet-2)}
+.hw-card.is-done h3{color:var(--ink-3);text-decoration:line-through;text-decoration-thickness:1.5px}
+.hw-top{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;flex-wrap:wrap}
+.hw-card h3{font-family:var(--f-display);font-weight:600;font-size:22px;line-height:1.2;margin:0;overflow-wrap:break-word}
+.hw-meta{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:6px}
+.hw-meta .due{margin-left:0}
+.hw-acts{gap:6px}
+.hw-note{white-space:pre-wrap;color:var(--ink-2);max-width:70ch}
+.hw-files{display:flex;flex-wrap:wrap;gap:8px}
+.hw-file{display:inline-flex;align-items:center;gap:10px;max-width:100%;padding:8px 14px 8px 8px;border:1px solid var(--line);border-radius:var(--r-sm);background:var(--sheet);color:var(--ink);font-weight:600;font-size:15px;transition:border-color .2s var(--ease),transform .2s var(--ease)}
+.hw-file:hover{border-color:var(--ink-3);transform:translateY(-1px)}
+.hw-file:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+.hw-fic{display:grid;place-items:center;width:30px;height:30px;border-radius:8px;background:var(--hero);color:var(--on-hero);font-size:14px;flex:none}
+.hw-fname{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+.hw-tick{display:inline-flex;align-items:center;gap:8px;font-weight:600;font-size:15px;cursor:pointer;padding:8px 14px;border:1px solid var(--line);border-radius:999px;background:var(--sheet)}
+.hw-tick input{width:18px;height:18px;accent-color:var(--ok);margin:0}
+.hw-tick:has(input:checked){border-color:var(--ok);background:var(--ok-soft);color:var(--ok)}
+.hw-tick:has(input:focus-visible){outline:2px solid var(--focus);outline-offset:2px}
+.hw-to{margin-top:2px}
+.hw-pick[data-fmt="ind"] .hw-p-group,.hw-pick[data-fmt="group"] .hw-p-ind{display:none}
+.hw-chip{padding-right:4px}
+.hw-x{all:unset;cursor:pointer;display:grid;place-items:center;width:20px;height:20px;border-radius:50%;font-weight:700}
+.hw-x:hover{background:var(--sheet-3)}
+.hw-x:focus-visible{outline:2px solid var(--focus)}
 /* library viewer: nearly full screen, the media fills it */
 dialog.dlg.wide{width:min(900px,calc(100% - 24px))}
 dialog.dlg.view{width:min(1200px,calc(100% - 24px));max-height:calc(100dvh - 24px)}
@@ -1225,6 +1251,7 @@ const PROMPT_IDEAS = [
   'If you could spend tomorrow anywhere in Uzbekistan, where would you go and why?',
 ];
 const I = {
+  hw:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4h6v3H9z"/><path d="M15 5.5h3.5V21h-13V5.5H9"/><path d="M9 12.5l2 2 4-4.5M9 18h6"/></svg>',
   chat:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"><path d="M4 5.5h16v10.5H10l-4.5 3.5V16H4z"/><path d="M8 9.5h8M8 12.5h5"/></svg>',
   inbox:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M3 13l2.5-7.5h13L21 13v5.5H3z"/><path d="M3 13h5l1.5 2.5h5L16 13h5"/></svg>',
   people:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="9" cy="8.5" r="3.2"/><path d="M3 19.5c.8-3.3 3.2-5 6-5s5.2 1.7 6 5"/><circle cx="17" cy="9" r="2.5"/><path d="M16.5 14.6c2.3.2 3.8 1.8 4.5 4.4"/></svg>',
@@ -1668,19 +1695,19 @@ function renderNav(){
   if(S.role==='staff'){
     const waiting = allEntries().filter(e=>e.status==='submitted').length;
     document.title = (waiting?`(${waiting}) `:'')+'Lexora · '+tr('title.teacher');
-    n.innerHTML = navBtn('inbox',tr('nav.inbox'),'inbox',waiting) + navBtn('chat',tr('dm.nav'),'chat',chatUnreadT()) + navBtn('students',tr('nav.students'),'people',Object.keys(S.profiles).length,true) + navBtn('me',tr('c.meH'),'team') + navBtn('groups',tr('c.grpH'),'people') + navBtn('club',tr('c.clubNav'),'bulb',clubVideoOn()?'●':0) + navBtn('library',tr('c.libNav'),'book') + navBtn('centre',tr('c.centreH'),'spark',Object.values(S.leads||{}).filter(l=>!l.st).length+pendingTorders()) + navBtn('bank',tr('nav.bank'),'bank') + `<div class="nav-foot">${tr('c.navFootStaff')}</div>`;
+    n.innerHTML = navBtn('inbox',tr('nav.inbox'),'inbox',waiting) + navBtn('chat',tr('dm.nav'),'chat',chatUnreadT()) + navBtn('students',tr('nav.students'),'people',Object.keys(S.profiles).length,true) + navBtn('me',tr('c.meH'),'team') + navBtn('groups',tr('c.grpH'),'people') + navBtn('homework',tr('hw.nav'),'hw') + navBtn('club',tr('c.clubNav'),'bulb',clubVideoOn()?'●':0) + navBtn('library',tr('c.libNav'),'book') + navBtn('centre',tr('c.centreH'),'spark',Object.values(S.leads||{}).filter(l=>!l.st).length+pendingTorders()) + navBtn('bank',tr('nav.bank'),'bank') + `<div class="nav-foot">${tr('c.navFootStaff')}</div>`;
     return;
   }
   if(S.mode==='teacher'){
     const waiting = allEntries().filter(e=>e.status==='submitted').length;
     document.title = (waiting?`(${waiting}) `:'')+'Lexora · '+tr('title.teacher');
-    n.innerHTML = navBtn('inbox',tr('nav.inbox'),'inbox',waiting) + navBtn('chat',tr('dm.nav'),'chat',chatUnreadT()) + navBtn('students',tr('nav.students'),'people',myStudentIds().length,true) + navBtn('team',tr('c.teamH'),'team',newLeads()+pendingStaffReq()+pendingApps()+pendingEnrolls()+pendingTorders()) + (S.team?.[MAIN_TID]?navBtn('me',tr('c.meH'),'pen'):'') + navBtn('groups',tr('c.grpH'),'people') + navBtn('club',tr('c.clubNav'),'bulb',clubVideoOn()?'●':0) + navBtn('library',tr('c.libNav'),'book') + navBtn('ledger',tr('nav.ledger'),'coin',pendingClaims()||lgOwing(),!pendingClaims()) + navBtn('bookings',tr('nav.book'),'spark',pendingRequests()) + navBtn('market',tr('nav.shop'),'bag',pendingOrders()+pendingPasses()) + navBtn('rating',tr('rt.h'),'trophy') + navBtn('board',tr('nav.board'),'flag') + navBtn('insights',tr('nav.insights'),'chart') + navBtn('prompt',tr('nav.prompt'),'bulb') + navBtn('bank',tr('nav.bank'),'bank') +
+    n.innerHTML = navBtn('inbox',tr('nav.inbox'),'inbox',waiting) + navBtn('chat',tr('dm.nav'),'chat',chatUnreadT()) + navBtn('students',tr('nav.students'),'people',myStudentIds().length,true) + navBtn('team',tr('c.teamH'),'team',newLeads()+pendingStaffReq()+pendingApps()+pendingEnrolls()+pendingTorders()) + (S.team?.[MAIN_TID]?navBtn('me',tr('c.meH'),'pen'):'') + navBtn('groups',tr('c.grpH'),'people') + navBtn('homework',tr('hw.nav'),'hw') + navBtn('club',tr('c.clubNav'),'bulb',clubVideoOn()?'●':0) + navBtn('library',tr('c.libNav'),'book') + navBtn('ledger',tr('nav.ledger'),'coin',pendingClaims()||lgOwing(),!pendingClaims()) + navBtn('bookings',tr('nav.book'),'spark',pendingRequests()) + navBtn('market',tr('nav.shop'),'bag',pendingOrders()+pendingPasses()) + navBtn('rating',tr('rt.h'),'trophy') + navBtn('board',tr('nav.board'),'flag') + navBtn('insights',tr('nav.insights'),'chart') + navBtn('prompt',tr('nav.prompt'),'bulb') + navBtn('bank',tr('nav.bank'),'bank') +
       `<div class="nav-foot">${tr('nav.foot')}</div>`;
   } else {
     const unseen = studentEntries().filter(e=>e.isNew).length;
     document.title = (unseen?`(${unseen}) `:'')+'Lexora · '+tr('title.student');
     const owe = S.myBalance && S.myBalance.left>0;
-    n.innerHTML = navBtn('home',tr('nav.home'),'home',unseen) + navBtn('chat',tr('dm.nav'),'chat',chatUnreadS()) + navBtn('write',tr('nav.write'),'pen') + navBtn('mistakes',tr('nav.mistakes'),'flag') + navBtn('words',tr('nav.words'),'book',(S.myFeedback?.vocab||[]).length,true) + navBtn('learn',tr('nav.learn'),'bulb',(S.board?.posts||[]).length,true) + navBtn('teachers',tr('c.navTeachers'),'team',Object.values(S.myLiveFor||{}).some(isLive)?'●':(promoOn(S.promo)?'%':0)) + navBtn('club',tr('c.clubNav'),'bulb',clubVideoOn()?'●':0) + navBtn('library',tr('c.libNav'),'book') + navBtn('book',tr('nav.book'),'spark') + (S.rating?.on!==false && (S.rating?.list||[]).length ? navBtn('rating',tr('rt.h'),'trophy') : '') + navBtn('services',tr('nav.services'),'cards',myServiceCount(),true) + navBtn('market',tr('nav.shop'),'bag') + (S.myBalance? navBtn('pay',tr('nav.pay'),'coin',owe?'!':0,false) : '');
+    n.innerHTML = navBtn('home',tr('nav.home'),'home',unseen) + navBtn('chat',tr('dm.nav'),'chat',chatUnreadS()) + navBtn('write',tr('nav.write'),'pen') + navBtn('homework',tr('hw.nav'),'hw',hwOpenCount()) + navBtn('mistakes',tr('nav.mistakes'),'flag') + navBtn('words',tr('nav.words'),'book',(S.myFeedback?.vocab||[]).length,true) + navBtn('learn',tr('nav.learn'),'bulb',(S.board?.posts||[]).length,true) + navBtn('teachers',tr('c.navTeachers'),'team',Object.values(S.myLiveFor||{}).some(isLive)?'●':(promoOn(S.promo)?'%':0)) + navBtn('club',tr('c.clubNav'),'bulb',clubVideoOn()?'●':0) + navBtn('library',tr('c.libNav'),'book') + navBtn('book',tr('nav.book'),'spark') + (S.rating?.on!==false && (S.rating?.list||[]).length ? navBtn('rating',tr('rt.h'),'trophy') : '') + navBtn('services',tr('nav.services'),'cards',myServiceCount(),true) + navBtn('market',tr('nav.shop'),'bag') + (S.myBalance? navBtn('pay',tr('nav.pay'),'coin',owe?'!':0,false) : '');
   }
 }
 
@@ -1750,7 +1777,7 @@ function renderMain0(){
   if(S.mode==='student' && S.myProfile===undefined){ m.innerHTML=`<div class="loading">${tr('load.student')}</div>`; return; }
   const fn = {inbox:vInbox, students:vStudents, student:vStudent, insights:vInsights, prompt:vPrompt, bank:vBank, review:vReview, ledger:vLedger, board:vBoard, bookings:vBookings, market:vMarket, learn:vLearn, book:vBook, rating:()=>S.mode==='teacher'?vRatingT():vRatingS(),
               home:vHome, write:vWrite, entry:vEntry, mistakes:vMistakes, words:vWords, setup:vSetup, pay:vPay,
-              news:vNews, newsEdit:vNewsEdit, study:vStudy, services:vServices, set:vSet, setEdit:vSetEdit, team:vTeam, me:vMe, centre:vCentre, teachers:vStuTeachers, groups:vGroups, club:vClub, library:vLibrary, chat:vChat}[v];
+              news:vNews, newsEdit:vNewsEdit, study:vStudy, services:vServices, set:vSet, setEdit:vSetEdit, team:vTeam, me:vMe, centre:vCentre, teachers:vStuTeachers, groups:vGroups, homework:vHomework, club:vClub, library:vLibrary, chat:vChat}[v];
   if(tgNeeded()){ m.innerHTML=vTgGate(); return; }   // everyone (students, teachers, the owner) connects Telegram first
   m.innerHTML = fn ? fn() : '';
   after[v] && after[v]();
@@ -4909,7 +4936,7 @@ function startCentre(role){
   if(role==='owner'){
     col('leads','leads', asgSoon); col('leaves','leaves', ()=>setTimeout(finishLeaves, 1500)); col('dm','dms'); col('gchat','gchats', asgSoon); one('centre/assign','asgCfg',{}, asgSoon); col('staffReq','sreq'); col('teacherPriv','tpriv'); col('applications','apps');
     col('enroll','enrolls'); col('enrollStatus','enrollSt'); col('roster','rosters'); col('live','lives'); col('torders','torders'); one('site/promo','promo',{});
-    one('groups/'+MAIN_TID,'myGroups',null); startClub(); col('library','lib'); one('centre/upload','upCfg',null);
+    one('groups/'+MAIN_TID,'myGroups',null); col('homework','hw'); col('hwFor','hwFor'); startClub(); col('library','lib'); one('centre/upload','upCfg',null);
     col('staff','staffEmails', ()=>{ S.staffMap={}; for(const [em,x] of Object.entries(S.staffEmails||{})) if(x?.tid) S.staffMap[x.tid]=em; });
     one('centre/offers','offers',{items:[]}); one('private/meet','meetDoc',{});
   }
@@ -4917,11 +4944,11 @@ function startCentre(role){
     const t=S.staffTid;
     where1('dm','tid',t,'dms'); where1('gchat','tid',t,'gchats');
     one('centre/offers','offers',{items:[]}); one('staffReq/'+t,'mySreq',null); one('teacherPriv/'+t,'myTPriv',null);
-    one('roster/'+t,'myRoster',null); one('live/'+t,'myLive',null); where1('torders','tid',t,'torders'); one('groups/'+t,'myGroups',null); startClub(); startLib(); one('centre/upload','upCfg',null);
+    one('roster/'+t,'myRoster',null); one('live/'+t,'myLive',null); where1('torders','tid',t,'torders'); one('groups/'+t,'myGroups',null); where1('homework','tid',t,'hw'); col('hwFor','hwFor'); startClub(); startLib(); one('centre/upload','upCfg',null);
     S.unsubs.push(S.db.collection('leads').where('tid',t).onSnapshot(q=>{ const o={}; q.docs.forEach(d=>{ if(d.exists) o[d.id]=d.data(); }); S.leads=o; refreshAny(); }, quiet));
   }
   if(role==='student'){
-    one('lessons/'+S.uid,'myLessons',null); one('site/promo','promo',null);
+    one('lessons/'+S.uid,'myLessons',null); one('site/promo','promo',null); one('hwFor/'+S.uid,'myHw',null);
     one('liveFor/'+S.uid,'myLiveFor',null); startClub(); startLib();
     one('enroll/'+S.uid,'myEnroll',null); one('enrollStatus/'+S.uid,'myEnrollSt',null, studentWatches); where1('torders','uid',S.uid,'myTorders');
     // the chosen teacher's Meet link follows the journal (it can only be read once the journal exists)
@@ -5861,6 +5888,121 @@ function myOrdersSection(){
       <div class="req-act"><span class="pill bk-${s==='done'?'ok':s}">${tr(s==='done'?'c.orderDone':'bk.st.'+s)}</span>${s==='wait'?`<button class="btn ghost sm" data-act="c-ord-x" data-id="${esc(o.id)}">${tr('cancel')}</button>`:''}</div></div>`; }).join('')}</div></div>`;
 }
 
+/* ---------- homework ---------- */
+// homework/{hid}: {id, tid, title, note, due, fmt:'ind'|'group', to:{uids:[], gids:[]}, files:[{name,url,kind}], at}   teachers only
+// hwFor/{uid}:    {items:{[hid]:{title,note,due,files,tid,at}}, done:{[hid]:{at}}}   the student's own copy; they may only change "done"
+const HW_ACCEPT = 'audio/*,video/*,image/*,.pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.txt,.zip';
+const hwKind = (url, name) => ytId(url) ? 'video' : /\.(mp3|m4a|wav|ogg|aac|opus)$/i.test(name||url) ? 'audio' : /\.(mp4|mov|webm|mkv)$/i.test(name||url) ? 'video' : safeLink(url) && !driveId(url) && !/\.\w{2,4}$/.test(name||'') ? 'link' : 'file';
+const hwIcon = k => k==='audio' ? '♪' : k==='video' ? '▶' : k==='link' ? '↗' : '▤';
+const hwList = () => Object.values(S.hw||{}).filter(h=>S.role==='owner' || h.tid===myTid()).sort((a,b)=>(b.at||0)-(a.at||0));
+// everyone a homework reaches: the students picked one by one plus the members of the picked groups
+function hwUids(h){ const g=myGroups(); return [...new Set([...(h.to?.uids||[]), ...(h.to?.gids||[]).flatMap(id=>g.find(x=>x.id===id)?.members||[])])]; }
+const hwSummary = h => ({title:h.title, note:h.note||'', due:h.due||'', files:h.files||[], tid:h.tid, at:h.at});
+async function hwFanOut(h, before){
+  const now=new Set(hwUids(h)), old=new Set(before?hwUids(before):[]);
+  for(const uid of now) await S.db.doc('hwFor/'+uid).set({items:{[h.id]:hwSummary(h)}}, {merge:true});
+  for(const uid of old) if(!now.has(uid)) await hwDrop(uid, h.id);
+}
+async function hwDrop(uid, hid){
+  const ref=S.db.doc('hwFor/'+uid), s=await ref.get(); if(!s.exists) return;
+  const d=s.data(); if(!d.items?.[hid]) return; delete d.items[hid]; if(d.done) delete d.done[hid]; await ref.set(d);
+}
+const hwDue = due => { if(!due) return ''; const late = due < todayStr(); return `<span class="due${late?' late':''}">${late?tr('hw.late')+' · ':''}${tr('hw.due',{d:esc(dloc(parseDate(due),{day:'numeric',month:'short'}))})}</span>`; };
+const hwFiles = (files, hid, who) => (files||[]).length ? `<div class="hw-files">${files.map((f,i)=>`<button class="hw-file" data-act="hw-open" data-hid="${esc(hid)}" data-i="${i}" data-who="${who}"><span class="hw-fic" aria-hidden="true">${hwIcon(f.kind)}</span><span class="hw-fname">${esc(f.name||f.url)}</span></button>`).join('')}</div>` : '';
+function vHomework(){ return S.mode==='student' ? vHwStudent() : vHwTeacher(); }
+function vHwTeacher(){
+  const list=hwList(), names=Object.fromEntries(myStudentList().map(x=>[x.uid,x.name])), groups=Object.fromEntries(myGroups().map(g=>[g.id,g.name]));
+  const card = h => { const uids=hwUids(h), done=uids.filter(u=>S.hwFor?.[u]?.done?.[h.id]).length;
+    return `<article class="card hw-card"><div class="hw-top"><div style="min-width:0"><h3>${esc(h.title)}</h3><div class="hw-meta">${hwDue(h.due)}<span class="pill ${h.fmt==='group'?'bk-wait':'bk-ok'}">${tr(h.fmt==='group'?'hw.grp':'hw.ind')}</span><span class="small faint num">${tr('hw.nDone',{n:done,m:uids.length})}</span></div></div>
+      <div class="row hw-acts"><button class="btn sm" data-act="hw-share" data-hid="${esc(h.id)}">${tr('hw.share')}</button><button class="btn ghost sm" data-act="hw-edit" data-hid="${esc(h.id)}">${tr('edit')}</button><button class="btn ghost sm del-btn" data-act="hw-del" data-hid="${esc(h.id)}">${tr('delete')}</button></div></div>
+      ${h.note?`<p class="hw-note">${esc(h.note)}</p>`:''}${hwFiles(h.files, h.id, 't')}
+      <div class="tchips hw-to">${(h.to?.gids||[]).map(g=>`<span class="lchip">${esc(groups[g]||'–')}</span>`).join('')}${(h.to?.uids||[]).map(u=>`<span class="lchip ghost">${esc(names[u]||'–')}</span>`).join('')}</div></article>`; };
+  return `<div class="page-head"><div><h1>${tr('hw.h')}</h1><p>${tr('hw.p')}</p></div><button class="btn primary" data-act="hw-edit">+ ${tr('hw.add')}</button></div>
+    ${list.length?`<div class="list">${list.map(card).join('')}</div>`:`<div class="empty"><h3>${tr('hw.noneH')}</h3><p>${tr('hw.noneP')}</p><p style="margin-top:14px"><button class="btn primary" data-act="hw-edit">${tr('hw.add')}</button></p></div>`}`;
+}
+// the student's list: open first (soonest due on top), then the ones already done
+function myHwItems(){
+  const it=S.myHw?.items||{}, done=S.myHw?.done||{};
+  return Object.entries(it).map(([id,h])=>({id,...h,done:!!done[id]})).sort((a,b)=>(a.done-b.done) || ((a.due||'9')>(b.due||'9')?1:-1) || (b.at||0)-(a.at||0));
+}
+const hwOpenCount = () => myHwItems().filter(h=>!h.done).length;
+function hwStudentCard(h){
+  return `<article class="card hw-card${h.done?' is-done':''}"><div class="hw-top"><div style="min-width:0"><h3>${esc(h.title)}</h3><div class="hw-meta">${h.done?`<span class="pill bk-ok">${tr('hw.done')}</span>`:hwDue(h.due)}<span class="small faint">${tr('hw.from',{name:esc(tName(h.tid))})}</span></div></div>
+    <label class="hw-tick"><input type="checkbox" data-act="hw-tick" data-hid="${esc(h.id)}" ${h.done?'checked':''} ${S.canWrite===false?'disabled':''}> ${tr('hw.markDone')}</label></div>
+    ${h.note?`<p class="hw-note">${esc(h.note)}</p>`:''}${hwFiles(h.files, h.id, 's')}</article>`;
+}
+function vHwStudent(){
+  const list=myHwItems();
+  return `<div class="page-head"><div><h1>${tr('hw.h')}</h1><p>${tr('hw.pS')}</p></div></div>
+    ${list.length?`<div class="list">${list.map(hwStudentCard).join('')}</div>`:`<div class="empty"><h3>${tr('hw.noneHS')}</h3><p>${tr('hw.nonePS')}</p></div>`}`;
+}
+function hwOpen(hid, i, who){
+  const h = who==='s' ? S.myHw?.items?.[hid] : S.hw?.[hid]; const f=h?.files?.[+i]; if(!f) return;
+  const pv = drivePreview(f.url) || (ytId(f.url)?`https://www.youtube-nocookie.com/embed/${ytId(f.url)}?rel=0&autoplay=1`:null);
+  if(!pv){ window.open(f.url, '_blank', 'noopener'); return; }
+  const kind = f.kind==='audio' ? 'audio' : f.kind==='video' ? 'video' : 'doc';
+  showDlg(`<div>${dlgHead(esc(h.title), esc(f.name||''))}<div class="dlg-body"><iframe class="lib-frame ${kind}" id="lib-frame" src="${esc(pv)}" allow="autoplay; fullscreen" allowfullscreen title="${esc(f.name||h.title)}"></iframe></div>
+    <div class="dlg-foot">${kind!=='audio'?`<button type="button" class="btn" data-act="c-lib-fs">⛶ ${tr('c.libFull')}</button>`:''}<a class="btn ghost" href="${esc(f.url)}" target="_blank" rel="noopener">${tr('c.libNewTab')}</a><button type="button" class="btn primary" data-act="dlg-close">${tr('close')}</button></div></div>`, {type:'libview'});
+}
+// who-gets-it picker: students one by one, or whole groups
+const hwPicker = (to, fmt) => { const st=myStudentList(), gs=myGroups();
+  return `<div class="field hw-pick" data-fmt="${fmt}"><span>${tr('hw.fTo')}</span>
+    <div class="lpick hw-p-group">${gs.length?gs.map(g=>`<label class="lchip pick"><input type="checkbox" class="hw-g" value="${esc(g.id)}" ${(to?.gids||[]).includes(g.id)?'checked':''}> ${esc(g.name)} <span class="faint">${(g.members||[]).length}</span></label>`).join(''):`<span class="faint small">${tr('c.grpNoneH')}</span>`}</div>
+    <div class="lpick hw-p-ind">${st.length?st.map(x=>`<label class="lchip pick"><input type="checkbox" class="hw-u" value="${esc(x.uid)}" ${(to?.uids||[]).includes(x.uid)?'checked':''}> ${esc(x.name)}</label>`).join(''):`<span class="faint small">${tr('hw.noStudents')}</span>`}</div></div>`; };
+const hwPicked = () => ({uids:[...document.querySelectorAll('.hw-u:checked')].map(i=>i.value), gids:[...document.querySelectorAll('.hw-g:checked')].map(i=>i.value)});
+function openHw(hid){
+  const h0 = hid ? clone(S.hw?.[hid]) : null, h = h0 || {files:[], fmt:'ind', to:{uids:[],gids:[]}};
+  S.hwDraft = clone(h.files||[]);
+  const filesHtml = () => S.hwDraft.length ? S.hwDraft.map((f,i)=>`<span class="lchip hw-chip"><span aria-hidden="true">${hwIcon(f.kind)}</span> ${esc(f.name||f.url)}<button type="button" class="hw-x" data-act="hw-rmfile" data-i="${i}" aria-label="${tr('delete')}">×</button></span>`).join('') : '';
+  showDlg(`<form id="hw-form" novalidate>${dlgHead(tr('hw.h'), hid?tr('hw.edit'):tr('hw.add'))}<div class="dlg-body">
+    <label class="field"><span>${tr('hw.fTitle')}</span><input class="inp" id="hw-title" maxlength="120" value="${esc(h.title||'')}" placeholder="${tr('hw.fTitlePh')}" required></label>
+    <label class="field"><span>${tr('hw.fNote')}</span><textarea class="inp" id="hw-note" rows="4" maxlength="3000" placeholder="${tr('hw.fNotePh')}">${esc(h.note||'')}</textarea></label>
+    <div class="grid2" style="gap:12px"><label class="field"><span>${tr('hw.fDue')} <span class="faint">${tr('optional')}</span></span><input class="inp" type="date" id="hw-due" value="${esc(h.due||'')}" min="${todayStr()}"></label>
+      <div class="field"><span>${tr('hw.fFmt')}</span><div class="seg" role="radiogroup"><button type="button" data-act="hw-fmt" data-f="ind" aria-pressed="${h.fmt!=='group'}">${tr('hw.ind')}</button><button type="button" data-act="hw-fmt" data-f="group" aria-pressed="${h.fmt==='group'}">${tr('hw.grp')}</button></div></div></div>
+    ${hwPicker(h.to, h.fmt==='group'?'group':'ind')}
+    <div class="field"><span>${tr('hw.fFiles')} <span class="faint">${tr('optional')}</span></span>
+      <label class="lib-drop"><input type="file" id="hw-file" accept="${HW_ACCEPT}" hidden><b>${tr('hw.pick')}</b><span class="small faint" id="hw-fname">${tr('hw.pickP')}</span><progress id="hw-pr" max="100" value="0" hidden></progress></label>
+      <div class="row" style="gap:8px;margin-top:8px"><input class="inp" id="hw-link" placeholder="${tr('hw.link')}" style="flex:1"><button type="button" class="btn" data-act="hw-addlink">${tr('hw.addLink')}</button></div>
+      <div class="tchips" id="hw-files" style="margin-top:8px">${filesHtml()}</div></div>
+    <p class="lg-err" id="hw-err" role="alert"></p></div>
+    <div class="dlg-foot"><button type="button" class="btn ghost" data-act="dlg-close">${tr('cancel')}</button><button class="btn pen" id="hw-go">${hid?tr('save'):tr('hw.send')}</button></div></form>`, {type:'hw', id:hid||''});
+  S.hwFilesHtml = filesHtml;
+  $('#hw-file').addEventListener('change', async e=>{ const file=e.target.files[0]; if(!file) return; const pr=$('#hw-pr'), err=$('#hw-err'), go=$('#hw-go'); pr.hidden=false; go.disabled=true; err.textContent='';
+    const r=await uploadFile(file, p=>{ pr.value=Math.round(p*100); $('#hw-fname').textContent=tr('c.libPct',{p:Math.round(p*100)}); }); go.disabled=false; pr.hidden=true; e.target.value='';
+    if(!r.ok){ $('#hw-fname').textContent=file.name; err.textContent = r.error==='nocfg'?tr(S.role==='owner'?'c.libNoCfgOwner':'c.libNoCfg') : r.error==='big'?tr('c.libBig') : tr('c.libUpFail',{e:esc(r.error||'')}); return; }
+    S.hwDraft.push({name:file.name, url:r.url, kind:hwKind(r.url, file.name)}); $('#hw-files').innerHTML=filesHtml(); $('#hw-fname').textContent=tr('hw.pickP'); });
+  $('#hw-form').addEventListener('submit', async e=>{ e.preventDefault(); const err=$('#hw-err');
+    const title=$('#hw-title').value.trim(); if(!title){ err.textContent=tr('hw.needTitle'); return; }
+    const fmt=document.querySelector('[data-act=hw-fmt][aria-pressed=true]')?.dataset.f||'ind', to=hwPicked();
+    if(fmt==='group') to.uids=[]; else to.gids=[];
+    if(!to.uids.length && !to.gids.length){ err.textContent=tr('hw.needTo'); return; }
+    const x={id:hid||newId(), tid:h0?.tid||myTid(), title, note:$('#hw-note').value.trim(), due:$('#hw-due').value||'', fmt, to, files:S.hwDraft, at:h0?.at||Date.now()};
+    const go=$('#hw-go'); go.disabled=true;
+    try{ await S.db.doc('homework/'+x.id).set(x); await hwFanOut(x, h0); S.hw={...(S.hw||{}), [x.id]:x}; closeDlg(); renderMain(); toast(tr('hw.saved')); }
+    catch(er){ go.disabled=false; err.textContent=lgErrText(er); } });
+}
+// share an existing homework with more students or groups (nobody is removed here)
+function openHwShare(hid){
+  const h=S.hw?.[hid]; if(!h) return;
+  showDlg(`<form id="hws-form" novalidate>${dlgHead(tr('hw.share'), esc(h.title))}<div class="dlg-body"><p class="muted">${tr('hw.shareP')}</p>
+    <div class="seg" role="radiogroup" style="align-self:flex-start"><button type="button" data-act="hw-fmt" data-f="ind" aria-pressed="true">${tr('hw.ind')}</button><button type="button" data-act="hw-fmt" data-f="group" aria-pressed="false">${tr('hw.grp')}</button></div>
+    ${hwPicker(h.to, 'ind')}<p class="lg-err" id="hws-err" role="alert"></p></div>
+    <div class="dlg-foot"><button type="button" class="btn ghost" data-act="dlg-close">${tr('cancel')}</button><button class="btn primary" id="hws-go">${tr('hw.share')}</button></div></form>`, {type:'hwshare', id:hid});
+  $('#hws-form').addEventListener('submit', async e=>{ e.preventDefault(); const p=hwPicked();
+    const x=clone(h); x.to={uids:[...new Set([...(h.to?.uids||[]), ...p.uids])], gids:[...new Set([...(h.to?.gids||[]), ...p.gids])]};
+    if(x.to.gids.length && x.to.uids.length) x.fmt='group';
+    try{ await S.db.doc('homework/'+hid).set(x); await hwFanOut(x, h); S.hw[hid]=x; closeDlg(); renderMain(); toast(tr('hw.saved')); }catch(er){ $('#hws-err').textContent=lgErrText(er); } });
+}
+async function hwDelete(hid){
+  const h=S.hw?.[hid]; if(!h || !confirm(tr('hw.delAsk'))) return;
+  try{ for(const uid of hwUids(h)) await hwDrop(uid, hid); await S.db.doc('homework/'+hid).delete(); delete S.hw[hid]; renderMain(); }catch(er){ dbErr(er,'hw'); }
+}
+async function hwTick(hid, on){
+  const done={...(S.myHw?.done||{})}; if(on) done[hid]={at:Date.now()}; else delete done[hid];
+  // the whole done map is written so an untick really removes the key; only "done" changes, as the rules require
+  try{ const ref=S.db.doc('hwFor/'+S.uid), s=await ref.get(); await ref.set({...(s.exists?s.data():{}), done}); S.myHw={...(S.myHw||{}), done}; renderMain(); renderNav(); }catch(er){ dbErr(er,'hw'); }
+}
+
 /* ---------- groups: who sees a lesson when the teacher starts it ---------- */
 // groups/{tid}: {list:[{id,name,members:[uid]}]}; live/{tid}: the teacher's own lesson state {on,at,until,url,to,label};
 // liveFor/{uid}: {[tid]:{on,at,until,url,label,name}} — only the chosen students get the link
@@ -6230,6 +6372,14 @@ function seedCentre(db){
   db.m.set('live/t-dilnoza', {on:true, at:Date.now()-5*60000, until:Date.now()+6*3600e3, url:'https://meet.google.com/xyz-abcd-efg', to:['ex-aziza'], label:'Russian A2'});
   db.m.set('liveFor/ex-aziza', {'t-dilnoza':{on:true, at:Date.now()-5*60000, until:Date.now()+6*3600e3, url:'https://meet.google.com/xyz-abcd-efg', label:'Russian A2', name:'Dilnoza R. (example)'}});
   db.m.set('groups/main', {list:[{id:'g1', name:'IELTS evening group', members:['ex-aziza','ex-timur']}]});
+  { const d=n=>{ const x=new Date(); x.setDate(x.getDate()+n); return x.getFullYear()+'-'+pad(x.getMonth()+1)+'-'+pad(x.getDate()); };
+    const hw1={id:'hw-1', tid:'main', title:'Unit 3: listening and new words', note:'Listen to the recording twice. Write down 10 new words with a sentence for each, then answer the 5 questions in the file.', due:d(2), fmt:'group', to:{uids:[], gids:['g1']},
+      files:[{name:'unit3-listening.mp3', url:'https://drive.google.com/file/d/1DemoAudioListeningUnit3Example00/view', kind:'audio'},{name:'unit3-questions.pdf', url:'https://drive.google.com/file/d/1DemoPdfQuestionsUnit3Example000/view', kind:'file'}], at:Date.now()-3600e3};
+    const hw2={id:'hw-2', tid:'main', title:'Past simple: 20 sentences', note:'Write 20 sentences about last weekend. Use at least 8 irregular verbs.', due:d(-1), fmt:'ind', to:{uids:['ex-aziza'], gids:[]}, files:[{name:'Irregular verbs video', url:'https://www.youtube.com/watch?v=dQw4w9WgXcQ', kind:'video'}], at:Date.now()-2*864e5};
+    db.m.set('homework/hw-1', hw1); db.m.set('homework/hw-2', hw2);
+    const sum=h=>({title:h.title, note:h.note, due:h.due, files:h.files, tid:h.tid, at:h.at});
+    db.m.set('hwFor/ex-aziza', {items:{'hw-1':sum(hw1), 'hw-2':sum(hw2)}, done:{}});
+    db.m.set('hwFor/ex-timur', {items:{'hw-1':sum(hw1)}, done:{'hw-1':{at:Date.now()-1800e3}}}); }
   const td=day(0);
   db.m.set('club/English_'+td+'/msgs/m1', {uid:'ex-timur', name:'Timur (example)', text:'I think a lazy weekend is better. I sleep a lot and watch films!', at:Date.now()-40*60000});
   db.m.set('club/English_'+td+'/msgs/m2', {uid:'ex-madina', name:'Madina (example)', text:'For me a busy weekend is better, I like to go to the mountains with my family.', at:Date.now()-32*60000});
@@ -6521,6 +6671,14 @@ document.addEventListener('click', async ev => {
       toast(tr('task.given',{n:ids.length})); renderMain(); notify('task','all',taskMail(t)); break; }
     case 'task-write': S.edit={eid:null,title:b.dataset.t,body:'',mood:null,date:todayStr()}; go('write'); break;
     case 'plan-del': savePlan(b.dataset.sid, n=>{ n.items=n.items.filter(x=>x.id!==b.dataset.id); delete n.done[b.dataset.id]; }); break;
+    case 'hw-edit': openHw(b.dataset.hid||''); break;
+    case 'hw-share': openHwShare(b.dataset.hid); break;
+    case 'hw-del': hwDelete(b.dataset.hid); break;
+    case 'hw-open': hwOpen(b.dataset.hid, b.dataset.i, b.dataset.who); break;
+    case 'hw-tick': hwTick(b.dataset.hid, b.checked); break;
+    case 'hw-fmt': { const box=b.closest('form'); box.querySelectorAll('[data-act=hw-fmt]').forEach(x=>x.setAttribute('aria-pressed', x===b)); const pk=box.querySelector('.hw-pick'); if(pk) pk.dataset.fmt=b.dataset.f; break; }
+    case 'hw-addlink': { const i=$('#hw-link'), u=safeLink(i.value.trim()); if(!u){ $('#hw-err').textContent=tr('hw.badLink'); return; } $('#hw-err').textContent=''; S.hwDraft.push({name:u.replace(/^https:\/\/(www\.)?/,'').slice(0,60), url:u, kind:hwKind(u)}); i.value=''; $('#hw-files').innerHTML=S.hwFilesHtml(); break; }
+    case 'hw-rmfile': S.hwDraft.splice(+b.dataset.i,1); $('#hw-files').innerHTML=S.hwFilesHtml(); break;
     case 'plan-tick': { const done={...(S.myPlan?.done||{})}; done[b.dataset.id]=b.checked; try{ await S.db.doc('plans/'+S.uid).update({done}); }catch(e){ b.checked=!b.checked; dbErr(e,'plan'); } break; }
     // extra lessons
     case 'bk-set': { const uid=b.dataset.uid, st=b.dataset.st; try{ await S.db.doc('bookingStatus/'+uid).set({...(S.bstat[uid]||{}), [b.dataset.id]:st});

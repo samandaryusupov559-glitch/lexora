@@ -319,6 +319,20 @@ service cloud.firestore {
                   ? request.resource.data.keys().hasOnly([staffTid()])
                   : request.resource.data.diff(resource.data).affectedKeys().hasOnly([staffTid()])));
     }
+    // Homework: the master copy is for teachers only; each student gets a copy in hwFor/{uid}
+    // (written by teachers) and may change only the "done" map of their own copy.
+    match /homework/{id} {
+      allow read, delete: if isTeacher() || (isStaff() && resource.data.tid == staffTid());
+      allow create: if isTeacher() || (isStaff() && request.resource.data.tid == staffTid());
+      allow update: if isTeacher() || (isStaff() && resource.data.tid == staffTid() && request.resource.data.tid == staffTid());
+    }
+    match /hwFor/{uid} {
+      allow read: if isMe(uid) || isTeacher() || isStaff();
+      allow write: if isTeacher() || isStaff();
+      allow update: if isMe(uid)
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['done'])
+        && request.resource.data.done is map;
+    }
     // A teacher's groups (for starting a lesson for a group).
     match /groups/{tid} {
       allow read, write: if isTeacher() || (isStaff() && staffTid() == tid);
