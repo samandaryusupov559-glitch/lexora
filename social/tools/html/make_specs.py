@@ -12,6 +12,10 @@ def cta(big, sub, icons, size=104): return dict(type="cta", big=big, sub=sub, ic
 def beat(big): return dict(type="beat", big=big, d=1.0)
 SAVE, SEND, COM, LINK = ["save", "Сохрани", True], ["send", "Отправь", False], ["comment", "Напиши", True], ["link", "Ссылка", True]
 R = {
+ "1111": ("drive", [hook("3 слова, которые *тянут* *вниз* твой IELTS Writing", "Третье — самое незаметное", 104),
+    dict(swap("*very* important", "*crucial*", "Слабое усиление", "1/3"), d=2.9), dict(swap("*good* method", "*effective* method", "Слишком общее слово", "2/3"), d=2.9),
+    dict(swap("important *thing*", "important *factor*", "Пустое слово. Ещё вариант: aspect", "3/3"), d=3.2),
+    T("Точные слова поднимают *Lexical* *Resource*", "Один из 4 критериев Writing", None, 100), cta("*Сохрани* перед экзаменом", "Отправь тому, кто готовится", [SAVE, ["send", "Отправь", True]])]),
  "1211": ("pop", [hook("*Первый* *урок* бесплатно", "Что происходит дальше?", 128), T("Оставляешь *заявку*", "Ссылка в профиле", "1/4"), T("Мы определяем *уровень*", None, "2/4"),
     T("Подбираем *преподавателя*", None, "3/4"), T("Урок в *Google* *Meet*", "Запуск одной кнопкой из Lexora", "4/4"), cta("Попробуй *бесплатно*", "Ссылка в профиле", [LINK, ["send", "Отправь другу", False]])]),
  "1311": ("play", [hook("Хватит говорить *«very* *good»*", "5 слов, которые звучат сильнее", 116), T("*excellent*", "отличный", "1/5", 150), T("*outstanding*", "выдающийся", "2/5", 150),
