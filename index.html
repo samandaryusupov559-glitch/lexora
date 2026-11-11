@@ -1148,6 +1148,44 @@ dialog.dlg[open]{animation:lx-in .3s var(--ease) both}
 .toast{transform:translateX(-50%)}
 @keyframes lx-toast{from{opacity:0;transform:translate(-50%,12px)}to{opacity:1;transform:translate(-50%,0)}}
 .toast{animation-name:lx-toast}
+/* dashboards */
+.dash{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+.dash-tile{display:flex;flex-direction:column;gap:12px;min-width:0;padding:18px 20px;background:var(--sheet);border:1px solid var(--line);border-radius:var(--r)}
+.dash-tile h3{font-family:var(--f-display);font-weight:600;font-size:21px;margin:0}
+.dash-sched{background:var(--hero);border-color:var(--hero);color:var(--on-hero)}
+.dash-sched .muted{color:var(--on-hero-2)}
+.dash-sched .btn:not(.pen){background:transparent;color:var(--on-hero);border-color:color-mix(in srgb,var(--on-hero) 35%,transparent)}
+.dash-sched .btn:not(.pen):hover{background:color-mix(in srgb,var(--on-hero) 8%,transparent)}
+.dash-sched .btn:focus-visible{outline-color:var(--on-hero)}
+.dash-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
+.dash-list li{display:flex;align-items:center;gap:12px;padding:10px 0;border-top:1px solid var(--line);min-width:0}
+.dash-list li:first-child{border-top:0;padding-top:0}
+.dash-sched .dash-list li{border-top-color:color-mix(in srgb,var(--on-hero) 14%,transparent)}
+.dash-when{display:flex;flex-direction:column;min-width:64px;line-height:1.2}
+.dash-when b{font-weight:700}
+.dash-when span{font-size:13.5px;color:var(--on-hero-2)}
+.dash-time{margin-right:auto;font-weight:600}
+.dash-task{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600}
+.dash-link{all:unset;cursor:pointer;color:inherit;text-decoration:underline;text-decoration-color:var(--line);text-underline-offset:4px;transition:text-decoration-color .15s var(--ease)}
+.dash-link:hover{text-decoration-color:currentColor}
+.dash-link:focus-visible{outline:2px solid var(--focus);outline-offset:2px;border-radius:3px}
+.dash-tname{display:block;font-size:18px}
+.dash-hl{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dash-kv{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px 16px;margin:0}
+.dash-kv dt{font-size:13.5px;color:var(--ink-3)}
+.dash-kv dd{margin:2px 0 0;font-family:var(--f-display);font-weight:600;font-size:22px;line-height:1.2}
+.dash-kv dd .dash-link{font-family:var(--f-ui);font-size:16px;font-weight:600}
+.dash-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:-6px 0 22px}
+.dash-stat{display:flex;flex-direction:column;align-items:flex-start;gap:2px;padding:14px 16px;background:var(--sheet);border:1px solid var(--line);border-radius:var(--r);text-align:left;color:var(--ink);transition:border-color .2s var(--ease),transform .2s var(--ease)}
+.dash-stat:hover{border-color:var(--ink-3);transform:translateY(-2px)}
+.dash-stat:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+.dash-stat b{font-family:var(--f-display);font-weight:600;font-size:30px;line-height:1.1}
+.dash-stat span{font-size:14px;color:var(--ink-3)}
+main.enter .dash > *,main.enter .dash-stats > *{animation:lx-rise .45s var(--ease) both}
+main.enter .dash > :nth-child(2),main.enter .dash-stats > :nth-child(2){animation-delay:.06s}
+main.enter .dash > :nth-child(3),main.enter .dash-stats > :nth-child(3){animation-delay:.12s}
+main.enter .dash > :nth-child(4),main.enter .dash-stats > :nth-child(4){animation-delay:.18s}
+@media (max-width:820px){.dash{grid-template-columns:minmax(0,1fr)}.dash-stats{grid-template-columns:repeat(2,minmax(0,1fr))}}
 /* homework */
 .hw-card{padding:18px 20px;display:flex;flex-direction:column;gap:10px}
 .hw-card.is-done{background:var(--sheet-2)}
@@ -1813,7 +1851,7 @@ function vInbox(){
     <div class="empty"><h3>${tr('inbox.emptyH')}</h3><p>${tr('inbox.emptyP')}</p>
 </div>`;
   return `<div class="page-head"><div><h1>${tr('inbox.h')}</h1><p>${waiting.length? tr('inbox.waiting',{n:waiting.length}) : tr('inbox.caught')}</p></div>${allTToggle()}
-    ${waiting.length?`<button class="btn pen" data-act="open-review" data-sid="${esc(waiting[0].sid)}" data-eid="${esc(waiting[0].eid)}">${I.pen} ${tr('inbox.start')}</button>`:''}</div>
+    ${waiting.length?`<button class="btn pen" data-act="open-review" data-sid="${esc(waiting[0].sid)}" data-eid="${esc(waiting[0].eid)}">${I.pen} ${tr('inbox.start')}</button>`:''}</div>${teacherDash()}
     ${waiting.length?`<div class="list">${waiting.map(e=>entryCard(e)).join('')}</div>`:''}
     ${prog.length?`<div class="section"><h2>${tr('inbox.prog')}</h2><div class="list">${prog.map(e=>entryCard(e)).join('')}</div></div>`:''}
     ${done.length?`<div class="section"><h2>${tr('inbox.done')}</h2><div class="list">${done.map(e=>entryCard(e)).join('')}</div></div>`:''}`;
@@ -5888,6 +5926,43 @@ function myOrdersSection(){
       <div class="req-act"><span class="pill bk-${s==='done'?'ok':s}">${tr(s==='done'?'c.orderDone':'bk.st.'+s)}</span>${s==='wait'?`<button class="btn ghost sm" data-act="c-ord-x" data-id="${esc(o.id)}">${tr('cancel')}</button>`:''}</div></div>`; }).join('')}</div></div>`;
 }
 
+/* ---------- the student's dashboard: schedule, teacher, status, to-do ---------- */
+function homeDash(){
+  if(S.mode!=='student') return '';
+  const today=todayStr(), tid=tidOf(S.myProfile), t=S.team?.[tid], meet=S.myTPriv?.meet;
+  const links=Object.entries(S.myLessons?.links||{}).map(([id,x])=>({id,...x})).filter(x=>(x.date||'')>=today).sort((a,b)=>(a.date+a.from).localeCompare(b.date+b.from)).slice(0,4);
+  const when = x => { const d=parseDate(x.date); return `<span class="dash-when"><b>${x.date===today?tr('dash.today'):esc(cap(dloc(d,{weekday:'short'})))}</b><span class="num">${esc(dloc(d,{day:'numeric',month:'short'}))}</span></span>`; };
+  const sched = `<section class="dash-tile dash-sched"><h3>${tr('dash.sched')}</h3>
+    ${links.length?`<ul class="dash-list">${links.map(x=>`<li>${when(x)}<span class="num dash-time">${esc(x.from||'')}${x.to?'–'+esc(x.to):''}</span>${x.url?`<a class="btn ${x.date===today?'pen':''} sm" href="${esc(x.url)}" target="_blank" rel="noopener">${I.video} ${tr('c.join')}</a>`:''}</li>`).join('')}</ul>`
+      :`<p class="muted small">${tr('dash.noLessons')}</p><button class="btn sm" data-act="go" data-v="teachers">${tr('dash.findLesson')}</button>`}</section>`;
+  const teacher = `<section class="dash-tile dash-teacher"><h3>${tr('dash.teacher')}</h3>
+    ${t||tid?`<div class="row" style="gap:12px;min-width:0;flex-wrap:nowrap">${t?tPhoto(t,tid):''}<div style="min-width:0"><b class="dash-tname">${esc(t?.name||tName(tid))}</b>${t?.headline?`<span class="small muted dash-hl">${esc(t.headline)}</span>`:''}</div></div>
+      <div class="row" style="gap:8px;margin-top:auto">${meet?`<a class="btn sm" href="${esc(meet)}" target="_blank" rel="noopener">${I.video} ${tr('c.join')}</a>`:''}<button class="btn ghost sm" data-act="go" data-v="chat">${I.chat} ${tr('dash.write')}</button></div>`
+      :`<p class="muted small">${tr('c.noTeacher')}</p>`}</section>`;
+  const B=S.myBalance, me=myRank(), lvl=S.myProfile?.level;
+  const payTxt = !B ? '' : B.left>0 ? `<span class="owe">${tr('dash.owe',{sum:som(B.left)})}</span>` : tr('dash.paid');
+  const status = `<section class="dash-tile dash-status"><h3>${tr('dash.status')}</h3><dl class="dash-kv">
+      ${lvl?`<div><dt>${tr('dash.level')}</dt><dd>${esc(lvl)}</dd></div>`:''}
+      ${me?`<div><dt>${tr('dash.rank')}</dt><dd><button class="dash-link" data-act="go" data-v="rating">${tr('dash.rankV',{i:me.i+1,n:me.n})}</button></dd></div>`:''}
+      <div><dt>${tr('k.streak')}</dt><dd class="num">${streak()}</dd></div>
+      ${B?`<div><dt>${tr('dash.pay')}</dt><dd><button class="dash-link" data-act="go" data-v="pay">${payTxt}</button></dd></div>`:''}</dl></section>`;
+  const hw=myHwItems().filter(h=>!h.done), P=S.myPlan, items=(P?.items||[]).filter(i=>!(P.done||{})[i.id]);
+  const todo = `<section class="dash-tile dash-todo"><div class="row" style="justify-content:space-between;gap:8px"><h3>${tr('dash.todo')}</h3>${hw.length+items.length?`<span class="pill bk-wait num">${hw.length+items.length}</span>`:''}</div>
+    ${hw.length||items.length?`<ul class="dash-list">${hw.slice(0,3).map(h=>`<li><button class="dash-link dash-task" data-act="go" data-v="homework">${esc(h.title)}</button>${hwDue(h.due)}</li>`).join('')}${items.slice(0,Math.max(0,3-hw.length)).map(i=>`<li><span class="dash-task">${esc(i.text)}</span>${i.due?dueTag(i,false):''}</li>`).join('')}</ul>
+      ${hw.length?`<button class="btn sm" style="margin-top:auto;align-self:flex-start" data-act="go" data-v="homework">${tr('dash.allHw')}</button>`:''}`
+      :`<p class="muted small">${tr('dash.allDone')}</p>`}</section>`;
+  return `<div class="dash section">${sched}${todo}${teacher}${status}</div>`;
+}
+// the teacher's overview at the top of the inbox: what is waiting, who is behind, homework progress
+function teacherDash(){
+  const ids=myStudentIds(), hws=hwList(), waiting=allEntries().filter(e=>e.status==='submitted').length;
+  const openHw = hws.filter(h=>!h.due || h.due>=todayStr()).length;
+  let given=0, done=0; for(const h of hws){ const u=hwUids(h); given+=u.length; done+=u.filter(x=>S.hwFor?.[x]?.done?.[h.id]).length; }
+  const owing = S.role==='owner' && S.lg?.students ? lgRows(curYM()).filter(r=>r.L.left>0).length : null;
+  const tile = (n, label, act, v) => `<button class="dash-stat" data-act="go" data-v="${v}"><b class="num">${n}</b><span>${label}</span></button>`;
+  return `<div class="dash-stats">${tile(waiting, tr('dash.tWaiting'), 'go', 'inbox')}${owing!=null?tile(owing, tr('dash.tOwe'), 'go', 'ledger'):tile(ids.length, tr('dash.tStudents'), 'go', 'students')}${tile(openHw, tr('dash.tHw'), 'go', 'homework')}${tile(given?Math.round(done/given*100)+'%':'–', tr('dash.tHwDone'), 'go', 'homework')}</div>`;
+}
+
 /* ---------- homework ---------- */
 // homework/{hid}: {id, tid, title, note, due, fmt:'ind'|'group', to:{uids:[], gids:[]}, files:[{name,url,kind}], at}   teachers only
 // hwFor/{uid}:    {items:{[hid]:{title,note,due,files,tid,at}}, done:{[hid]:{at}}}   the student's own copy; they may only change "done"
@@ -6439,14 +6514,15 @@ function vHome(){
   const fresh = ents.filter(e=>e.isNew);
   const months={}; ents.forEach(e=>{ const k=cap(dloc(parseDate(e.date),{month:'long',year:'numeric'})); (months[k]=months[k]||[]).push(e); });
   return `${S.canWrite===false?`<div class="notice">${tr('home.viewOnly')}</div>`:''}
-  <div class="hero">
+  ${liveBanner()}${homeDash()}
+  <div class="hero section">
     <div class="today">${I.nib}<div class="label" style="color:inherit;opacity:.7">${dloc(new Date(),{weekday:'long'})}</div>
       <div class="d">${dloc(new Date(),{day:'numeric',month:'long'})}</div>
       <p>${wroteToday?tr('home.wrote',{name:esc(first)}):tr('home.hi',{name:esc(first)})}</p>
       <button class="btn" data-act="new-entry">${I.pen} ${wroteToday?tr('home.another'):tr('home.today')}</button></div>
     <div class="prompt-card"><span class="label">${tr('home.prompt')}</span>${S.prompt?.text?`<q>${esc(S.prompt.text)}</q><button class="btn sm" style="align-self:flex-start;margin-top:auto" data-act="new-entry" data-prompt="1">${tr('home.about')}</button>`:`<p class="muted">${tr('home.noPrompt')}</p>`}</div>
   </div>
-  ${liveBanner()}${myTeacherCard()}${payCard()}${pmHome()}${rankCard()}
+  ${pmHome()}
   ${homeBoard()}
   ${fresh.length?`<div class="notice info" style="margin-top:16px;display:flex;gap:8px;align-items:center;flex-wrap:wrap"><span>${tr('home.checked',{n:fresh.length})}</span>${fresh.map(e=>`<button class="btn sm" data-act="open-entry" data-eid="${esc(e.eid)}">${esc(e.title||tr('untitled'))}</button>`).join('')}</div>`:''}
   <div class="stats section" style="margin-top:20px"><div class="stat"><b>${ents.length}</b><span>${tr('k.entries')}</span></div><div class="stat"><b>${words.toLocaleString()}</b><span>${tr('k.words')}</span></div><div class="stat"><b>${streak()}</b><span>${tr('k.streak')}</span></div><div class="stat"><b>${fmtBand(pts.length?pts[pts.length-1].v:null)}</b><span>${tr('k.latest')}</span></div></div>
