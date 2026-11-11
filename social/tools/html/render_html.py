@@ -19,6 +19,14 @@ def events(spec):
         if k == "hook": ev.append((t, "pop"))
         elif k == "fix": ev += [(t + 0.05, "pop"), (t + 0.95, "buzz"), (t + 1.38, "ding")] + [(t + 2.05 + j * 0.05, "word") for j in range(0, len(s["note"].split()), 2)]
         elif k == "beat": ev += [(t + 0.02 + j * 0.07, "word") for j in range(len(s["big"].split()))]
+        elif k == "text": ev += [(t + 0.05 + j * 0.07, "word") for j in range(len(s["big"].split()))]
+        elif k == "count": ev += [(t, "pop")] + [(t + j, "tick") for j in range(int(s.get("secs", 3)))]
+        elif k == "choice": ev += [(t, "pop"), (t + 0.25, "pop"), (t + 0.4, "pop")] + [(t + j, "tick") for j in (1, 2) if j < s["secs"]] + [(t + s["secs"], "ding")]
+        elif k == "swap": ev += [(t, "pop"), (t + 1.05, "buzz"), (t + 1.2, "ding")]
+        elif k == "stamp": ev += [(t, "pop"), (t + 1, "tick"), (t + s["secs"], "buzz"), (t + s["secs"] + 0.05, "pop")]
+        elif k == "type":
+            tT = 0.3 + len(s["text"]) / 24; tR = tT + 2.2
+            ev += [(t + 0.3 + j / 24, "type") for j in range(0, len(s["text"]), 2)] + [(t + tT + 0.2, "tick"), (t + tT + 1.2, "tick"), (t + tR, "buzz"), (t + tR + 0.35, "ding"), (t + tR + 0.8, "pop")]
         elif k == "cta": ev += [(t + 0.05 + j * 0.06, "word") for j in range(len(s["big"].split()))] + [(t + 0.75 + j * 0.16, "pop") for j in range(len(s["icons"]))]
         t += s["beats"] * beat
     return ev, t

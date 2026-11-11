@@ -73,6 +73,10 @@ function text(parent, str, o) {
 function chip(parent, label, x, y, bg, fg, size = 34) { return E('div', 'chip', parent, `left:${x}px;top:${y}px;font-size:${size}px;padding:${size * .32}px ${size * .8}px;background:${bg};color:${fg};transform-origin:0 50%`, ).appendChild(document.createTextNode(label)).parentNode; }
 const ICON = { save: '<path d="M-32-46h64v94L0 18l-32 30z"/>', send: '<path d="M-52-8L50-46 10 50-6 10z"/><path d="M-6 10L50-46" stroke="#141E5A" stroke-width="6"/>',
   comment: '<rect x="-46" y="-42" width="92" height="64" rx="22"/><path d="M-24 18l-6 32 36-30z"/>', link: '<circle r="40" fill="none" stroke="currentColor" stroke-width="11"/><path d="M-8-24L26 0-8 24z"/>' };
+
+function tbar(parent, y, x = 80, w = 920) { const b = E('div', 'abs', parent, `left:${x}px;top:${y}px;width:${w}px;height:16px;border-radius:8px;background:#3C5ABE;overflow:hidden`);
+  const f = E('div', 'abs', b, 'inset:0;background:#F8E08A;border-radius:8px;transform-origin:0 50%'); return k => { f.style.transform = `scaleX(${clamp(k)})`; b.style.opacity = k > 0 ? 1 : 0; }; }
+const textH = (str, weight, size, width) => wrapLines(str, weight, size, width).length * size * 1.16;
 /* ---------- scene builders: each returns upd(lt, dur) ---------- */
 const B = {
   hook(el, s) { const a = text(el, s.big, { y: 0, size: s.size || 112, stagger: 0.001, t0: -2 }); const top = 820 - (a.h + 110) / 2; a.el.style.top = top + 'px';
@@ -101,6 +105,76 @@ const B = {
       const l = E('div', 'abs', g, 'left:-60px;right:-60px;top:226px;font-size:42px;font-weight:800'); l.textContent = lab; ic.push({ g, c, l, on, i }); });
     return lt => { a.upd(lt); if (b) b.upd(lt); for (const { c, l, on, i } of ic) { const t = lt - .75 - i * .16, p = spring(t, 2.8, .4);
         const bob = on && t > .5 ? -18 * Math.abs(Math.sin((t - .5) * Math.PI / (2 * BEAT))) : 0; c.style.transform = `translateY(${bob}px) scale(${p})`; l.style.opacity = clamp(t / .2); } }; },
+
+  text(el, s) { const a = text(el, s.big, { y: 0, size: s.size || 120, stagger: 0.07, t0: 0.05 });
+    const b = s.sub ? text(el, s.sub, { y: 0, size: 58, weight: 700, color: '#AABEF5', stagger: 0.04, t0: 0.4 }) : null;
+    const c = s.ex ? text(el, s.ex, { y: 0, size: s.exSize || 76, weight: 800, stagger: 0.05, t0: 0.45 }) : null;
+    const total = a.h + (c ? 56 + c.h : 0) + (b ? 50 + b.h : 0); let y = 840 - total / 2; a.el.style.top = y + 'px'; y += a.h;
+    if (c) { c.el.style.top = (y + 56) + 'px'; y += 56 + c.h; } if (b) b.el.style.top = (y + 50) + 'px';
+    return lt => { a.upd(lt); if (b) b.upd(lt); if (c) c.upd(lt); }; },
+  count(el, s) { const t1 = text(el, s.title, { y: 410, size: 108, stagger: 0.05, t0: 0.02 }), t2 = text(el, s.sub, { y: 550, size: 58, weight: 800, color: '#AABEF5', t0: 0.2 });
+    const card = E('div', 'card', el, 'left:80px;top:690px;width:920px;height:230px'), ss = fit(s.sentence, 800, 80, 840);
+    const st = E('div', 'abs', card, `inset:0;display:flex;align-items:center;justify-content:center;font-size:${ss}px;font-weight:800;white-space:nowrap`); st.textContent = s.sentence;
+    const ring = E('div', 'abs', el, 'left:380px;top:1020px;width:320px;height:320px');
+    ring.innerHTML = '<svg viewBox="-160 -160 320 320" width="320" height="320"><circle r="140" fill="none" stroke="#3C5ABE" stroke-width="24"/><circle class="arc" r="140" fill="none" stroke="#F2566B" stroke-width="24" stroke-linecap="round" transform="rotate(-90)" stroke-dasharray="879.65"/></svg><div class="num" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:150px;font-weight:900"></div>';
+    const arc = ring.querySelector('.arc'), num = ring.querySelector('.num'), secs = s.secs || 3;
+    return lt => { t1.upd(lt); t2.upd(lt); const q = spring(lt - .1, 2.8, .55); card.style.transform = `scale(${.85 + .15 * q})`; card.style.opacity = clamp(lt / .12);
+      arc.style.strokeDashoffset = 879.65 * (1 - clamp(lt / secs)); const left = Math.ceil(secs - Math.min(lt, secs)); num.textContent = left > 0 ? left : '!';
+      ring.style.transform = `scale(${spring(lt - .2, 3, .5) * (1 + .07 * Math.exp(-(lt % 1) * 8))})`; }; },
+  choice(el, s) { const q = text(el, s.q, { y: 400, size: s.qs || 92, stagger: 0.05, t0: 0.02 }); let y = 400 + q.h + 44; const tb = tbar(el, y);
+    const hint = E('div', 'abs', el, `left:80px;width:920px;top:${y + 40}px;text-align:center;font-size:46px;font-weight:700;color:#AABEF5`); hint.textContent = s.hint || 'Выбери за 3 секунды'; y += 140;
+    const os = Math.min(fit(s.a, 800, 70, 700), fit(s.b, 800, 70, 700)), secs = s.secs || 2.5;
+    const cards = [s.a, s.b].map((txt, i) => { const c = E('div', 'card', el, `left:80px;top:${y + i * 250}px;width:920px;height:210px`);
+      const dot = E('div', 'abs', c, 'left:30px;top:51px;width:100px;height:100px;border-radius:50%;font-size:60px;font-weight:900;display:flex;align-items:center;justify-content:center');
+      const t = E('div', 'abs', c, `left:166px;top:0;bottom:0;right:20px;display:flex;align-items:center;font-size:${os}px;font-weight:800;white-space:nowrap`); t.textContent = txt; return { c, dot, t, i }; });
+    return lt => { q.upd(lt); tb(lt < secs ? 1 - lt / secs : 0); hint.style.opacity = lt < secs ? clamp((lt - .2) / .2) : 0;
+      for (const { c, dot, t, i } of cards) { const p = spring(lt - .25 - i * .15, 2.8, .5), ok = i === s.correct, done = lt >= secs; let sc = .85 + .15 * p;
+        if (done && ok) sc *= 1 + .05 * Math.sin(clamp((lt - secs) / .4) * Math.PI);
+        c.style.background = done ? (ok ? '#78E8A0' : '#1E2C78') : '#2642AF'; c.style.borderColor = done && ok ? '#78E8A0' : '#7896F0';
+        t.style.color = done ? (ok ? '#141E5A' : '#6E7DBE') : '#fff'; t.style.textDecoration = done && !ok ? 'line-through' : 'none';
+        dot.textContent = done && ok ? '✓' : 'AB'[i]; dot.style.background = done ? (ok ? '#141E5A' : '#46559A') : (i ? '#F2566B' : '#F8E08A'); dot.style.color = done && ok ? '#78E8A0' : '#141E5A';
+        c.style.transform = `translateY(${(1 - clamp(p)) * 60}px) scale(${sc})`; c.style.opacity = clamp((lt - .25 - i * .15) / .1); } }; },
+  swap(el, s) { const Wt = s.wait || 1.1, c1 = chip(el, 'ОБЫЧНО', 80, 440, '#F2566B', '#fff');
+    const so = fit(s.old.replace(/\*/g, ''), 800, 108, 920), sn = fit(s.new.replace(/\*/g, ''), 900, 124, 920);
+    const old = text(el, s.old, { y: 520, size: so, weight: 800, align: 'left', hlColor: '#F2566B', underline: false, stagger: 0.05, t0: 0.02 });
+    const strikes = [...old.el.querySelectorAll('.hl')].map(w => E('span', '', w.parentNode, 'position:absolute;left:0;right:0;top:50%;height:.1em;background:#fff;border-radius:1em;transform-origin:0 50%'));
+    const qm = E('div', 'abs', el, 'left:0;width:1080px;top:750px;text-align:center;font-size:260px;font-weight:900;color:#F8E08A;line-height:1'); qm.textContent = '?';
+    const tb = tbar(el, 1070, 340, 400), c2 = chip(el, 'ТОЧНЕЕ', 80, 770, '#78E8A0', '#141E5A');
+    const nw = text(el, s.new, { y: 850, size: sn, align: 'left', hlColor: '#78E8A0', underline: false, stagger: 0.07, t0: Wt + .08 });
+    const tr = text(el, s.tr, { y: 850 + nw.h + 34, size: 58, weight: 700, color: '#AABEF5', align: 'left', t0: Wt + .4 });
+    return lt => { c1.style.transform = `scale(${spring(lt, 3.2, .5)})`; old.upd(lt); strikes.forEach(x => x.style.transform = `scaleX(${io((lt - Wt + .05) / .2)})`);
+      const on = lt < Wt; qm.style.opacity = on ? clamp(lt / .15) : 0; qm.style.transform = `scale(${1 + .12 * Math.abs(Math.sin(lt * 7))})`; tb(on ? 1 - lt / Wt : 0);
+      c2.style.transform = `scale(${spring(lt - Wt, 3.2, .5)})`; nw.upd(lt); tr.upd(lt); }; },
+  stamp(el, s) { const size = s.size || 86, h = textH(s.statement, 900, size, 840) + 130, secs = s.secs || 2;
+    const card = E('div', 'card', el, `left:80px;top:480px;width:920px;height:${h}px`); const st = text(el, s.statement, { x: 120, y: 545, width: 840, size, stagger: 0.001, t0: -2 });
+    const yb = 480 + h + 60, tb = tbar(el, yb); const hint = text(el, s.hint || '*Миф* *или* *правда?*', { y: yb + 60, size: 84, underline: false, stagger: 0.05, t0: 0.15 });
+    const stp = E('div', 'abs', el, `left:0;width:1080px;top:${yb + 40}px;text-align:center`);
+    const inner = E('div', '', stp, 'display:inline-block;padding:14px 70px;border:16px solid #F2566B;border-radius:40px;font-size:180px;font-weight:900;color:#F2566B;background:rgba(16,30,100,.92);line-height:1.1'); inner.textContent = s.stamp;
+    return lt => { st.upd(lt); card.style.transform = `scale(${1 + .04 * Math.exp(-lt * 6)})`; tb(lt < secs ? 1 - lt / secs : 0); hint.upd(lt); hint.el.style.opacity = lt < secs ? 1 : 0;
+      const a = o3((lt - secs) / .18); stp.style.opacity = lt >= secs ? 1 : 0; inner.style.transform = `rotate(-9deg) scale(${1.9 - .9 * a})`; }; },
+  type(el, s) { const cps = s.cps || 24, hunt = s.hunt || 2, tT = .3 + s.text.length / cps, tR = tT + .2 + hunt, lines = wrapLines(s.text, 600, 62, 800), bot = 620 + lines.length * 124 + 20;
+    const paper = E('div', 'abs', el, `left:80px;top:430px;width:920px;height:${bot - 430}px;border-radius:48px;background:#F4F6FF`);
+    E('div', 'abs', paper, 'left:60px;top:44px;font-size:52px;font-weight:900;color:#1E3A9E').textContent = s.title || 'My day';
+    E('div', 'abs', paper, 'left:60px;right:60px;top:122px;height:4px;background:#CDD4F0');
+    const words = []; let n = 0;
+    lines.forEach((ln, li) => { const L = E('div', 'abs', paper, `left:60px;top:${200 + li * 124}px;font-size:62px;font-weight:600;color:#18205A;white-space:nowrap`);
+      ln.forEach(tok => { const sp = E('span', '', L, 'position:relative;display:inline-block;border-radius:14px;padding:0 6px;margin:0 6px 0 -6px'); const bad = tok.replace(/[.,]/g, '') === s.wrong;
+        let strike = null, fixc = null; if (bad) { strike = E('span', '', sp, 'position:absolute;left:0;right:0;top:52%;height:7px;background:#D63C54;transform-origin:0 50%');
+          fixc = E('span', '', sp, 'position:absolute;left:50%;top:-80px;padding:6px 26px;border-radius:40px;background:#22A060;color:#fff;font-size:54px;font-weight:900;white-space:nowrap'); fixc.textContent = s.right; }
+        const tx = document.createTextNode(''); sp.insertBefore(tx, sp.firstChild); words.push({ sp, tx, tok, n0: n, bad, strike, fixc }); n += tok.length + 1; }); });
+    const caret = E('div', 'abs', paper, 'width:7px;height:66px;background:#1E3A9E');
+    const tb = tbar(el, bot + 50), ht = text(el, s.huntText || 'Найди ошибку раньше преподавателя', { y: bot + 100, size: 56, weight: 800, stagger: 0.04, t0: tT + .2 });
+    const bub = E('div', 'card', el, `left:80px;top:${bot + 50}px;width:920px;height:240px`);
+    E('div', 'abs', bub, 'left:40px;top:38px;width:72px;height:72px;border-radius:50%;background:#F8E08A;color:#141E5A;font-size:46px;font-weight:900;display:flex;align-items:center;justify-content:center').textContent = 'L';
+    E('div', 'abs', bub, 'left:136px;top:44px;font-size:46px;font-weight:800;color:#F8E08A').textContent = s.who || 'Преподаватель';
+    const nt = text(bub, s.note, { x: 40, y: 136, width: 840, size: fit(s.note.replace(/\*/g, ''), 700, 54, 840), weight: 700, align: 'left', hlColor: '#78E8A0', underline: false, stagger: 0.05, t0: tR + .95 });
+    return lt => { const nch = Math.floor(Math.max(0, lt - .3) * cps), rev = lt >= tR, rk = clamp((lt - tR) / .25); let cx = 60, cy = 200;
+      for (const w of words) { const vis = w.tok.slice(0, Math.max(0, nch - w.n0)); w.tx.nodeValue = vis; if (vis) { const r = w.sp.getBoundingClientRect(), pr = paper.getBoundingClientRect(), k = pr.width / 920; cx = (r.right - pr.left) / k; cy = (r.top - pr.top) / k; }
+        if (w.bad) { w.sp.style.background = rev ? `rgba(255,200,208,${rk})` : 'transparent'; w.sp.style.color = rev ? '#D63C54' : '#18205A'; w.strike.style.transform = `scaleX(${rev ? rk : 0})`;
+          const a = spring(lt - tR - .35, 3, .5); w.fixc.style.transform = `translateX(-50%) scale(${a})`; w.fixc.style.opacity = lt > tR + .35 ? 1 : 0; } }
+      caret.style.left = cx + 'px'; caret.style.top = (cy + 6) + 'px'; caret.style.opacity = lt < tT + .2 && Math.floor(lt * 4) % 2 === 0 ? 1 : 0;
+      const hunting = lt >= tT + .2 && lt < tR; tb(hunting ? 1 - (lt - tT - .2) / hunt : 0); ht.upd(lt); ht.el.style.opacity = hunting ? 1 : 0;
+      const q = spring(lt - tR - .8, 2.8, .55); bub.style.opacity = lt > tR + .8 ? 1 : 0; bub.style.transform = `translateY(${(1 - q) * 60}px)`; nt.upd(lt); }; },
 };
 /* ---------- timeline ---------- */
 const scenes = []; let acc = 0;
