@@ -243,6 +243,8 @@ textarea.ruled::placeholder{color:var(--ink-3)}
 .mk:hover{background:linear-gradient(var(--tc),var(--tc)) left bottom/100% 2px no-repeat,linear-gradient(color-mix(in srgb,var(--tc) 24%,transparent),color-mix(in srgb,var(--tc) 24%,transparent))}
 .mk[data-fix]:not(.t-good){text-decoration:line-through;text-decoration-color:color-mix(in srgb,var(--pen) 80%,transparent);text-decoration-thickness:1.6px}
 .mk[data-fix]::after{content:attr(data-fix);position:absolute;left:-2px;bottom:calc(100% - .3em);font-family:var(--f-hand);font-weight:700;font-size:.82em;line-height:1;color:var(--pen);white-space:nowrap;transform:rotate(-2deg);transform-origin:left bottom;pointer-events:none;text-decoration:none}
+/* a correction that would run past the page edge is set inline after the word instead (class .inl, see fitMarks) so it wraps and is never cut off */
+.mk.inl[data-fix]::after{position:static;display:inline-block;margin-left:.4em;max-width:100%;white-space:normal;transform:none;line-height:1.25;vertical-align:baseline;text-decoration:none}
 .mk.t-good{--tc:var(--c-good)}
 .mk.t-good::after{color:var(--c-good)}
 .mk.sug{background:none;border-bottom:2px dashed var(--tc);text-decoration:none;animation:none}
@@ -4647,6 +4649,27 @@ function correctedText(body, anns){ const items=anns.filter(a=>a.type!=='good'&&
 function fixOffsets(body, anns){ // keep annotations aligned if offsets drift
   return anns.map(a=>{ if(body.slice(a.start,a.end)===a.quote) return a; const j=body.indexOf(a.quote); return j>=0? {...a,start:j,end:j+a.quote.length} : {...a,start:-1,end:-1}; });
 }
+/* Corrections are drawn above the marked word. If one would run past the right edge of the page (long fix, or word near the end of a line)
+   it is switched to inline mode (.inl) so students and teachers always see the whole correction. */
+let _fitCtx=null;
+function fitMarks(root){
+  const el = root || document.querySelector('#entry-text, #paper-text'); if(!el) return;
+  const marks = el.querySelectorAll('.mk[data-fix]'); if(!marks.length) return;
+  _fitCtx = _fitCtx || document.createElement('canvas').getContext('2d');
+  marks.forEach(m=>m.classList.remove('inl'));            // measure in the default "above the word" layout
+  const edge = el.getBoundingClientRect().right;
+  marks.forEach(m=>{
+    const rect = m.getClientRects()[0]; if(!rect) return;
+    const cs = getComputedStyle(m,'::after');
+    _fitCtx.font = `${cs.fontWeight} ${cs.fontSize} ${cs.fontFamily}`;
+    const w = _fitCtx.measureText(m.dataset.fix).width;
+    if(rect.left - 2 + w + 6 > edge) m.classList.add('inl');
+  });
+}
+let _fitT=null;
+const fitMarksSoon = () => { clearTimeout(_fitT); _fitT=setTimeout(()=>fitMarks(),80); };
+window.addEventListener('resize', fitMarksSoon);
+if(document.fonts && document.fonts.ready) document.fonts.ready.then(fitMarksSoon);
 function stampHTML(status, bands){
   if(status==='revise') return `<div class="stamp revise">${tr('stamp.revise')}</div>`;
   if(status!=='reviewed') return '';
@@ -4705,6 +4728,7 @@ function renderReviewTools(){
 function renderPaper(){
   const R=S.review, el=$('#paper-text'); if(!R||!el) return;
   el.innerHTML = R.view==='corrected' ? correctedHTML(R.entry.body,R.data.annotations) : markedHTML(R.entry.body,R.data.annotations,R.sugs,R.selId);
+  fitMarks(el); fitMarksSoon();
 }
 function renderAnnList(){
   const R=S.review, el=$('#ann-list'); if(!R||!el) return;
@@ -6858,6 +6882,7 @@ function vEntry(){
     </aside></div>`;
 }
 after.entry = () => {
+  fitMarks($('#entry-text')); fitMarksSoon();
   const eid=S.view.eid; const st=S.myFeedback?.reviews?.[eid]?.status;
   if(st==='reviewed'||st==='revise'){ const seen=new Set(LS.get('seen:'+S.uid,[])); if(!seen.has(eid)){ seen.add(eid); LS.set('seen:'+S.uid,[...seen]); renderNav(); } }
 };
