@@ -4609,7 +4609,7 @@ const siteUrl = () => location.origin + location.pathname;
 function startMail(role){
   S.mail={url:'', secret:'', on:{}}; S.contacts={}; S.contactsLoaded=false; S.myContact=undefined;
   if(role==='teacher'){
-    S.unsubs.push(S.db.doc('private/mail').onSnapshot(s=>{ const d=s.exists?s.data():{}; S.mail={url:d.url||'', secret:d.secret||'', on:d.on||{}, v:d.v||0}; S.mailOld = d.v===1; if(S.view.name==='board'||S.view.name==='news') refresh(); clearTimeout(pmT); pmT=setTimeout(nwMailSync,2500); }, ()=>{}));
+    S.unsubs.push(S.db.doc('private/mail').onSnapshot(s=>{ const d=s.exists?s.data():{}; S.mail={url:d.url||'', secret:d.secret||'', on:d.on||{}, v:d.v||0}; S.mailOld = d.v===1; if(S.view.name==='board'||S.view.name==='news') refresh(); clearTimeout(pmT); pmT=setTimeout(nwMailStop,2500); }, ()=>{}));
     S.unsubs.push(S.db.collection('contacts').onSnapshot(q=>{ const o={}; q.docs.forEach(d=>{ if(d.exists) o[d.id]=d.data(); }); S.contacts=o; S.contactsLoaded=true; }, ()=>{}));
   } else {
     S.unsubs.push(S.db.doc('contacts/'+S.uid).onSnapshot(s=>{ const first=S.myContact===undefined; S.myContact=s.exists?s.data():null; syncContact(); if(first) refreshStudent(); }, ()=>{ S.myContact=null; }));
