@@ -1,0 +1,37 @@
+name: Editorial browser preview
+
+on:
+  pull_request:
+    paths:
+      - index.html
+      - editorial-landing.css
+      - i18n.js
+      - tests/editorial-browser.mjs
+      - .github/workflows/editorial-browser.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  browser-qa:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install isolated browser test dependency
+        run: npm install --no-save --no-package-lock playwright@1.58.2
+      - name: Install browser dependencies
+        run: npx playwright install --with-deps chromium
+      - name: Test demo mode only (never connects to production Firebase)
+        run: node tests/editorial-browser.mjs
+      - name: Upload mobile and desktop screenshots with QA results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: editorial-browser-preview
+          path: artifacts/editorial-browser/
+          retention-days: 14

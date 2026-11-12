@@ -1,0 +1,25 @@
+name: Editorial homepage checks
+
+on:
+  pull_request:
+    paths:
+      - index.html
+      - editorial-landing.css
+      - i18n.js
+      - tests/editorial-landing.test.mjs
+      - .github/workflows/editorial-ui.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  static-smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check homepage structure, integration hooks and JS syntax
+        run: node --test tests/editorial-landing.test.mjs

@@ -1,0 +1,205 @@
+/*
+ * Lexora / Editorial landing page
+ * Design-only layer. Scoped to the guest landing screen.
+ * The underlying Firebase, bookings, authentication and teacher data are unchanged.
+ * Avoid editing application styles here.
+ */
+body:has(.ed-stage){
+  --desk:#F8F6EE; --dot:#F8F6EE; --sheet:#FFFDF8; --sheet-2:#F2F0E9;
+  --sheet-3:#E7E8E9; --ink:#222944; --ink-2:#515B73; --ink-3:#777E8B;
+  --line:#DDDCD7; --pen:#2850DF; --pen-soft:#E2E9FF;
+  --coral:#FF8553; --coral-2:#F36F43; --on-coral:#FFFFFF;
+  --blue:#2850DF; --blue-soft:#DEE8FF; --hero:#2850DF;
+  --hero-2:#1E3FC0; --on-hero:#FFFFFF; --on-hero-2:#E5EDFF;
+  --violet:#2850DF; --plum:#2850DF; --lime:#FF8553;
+  --lime-soft:#FAE6D7; --lime-ink:#855139;
+  --lilac-soft:#DFE8FF; --lilac-ink:#2850DF;
+  --shadow:rgba(36,59,114,.13); --focus:#2850DF;
+  --f-display:"Playfair Display",Georgia,serif;
+  background:#F8F6EE; background-image:none; color:#222944; color-scheme:light;
+}
+body:has(.ed-stage) .top{background:#F8F6EE;border-bottom:1px solid #E4E1D8;box-shadow:none}
+body:has(.ed-stage) .top .brand .logo{color:#2850DF;font-weight:850;letter-spacing:-.075em}
+body:has(.ed-stage) .top .brand .mark svg rect{fill:#2850DF}
+body:has(.ed-stage) .top .brand .mark svg circle{fill:#FF8553;stroke:#222944}
+body:has(.ed-stage) .top .brand .sub{border-color:#DCDDDC;color:#777E8B;background:#FFFDF8}
+body:has(.ed-stage) .lx-nav a{color:#394667}
+body:has(.ed-stage) .lx-nav a:hover{color:#2850DF}
+body:has(.ed-stage) .lx-top-start{background:#2850DF;border-color:#2850DF;color:#FFF}
+body:has(.ed-stage) .lx-signin{color:#2850DF}
+body:has(.ed-stage) #top .lang button[aria-pressed="true"]{background:#2850DF;color:white}
+#main:has(.ed-stage){--lx-gap:104px}
+#main:has(.ed-stage) .lx :is(h1,h2,h3){color:#222944}
+#main:has(.ed-stage) .lx :is(h1,h2){font-family:"Playfair Display",Georgia,serif;font-weight:600;letter-spacing:-.055em}
+#main:has(.ed-stage) .lx-sec{scroll-margin-top:110px}
+#main:has(.ed-stage) .lx-k{font-size:11px;letter-spacing:.18em;color:#2850DF;font-weight:850}
+#main:has(.ed-stage) .lx-k::before{background:#FF8553;width:7px;height:7px}
+#main:has(.ed-stage) .lx-head h2{font-size:clamp(36px,4.6vw,64px);line-height:1.08}
+#main:has(.ed-stage) .lx-head h2 em,
+#main:has(.ed-stage) .lx-faq-h h2 em,
+#main:has(.ed-stage) .lx-end h2 em{color:#2850DF}
+#main:has(.ed-stage) .lx-head > p{color:#6B7483}
+
+/* Announcement: a fine editorial caption rather than a marketing banner */
+#main:has(.ed-stage) .lx-ann{background:transparent;color:#606D85;border-radius:0;border-bottom:1px solid #E0DED5;padding:13px 10px;font-size:12.5px;letter-spacing:.02em}
+#main:has(.ed-stage) .lx-ann b{color:#222944}
+#main:has(.ed-stage) .lx-ann .lx-spark{color:#FF8553}
+#main:has(.ed-stage) .lx-ann button{color:#2850DF;font-weight:800}
+
+/* Hero: oversized editorial serif + independent abstract art */
+#main:has(.ed-stage) .lx-hero{grid-template-columns:1.07fr .93fr;gap:clamp(24px,4vw,60px);padding:70px 0 0;align-items:center}
+#main:has(.ed-stage) .lx-tag{border:0;background:transparent;padding:0;color:#2850DF;border-radius:0;font-size:11px;letter-spacing:.2em;margin-bottom:16px}
+#main:has(.ed-stage) .lx-tag::before{width:21px;height:1px;background:#FF8553;box-shadow:none;border-radius:0}
+#main:has(.ed-stage) .lx-hero h1{font-size:clamp(55px,6vw,96px);font-family:"Playfair Display",Georgia,serif;font-weight:600;letter-spacing:-.068em;line-height:1.05;color:#222944}
+#main:has(.ed-stage) .lx-hero h1 em{color:#2850DF}
+#main:has(.ed-stage) .lx-hero h1 em::after{display:none}
+#main:has(.ed-stage) .lx-desc{font-size:16px;line-height:1.9;color:#6C7482;max-width:520px;margin:28px 0}
+#main:has(.ed-stage) .lx-ctas{gap:12px}
+#main:has(.ed-stage) .lx-btn{border-radius:999px;padding:17px 24px;min-height:52px}
+#main:has(.ed-stage) .lx-btn.primary{background:#2850DF;border-color:#2850DF;color:#FFF;box-shadow:none}
+#main:has(.ed-stage) .lx-btn.primary:hover{background:#1E3FC0;box-shadow:0 10px 22px #2850DF28}
+#main:has(.ed-stage) .lx-btn.outline{background:transparent;color:#2850DF;border:1px solid #BCC6E2}
+#main:has(.ed-stage) .lx-meta{margin-top:44px;gap:16px 26px}
+#main:has(.ed-stage) .lx-stats{gap:25px}
+#main:has(.ed-stage) .lx-stats b{font-family:"Playfair Display",Georgia,serif;font-weight:600;font-size:32px}
+#main:has(.ed-stage) .lx-stats span{font-size:12px;color:#7B8290}
+#main:has(.ed-stage) .lx-chip{background:transparent;color:#2850DF;border:1px solid #D1D8E6;border-radius:999px;font-size:12.5px}
+#main:has(.ed-stage) .lx-chip svg{color:#2850DF}
+
+/* Original format-selection hooks (#lx-out and data-act=lx-fmt) remain unchanged. */
+#main:has(.ed-stage) .ed-stage{height:580px;border-radius:240px 240px 20px 20px;overflow:hidden;background:#DDE8FF;box-shadow:none;border:1px solid #CBD8F0;isolation:isolate}
+#main:has(.ed-stage) .ed-stage::before{background:none;opacity:1;mask-image:none;-webkit-mask-image:none;inset:auto auto -165px -130px;width:440px;height:440px;border:70px solid #C4D4FA;border-radius:50%;position:absolute}
+#main:has(.ed-stage) .ed-stage::after{display:none}
+#main:has(.ed-stage) .ed-arch{position:absolute;z-index:0;right:42px;top:58px;width:237px;height:310px;background:#FF8553;border-radius:150px 150px 8px 8px;transform:rotate(13deg);box-shadow:16px 14px 0 #2850DF}
+#main:has(.ed-stage) .ed-arch::after{content:"";position:absolute;left:58px;bottom:0;width:122px;height:180px;border-radius:100px 100px 5px 5px;background:#DDE8FF}
+#main:has(.ed-stage) .ed-hello{position:absolute;z-index:1;top:88px;left:26px;color:#2850DF;font:600 clamp(56px,5.6vw,86px)/.99 "Playfair Display",Georgia,serif;letter-spacing:-.08em;transform:rotate(-10deg);text-shadow:0 2px 0 #DDE8FF}
+#main:has(.ed-stage) .ed-stamp{position:absolute;z-index:2;right:8px;top:14px;width:105px;height:105px;border-radius:50%;border:2px dashed #D99456;background:#FFE5B7;display:grid;place-items:center;text-align:center;color:#984D2F;font-size:10px;font-weight:900;line-height:1.45;letter-spacing:.08em;transform:rotate(15deg)}
+#main:has(.ed-stage) .lx-orbit,
+#main:has(.ed-stage) .lx-star,
+#main:has(.ed-stage) .lx-float{display:none}
+#main:has(.ed-stage) .lx-cap{top:24px;left:30px;color:#2850DF;opacity:.8;font-size:10px;font-weight:800}
+#main:has(.ed-stage) .lx-card{z-index:3;top:auto;bottom:20px;left:10%;width:80%;padding:19px 22px;background:#FFFDF8;border:1px solid #E8E4D9;border-radius:15px;box-shadow:0 17px 28px #304A8029;transform:rotate(-2deg)}
+#main:has(.ed-stage) .lx-card-top{font-size:13px}
+#main:has(.ed-stage) .lx-card-top span{color:#2850DF}
+#main:has(.ed-stage) .lx-card-k{margin:12px 0 5px;font-size:10px;color:#727B8A}
+#main:has(.ed-stage) .lx-card h2{font-family:"Playfair Display",Georgia,serif;font-weight:600;font-size:23px;line-height:1.15;letter-spacing:-.04em;margin:0 0 12px}
+#main:has(.ed-stage) .lx-fmt button{background:#F6F5F1;border-color:#DEDEDD;border-radius:10px;font-size:12px;min-width:0;gap:6px;padding:9px 7px}
+#main:has(.ed-stage) .lx-fmt button[aria-pressed="true"]{color:#2850DF;background:#E4EBFF;border-color:#AFC1FA}
+#main:has(.ed-stage) .lx-fmt i{background:#E4EBFF;color:#2850DF;width:21px;height:21px;border-radius:6px}
+#main:has(.ed-stage) .lx-out{background:#F2F5FD;border:1px solid #E1E8F9;border-radius:10px;padding:10px;margin-top:10px}
+#main:has(.ed-stage) .lx-out:hover{background:#E5EDFF}
+#main:has(.ed-stage) .lx-out-ic{background:#DDE8FF;color:#2850DF;width:36px;height:36px;border-radius:9px}
+#main:has(.ed-stage) .lx-out b{font-size:13px}
+#main:has(.ed-stage) .lx-out span{font-size:12px;margin-top:1px}
+#main:has(.ed-stage) .lx-out .lx-split{color:#2850DF}
+#main:has(.ed-stage) .lx-out-go{background:#2850DF;color:white}
+#main:has(.ed-stage) .lx-stage{animation:none}
+
+/* Quiet ticker and clear, editorial section layout */
+#main:has(.ed-stage) .lx-motto{padding-top:60px;color:#657088;font-size:11px}
+#main:has(.ed-stage) .lx-marq{margin-top:38px;padding:17px 0;background:transparent;border-block:1px solid #DCDDD9;border-radius:0;mask-image:none;-webkit-mask-image:none}
+#main:has(.ed-stage) .lx-marq span{color:#697283;font-size:12px;letter-spacing:.12em}
+#main:has(.ed-stage) .lx-marq i{color:#FF8553}
+#main:has(.ed-stage) .lx-marq-track{animation:none}
+#main:has(.ed-stage) .lx-aud{background:#FFFDF8;border-color:#E6E2D9;border-radius:18px;min-height:408px}
+#main:has(.ed-stage) .lx-seg{background:#F0EFE9;border-color:#DDDCD4;border-radius:99px;padding:4px}
+#main:has(.ed-stage) .lx-seg button{border-radius:99px}
+#main:has(.ed-stage) .lx-seg button[aria-selected="true"]{background:#2850DF;color:white;box-shadow:none}
+#main:has(.ed-stage) .lx-aud-c h3{font-family:"Playfair Display",Georgia,serif;font-weight:600;font-size:clamp(31px,3.3vw,46px)}
+#main:has(.ed-stage) .lx-go{color:#2850DF}
+#main:has(.ed-stage) .lx-go span{background:#E0E9FF}
+#main:has(.ed-stage) .lx-prev{border-radius:15px;background:#E1E9FC}
+#main:has(.ed-stage) .lx-prev::after{border-color:#C6D8FA}
+#main:has(.ed-stage) .lx-pcard{border:1px solid #E1E3E8;border-radius:13px;box-shadow:0 15px 24px #344B9026}
+#main:has(.ed-stage) .lx-pav{background:#DFE8FF;color:#2850DF}
+#main:has(.ed-stage) .lx-prow i{background:#E4EBFF;color:#2850DF}
+#main:has(.ed-stage) .lx-pfoot{background:#2850DF}
+#main:has(.ed-stage) .lx-pbadge{background:#FFE0B9;color:#82452B}
+#main:has(.ed-stage) .lx-feat{gap:17px}
+#main:has(.ed-stage) .lx-f{border-radius:16px;border-color:#E4E1D8;padding:32px;background:#FFFDF8}
+#main:has(.ed-stage) .lx-f h3{font-family:"Playfair Display",Georgia,serif;font-weight:600;letter-spacing:-.04em;font-size:28px}
+#main:has(.ed-stage) .lx-f.main{background:#2850DF;color:#FFF;padding:40px}
+#main:has(.ed-stage) .lx-f.main h3{color:#FFF;font-size:40px}
+#main:has(.ed-stage) .lx-f.main p{color:#E1E9FF}
+#main:has(.ed-stage) .lx-f.main .lx-fk{color:#D1DFFF}
+#main:has(.ed-stage) .lx-f.main .btn{border-radius:99px;background:#FFF;color:#2850DF;border-color:#FFF}
+#main:has(.ed-stage) .lx-globe{background:radial-gradient(ellipse at center,#94B3FF,#4D72E8 40%,#2047BE 65%,transparent 66%)}
+#main:has(.ed-stage) .lx-globe b{color:#FFFDF8;text-shadow:none}
+#main:has(.ed-stage) .lx-f.lime{background:#F8E9DE}
+#main:has(.ed-stage) .lx-f.lime p{color:#6C6262}
+#main:has(.ed-stage) .lx-f.lime .lx-sym{color:#FF8553}
+#main:has(.ed-stage) .lx-f.lilac{background:#E2EAFD}
+#main:has(.ed-stage) .lx-f.lilac .lx-sym{color:#2850DF}
+#main:has(.ed-stage) .lx-books i:nth-child(1){background:#FAE0C5;color:#885333}
+#main:has(.ed-stage) .lx-books i:nth-child(2){background:#2850DF;color:#FFF}
+#main:has(.ed-stage) .lx-books i:nth-child(3){background:#C4D5FA;color:#2850DF}
+
+/* Real, Firebase-fed teacher cards: preserve their buttons and data-tid attributes */
+#main:has(.ed-stage) .lx .tcard{border-radius:15px;background:#FFFDF8;border-color:#E3E0D8}
+#main:has(.ed-stage) .lx .tcard:hover{border-color:#9AB0F3;box-shadow:0 20px 34px -24px #2444A666}
+#main:has(.ed-stage) .lx .tcard-go{color:#2850DF}
+#main:has(.ed-stage) .lx .lchip{border-radius:99px}
+#main:has(.ed-stage) .lx .lp-filter button[aria-pressed="true"]{background:#2850DF;color:white;border-color:#2850DF}
+#main:has(.ed-stage) .lx-lv{border-radius:15px;background:#FFFDF8}
+#main:has(.ed-stage) .lx-step{border-top-color:#D7D8D7}
+#main:has(.ed-stage) .lx-step b{background:transparent;color:#2850DF;border-radius:0;width:auto;height:auto;display:inline;font-family:"Playfair Display",Georgia,serif;font-size:32px;font-weight:600}
+#main:has(.ed-stage) .lx-step h3{font-family:"Playfair Display",Georgia,serif;font-size:24px;font-weight:600}
+#main:has(.ed-stage) .lx-step:not(:last-child)::after{color:#FF8553}
+#main:has(.ed-stage) .lx-story{border-radius:20px;background:#2850DF}
+#main:has(.ed-stage) .lx-story::before{background:radial-gradient(ellipse at 85% 35%,#7799F533,transparent 52%)}
+#main:has(.ed-stage) .lx-story h2{font-family:"Playfair Display",Georgia,serif;font-weight:600;color:white}
+#main:has(.ed-stage) .lx-story h2 em{color:#FFE0BB}
+#main:has(.ed-stage) .lx-story p{color:#DDE7FF}
+#main:has(.ed-stage) .lx-story .lx-k{color:#FFE0BB}
+#main:has(.ed-stage) .lx-story .btn{border-radius:99px;color:#2850DF}
+#main:has(.ed-stage) .lx-orb{background:radial-gradient(circle at 30% 24%,#FFC8A7,#FF8F5B 46%,#DF7049 76%);box-shadow:0 25px 55px #112F834D}
+#main:has(.ed-stage) .lx-orb b{color:#FFFDF8;text-shadow:none}
+#main:has(.ed-stage) .lx-orb::before,#main:has(.ed-stage) .lx-orb::after{border-color:#FFF6EF99}
+#main:has(.ed-stage) .lx-pspark2{color:#FFDDBB}
+#main:has(.ed-stage) .lx-note{border-radius:12px}
+#main:has(.ed-stage) .lx-faq-h h2{font-family:"Playfair Display",Georgia,serif;font-weight:600}
+#main:has(.ed-stage) .lx-acc summary::after{background:#DFE8FF;color:#2850DF}
+#main:has(.ed-stage) .lx-acc details[open] summary::after{background:#2850DF;color:#FFF}
+#main:has(.ed-stage) .lx-end{border-radius:18px;background:#DFE8FF}
+#main:has(.ed-stage) .lx-end .lx-k{color:#2850DF}
+#main:has(.ed-stage) .lx-end .lx-k::before{background:#FF8553}
+#main:has(.ed-stage) .lx-end h2{font-family:"Playfair Display",Georgia,serif;font-weight:600}
+#main:has(.ed-stage) .lx-foot{border-top:1px solid #E1DED7}
+#main:has(.ed-stage) .lx-foot .brand .logo{color:#2850DF}
+#main:has(.ed-stage) .lx-flinks :is(a,button):hover{color:#2850DF}
+
+/* Responsive layouts */
+@media(max-width:1120px){
+  #main:has(.ed-stage) .lx-hero{grid-template-columns:1fr;gap:34px;padding-top:44px}
+  #main:has(.ed-stage) .ed-stage{width:min(580px,100%);margin-inline:auto}
+}
+@media(max-width:620px){
+  #main:has(.ed-stage){--lx-gap:69px}
+  #main:has(.ed-stage) .lx-hero{padding-top:38px}
+  #main:has(.ed-stage) .lx-hero h1{font-size:clamp(48px,12vw,68px)}
+  #main:has(.ed-stage) .lx-desc{font-size:15.5px;line-height:1.8;margin:20px 0 24px}
+  #main:has(.ed-stage) .lx-ctas .lx-btn{flex:1 1 auto;padding:14px 18px}
+  #main:has(.ed-stage) .lx-meta{margin-top:30px}
+  #main:has(.ed-stage) .lx-stats{gap:18px}
+  #main:has(.ed-stage) .lx-stats b{font-size:26px}
+  #main:has(.ed-stage) .ed-stage{height:515px;border-radius:185px 185px 14px 14px}
+  #main:has(.ed-stage) .ed-arch{right:28px;top:42px;width:183px;height:255px}
+  #main:has(.ed-stage) .ed-arch::after{width:94px;height:154px;left:45px}
+  #main:has(.ed-stage) .ed-hello{top:76px;left:16px;font-size:clamp(55px,13vw,72px)}
+  #main:has(.ed-stage) .ed-stamp{top:6px;right:7px;width:88px;height:88px;font-size:8px}
+  #main:has(.ed-stage) .lx-cap{top:24px;left:22px;font-size:9px}
+  #main:has(.ed-stage) .lx-card{left:7%;width:86%;bottom:14px;padding:16px;transform:rotate(-1deg)}
+  #main:has(.ed-stage) .lx-card h2{font-size:21px}
+  #main:has(.ed-stage) .lx-card-top{font-size:12px}
+  #main:has(.ed-stage) .lx-fmt button{font-size:12px;padding:8px 6px;gap:4px}
+  #main:has(.ed-stage) .lx-out{padding:9px;gap:9px}
+  #main:has(.ed-stage) .lx-out .lx-split{font-size:11px}
+  #main:has(.ed-stage) .lx-aud{padding:18px}
+  #main:has(.ed-stage) .lx-f.main{min-height:425px}
+  #main:has(.ed-stage) .lx-f.wide{padding:24px}
+  #main:has(.ed-stage) .lx-story{border-radius:15px}
+  #main:has(.ed-stage) .lx-end{border-radius:15px}
+}
+@media(prefers-reduced-motion:reduce){
+  #main:has(.ed-stage) .lx-hero > div:first-child > *{animation:none}
+}

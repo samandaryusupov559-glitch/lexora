@@ -1662,6 +1662,7 @@ h3{font-weight:700;letter-spacing:-.02em}
 .lx-prev[hidden],.lx-aud-p[hidden]{display:none}
 .lx-aud-p{display:flex;flex-direction:column}
 </style>
+<link rel="stylesheet" href="editorial-landing.css?v=1">
 </head>
 <body>
 
@@ -5530,8 +5531,11 @@ function vLanding(){
         <div class="lx-meta"><div class="lx-stats"><div><b class="num">${all.length||'–'}</b><span>${tr('c.sTeachers')}</span></div><div><b class="num">${students||'–'}</b><span>${tr('c.sStudents')}</span></div><div><b class="num">${names.length}</b><span>${tr('c.sLangs')}</span></div></div>
           <div class="lx-links"><button class="lx-chip" data-act="c-gchat">${I.chat} ${tr('dm.guestBtn')}${guestDot()}</button><button class="lx-chip" data-act="c-apply">${I.team} ${tr('c.joinBtn')}</button></div></div>
       </div>
-      <div class="lx-stage" role="group" aria-label="${tr('lx.space')}"><span class="lx-orbit"></span><span class="lx-star a" aria-hidden="true">✳</span><span class="lx-star b" aria-hidden="true">✦</span>
+      <div class="lx-stage ed-stage" role="group" aria-label="${tr('lx.space')}"><span class="lx-orbit"></span><span class="lx-star a" aria-hidden="true">✳</span><span class="lx-star b" aria-hidden="true">✦</span>
         <span class="lx-cap">${tr('lx.space')} / 001</span>
+        <span class="ed-arch" aria-hidden="true"></span>
+        <span class="ed-hello" aria-hidden="true">Hello!<br>Salom.</span>
+        <span class="ed-stamp" aria-hidden="true">EVERY<br>WORD IS<br>A START ✷</span>
         <div class="lx-card"><div class="lx-card-top"><span>✳ lexora.</span><span class="lx-dots" aria-hidden="true"><i></i><i></i><i></i></span></div>
           <p class="lx-card-k">${tr('lx.forYou')}</p><h2>${tr('lx.which')}</h2>
           <div class="lx-fmt" role="group" aria-label="${tr('c.fFormat')}"><button data-act="lx-fmt" data-f="ind" aria-pressed="${fmt==='ind'}"><i aria-hidden="true">◉</i>${tr('pc.ind')}</button><button data-act="lx-fmt" data-f="group" aria-pressed="${fmt==='group'}"><i aria-hidden="true">✻</i>${tr('pc.group')}</button></div>
