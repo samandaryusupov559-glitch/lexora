@@ -103,7 +103,8 @@ try{
     await page.locator('.lx-hero [data-act="c-trial"]').first().click();
     await page.locator('#tr-form').waitFor();
     if(!await page.locator('#tr-contact').isVisible())throw Error('Contact field missing');
-    await page.locator('#tr-form [data-act="dlg-close"]').click();
+    await page.locator('#tr-form [data-act="dlg-close"]').first().click();
+    await page.locator('#tr-form').waitFor({state:'hidden'});
   });
   await check('FAQ expands',async()=>{
     await page.locator('.lx-acc details').first().locator('summary').click();
