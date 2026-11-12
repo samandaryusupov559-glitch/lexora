@@ -57,8 +57,14 @@ try{
   for(const width of [360,390,768,1440]){
     const {page,context}=await open({width,height:width>800?950:850});
     await check('No horizontal overflow at '+width+'px',async()=>{
-      const d=await page.evaluate(()=>({scroll:document.documentElement.scrollWidth,view:innerWidth}));
-      if(d.scroll>d.view+3)throw Error(JSON.stringify(d));
+      const d=await page.evaluate(()=>({
+        scroll:document.documentElement.scrollWidth,view:innerWidth,
+        client:document.documentElement.clientWidth,
+        offenders:[...document.querySelectorAll('body *')].map(el=>({el,r:el.getBoundingClientRect()}))
+          .filter(({r})=>r.width>0&&r.right>document.documentElement.clientWidth+2&&r.left>=0)
+          .slice(0,10).map(({el,r})=>({tag:el.tagName,cls:String(el.className||'').slice(0,70),id:el.id,right:Math.round(r.right),left:Math.round(r.left)}))
+      }));
+      if(d.scroll>width+2 || d.client>width+2)throw Error(JSON.stringify(d));
     });
     await check('Editorial visual styles loaded at '+width+'px',async()=>{
       const styles=await page.evaluate(()=>({
