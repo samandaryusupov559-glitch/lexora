@@ -5,9 +5,10 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Lexora · Online til markazi</title>
 <meta name="description" content="Lexora: your English journal, lessons, payments and shop in one place.">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 32 32%22%3E%3Crect width=%2232%22 height=%2232%22 rx=%228%22 fill=%22%2314213D%22/%3E%3Cpath d=%22M16 6l6 10-6 10-6-10z%22 fill=%22none%22 stroke=%22%23F4F2EA%22 stroke-width=%222%22/%3E%3Ccircle cx=%2216%22 cy=%2216%22 r=%221.8%22 fill=%22%23EE7B5F%22/%3E%3C/svg%3E">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 64 64%22%3E%3Crect width=%2264%22 height=%2264%22 rx=%2218%22 fill=%22%23241C41%22/%3E%3Cpath d=%22M20 14h8v28h18v8H20z%22 fill=%22%23DDFA88%22/%3E%3Ccircle cx=%2245%22 cy=%2219%22 r=%227%22 fill=%22%23B9A1FF%22/%3E%3C/svg%3E">
 <link rel="manifest" href="manifest.webmanifest">
-<meta name="theme-color" content="#14213D">
+<meta name="theme-color" content="#F7F7F2" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#121019" media="(prefers-color-scheme: dark)">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -15,7 +16,7 @@
 <meta name="apple-mobile-web-app-title" content="Lexora">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500..900;1,500..700&family=Onest:wght@400..800&family=Shantell+Sans:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400..900&family=Shantell+Sans:wght@400;500;600;700&family=Playfair+Display:wght@500..900&display=swap">
 <style>
 /* Hallmark · v2.0.0 · redesign: full · scope: app · genre: editorial · theme: brand (navy, cream, coral, by request) · type: Playfair Display / Onest / Shantell Sans · signature: a journal page in the hero, marked in coral by a teacher · built: the project */
 /* critique: one navy ink on cream paper, coral kept for the one action and the teacher's pen; the notebook stays as material (ruled sheets, handwriting, marks), not as decoration */
@@ -1289,6 +1290,379 @@ h1,h2,h3,.lp-stats b,.today .d,.tkv.big b,.rank-me b,.pm-until b,.stat b{font-va
 @media (prefers-reduced-motion:reduce){
   *,*::before,*::after{animation:none!important;transition:none!important}
 }
+/* ===================== Lexora redesign (Nov 2026) =====================
+   palette: ink #211B38 on paper #F7F7F2, violet #7654DD for the action and the teacher's marks,
+   lime #DDFA88 and lilac #BCACFD as highlights; one family (Inter) for UI and headings,
+   Shantell Sans stays for handwriting, Playfair Display only inside the newspaper. */
+:root{
+  --desk:#F7F7F2; --dot:#ECEAE3; --sheet:#FFFFFF; --sheet-2:#F4F2EE; --sheet-3:#ECE7FB;
+  --ink:#211B38; --ink-2:#4F4964; --ink-3:#686277;
+  --line:#E8E6E2; --rule:#E6E1F5; --margin:#CDBFFB;
+  --pen:#6A47D6; --pen-soft:#EFE9FF; --coral:#7654DD; --coral-2:#6541D7; --on-coral:#FFFFFF;
+  --blue:#3D3896; --blue-soft:#ECEBFA;
+  --hero:#211B39; --hero-2:#2E2552; --on-hero:#F5F2FF; --on-hero-2:#C7C0DE;
+  --sticky:#F0FAD0; --sticky-ink:#2F3A12;
+  --shadow:rgba(38,27,77,.2); --focus:#6A47D6; --scrim:rgba(24,19,43,.5); --on-ink:#FFFFFF;
+  --violet:#7654DD; --violet-hi:#AC94F4; --violet-lo:#6442C7; --plum:#261E45;
+  --lime:#DDFA88; --lime-soft:#E9F6C2; --lime-ink:#2F3A12; --lilac:#BCACFD; --lilac-soft:#ECE6FE; --lilac-ink:#5B3FC4;
+  --f-display:"Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --f-num:"Inter", system-ui, sans-serif;
+  --f-ui:"Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --r:18px; --r-sm:12px;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --desk:#121019; --dot:#1E1A2C; --sheet:#1A1726; --sheet-2:#211D31; --sheet-3:#2A2442;
+  --ink:#F1EEF8; --ink-2:#C6C0D6; --ink-3:#A29BB6;
+  --line:#2E2943; --rule:#2B2640; --margin:#4B3E85;
+  --pen:#B6A3FF; --pen-soft:#2A2347; --coral:#9D85F7; --coral-2:#B6A3FF; --on-coral:#15111F;
+  --blue:#B3B6F2; --blue-soft:#24223F;
+  --hero:#231D3E; --hero-2:#2E2652; --on-hero:#F5F2FF; --on-hero-2:#C7C0DE;
+  --sticky:#2C3315; --sticky-ink:#E4F7A8;
+  --shadow:rgba(0,0,0,.6); --focus:#CFC3FB; --scrim:rgba(5,4,10,.6); --on-ink:#15111F;
+  --violet:#B6A3FF; --plum:#231D3E; --lime-soft:#2B3215; --lime-ink:#E6F9AE; --lilac-soft:#29224A; --lilac-ink:#D3C8FF;
+}}
+:root[data-theme="dark"]{
+  --desk:#121019; --dot:#1E1A2C; --sheet:#1A1726; --sheet-2:#211D31; --sheet-3:#2A2442;
+  --ink:#F1EEF8; --ink-2:#C6C0D6; --ink-3:#A29BB6;
+  --line:#2E2943; --rule:#2B2640; --margin:#4B3E85;
+  --pen:#B6A3FF; --pen-soft:#2A2347; --coral:#9D85F7; --coral-2:#B6A3FF; --on-coral:#15111F;
+  --blue:#B3B6F2; --blue-soft:#24223F;
+  --hero:#231D3E; --hero-2:#2E2652; --on-hero:#F5F2FF; --on-hero-2:#C7C0DE;
+  --sticky:#2C3315; --sticky-ink:#E4F7A8;
+  --shadow:rgba(0,0,0,.6); --focus:#CFC3FB; --scrim:rgba(5,4,10,.6); --on-ink:#15111F;
+  --violet:#B6A3FF; --plum:#231D3E; --lime-soft:#2B3215; --lime-ink:#E6F9AE; --lilac-soft:#29224A; --lilac-ink:#D3C8FF;
+}
+/* the newspaper keeps its serif masthead */
+.nwp,.pm-art-news{--f-display:"Playfair Display", Georgia, serif}
+::selection{background:var(--lime);color:#211B39}
+
+/* type: heavy, tight headings like the design */
+h1,h2,.login-h{font-weight:800;letter-spacing:-.045em}
+h3{font-weight:700;letter-spacing:-.02em}
+.page-head h1{font-weight:800;letter-spacing:-.05em;isolation:isolate;padding-bottom:6px}
+.page-head h1::after{-webkit-mask:none;mask:none;background:var(--lime);height:10px;width:min(140px,60%);border-radius:50%;bottom:2px;transform:rotate(-1.5deg);z-index:-1}
+.section > h2{font-weight:800;letter-spacing:-.04em}
+.section > h2::after{background:var(--line)}
+.card h3,.empty h3,.pbox h3,.dlg-head h2,.post h3,.svc h3,.dash-tile h3,.ex-card h3,.hw-card h3{font-weight:750;letter-spacing:-.025em}
+.lp-how h2,.lp-end h2,.lp-levels h2,.lp-join h2,.club-topic h2{font-weight:800;letter-spacing:-.045em}
+.dash-kv dd,.dash-stat b,.tkv.big b,.ex-score > b,.tq-price,.rank-me b{font-weight:800;letter-spacing:-.03em}
+.card{border-radius:var(--r);box-shadow:0 18px 40px -32px var(--shadow)}
+
+/* buttons: soft, rounded, no hard drop shadows */
+.btn{border-radius:12px;font-weight:700}
+.btn.sm{border-radius:10px}
+.btn.primary{background:var(--ink);border-color:var(--ink);color:var(--sheet);box-shadow:0 9px 19px -8px color-mix(in srgb,var(--ink) 45%,transparent)}
+.btn.primary:hover{box-shadow:0 12px 24px -10px color-mix(in srgb,var(--ink) 55%,transparent);transform:translateY(-2px)}
+.btn.pen{background:var(--violet);border-color:var(--violet);color:var(--on-coral);box-shadow:0 9px 19px -8px color-mix(in srgb,var(--violet) 70%,transparent)}
+.btn.pen:hover{background:var(--coral-2);border-color:var(--coral-2);transform:translateY(-2px)}
+.today .btn{box-shadow:none}
+
+/* brand: dark tile, lime L, lilac dot */
+.brand{gap:10px}
+.brand .mark{width:40px;height:40px;border-radius:12px;background:#241C41;color:var(--lime);transform:none;box-shadow:none;position:relative;font:800 26px/1 var(--f-ui);letter-spacing:-.08em}
+.brand .mark::after{content:"";position:absolute;width:9px;height:9px;right:7px;top:7px;border-radius:50%;background:#B9A1FF}
+:root[data-theme="dark"] .brand .mark{background:#2E2652;box-shadow:inset 0 0 0 1px #3D3466}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]) .brand .mark{background:#2E2652;box-shadow:inset 0 0 0 1px #3D3466} }
+.brand .logo{font:850 27px/1 var(--f-ui);letter-spacing:-.065em}
+.brand .logo i{font-style:normal;color:#9179DF}
+.brand .sub{font:700 11.5px/1 var(--f-ui);letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3);transform:none;border:1px solid var(--line);background:var(--sheet);padding:7px 10px;border-radius:999px}
+:lang(ru) .brand .sub{font-size:11.5px}
+.top{background:color-mix(in srgb,var(--desk) 90%,transparent)}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--sheet)}
+.lp-filter button[aria-pressed="true"]{background:var(--ink);color:var(--sheet);border-color:var(--ink)}
+
+/* header links on the guest page */
+.lx-nav{display:flex;align-items:center;gap:26px;margin-right:8px}
+.lx-nav a{font-size:14.5px;font-weight:650;color:var(--ink-2);text-decoration:none;transition:color .2s var(--ease)}
+.lx-nav a:hover{color:var(--violet)}
+.lx-signin{font-weight:750}
+@media (max-width:1100px){ .lx-nav{display:none} }
+@media (max-width:560px){ .lx-top-start{display:none} }
+
+/* ---------- guest landing ---------- */
+#main:has(.lx){--lx-gap:120px}
+.lx{display:block}
+.lx :is(h1,h2,h3){color:var(--ink)}
+.lx em{font-style:normal}
+.lx-sec{scroll-margin-top:96px}
+.lx-k{display:inline-flex;align-items:center;gap:10px;font-size:12.5px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3)}
+.lx-k::before{content:"";width:8px;height:8px;border-radius:50%;background:#8B6FFF}
+.lx-head{display:flex;align-items:flex-end;justify-content:space-between;gap:36px;margin-bottom:40px}
+.lx-head h2{font-size:clamp(34px,4vw,56px);line-height:1.1;letter-spacing:-.055em;font-weight:820;margin-top:12px}
+.lx-head h2 em,.lx-faq-h h2 em,.lx-end h2 em{color:var(--violet)}
+.lx-head > p{max-width:380px;color:var(--ink-3);font-size:16px;line-height:1.75}
+
+/* announcement */
+.lx-ann{display:flex;align-items:center;justify-content:center;gap:12px;flex-wrap:wrap;text-align:center;background:var(--hero);color:var(--on-hero-2);border-radius:14px;padding:11px 18px;font-size:14px}
+.lx-ann b{color:var(--on-hero)}
+.lx-ann .lx-spark{color:var(--lime);font-size:17px;line-height:1}
+.lx-ann button{all:unset;cursor:pointer;color:var(--lime);font-weight:750;text-decoration:underline;text-underline-offset:3px}
+.lx-ann button:focus-visible{outline:2px solid var(--lime);outline-offset:3px;border-radius:4px}
+
+/* hero */
+.lx-hero{display:grid;grid-template-columns:1.02fr 1fr;align-items:center;gap:52px;padding:64px 0 0}
+.lx-tag{display:inline-flex;align-items:center;gap:10px;border:1px solid var(--line);background:var(--sheet);padding:9px 14px;border-radius:999px;color:var(--lilac-ink);font-size:12px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;margin-bottom:28px}
+.lx-tag::before{content:"";width:8px;height:8px;border-radius:50%;background:#9774EE;box-shadow:0 0 0 4px var(--lilac-soft)}
+.lx-hero h1{font-size:clamp(44px,5.4vw,78px);line-height:1.06;letter-spacing:-.07em;font-weight:820;isolation:isolate}
+.lx-hero h1 em{color:var(--violet);position:relative;white-space:nowrap}
+.lx-hero h1 em::after{content:"";position:absolute;left:2%;right:0;bottom:-6px;height:10px;background:var(--lime);border-radius:50%;transform:rotate(-1.7deg);z-index:-1}
+.lx-desc{margin:26px 0 30px;font-size:18px;line-height:1.75;color:var(--ink-2);max-width:520px}
+.lx-ctas{display:flex;flex-wrap:wrap;gap:12px;align-items:center}
+.lx-btn{padding:16px 22px;font-size:16px;gap:12px;border-radius:12px}
+.lx-btn svg{width:17px;height:17px}
+.lx-btn.outline{background:transparent;border-color:color-mix(in srgb,var(--ink) 18%,transparent)}
+.lx-meta{margin-top:40px;display:flex;flex-wrap:wrap;align-items:center;gap:14px 34px}
+.lx-stats{display:flex;gap:28px}
+.lx-stats div{display:flex;flex-direction:column;gap:2px}
+.lx-stats b{font:820 30px/1 var(--f-ui);letter-spacing:-.04em;color:var(--ink)}
+.lx-stats span{font-size:13.5px;color:var(--ink-3)}
+.lx-links{display:flex;flex-wrap:wrap;gap:8px}
+.lx-chip{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--line);background:var(--sheet);border-radius:999px;padding:9px 14px;font-size:14px;font-weight:650;color:var(--ink);cursor:pointer;transition:border-color .2s var(--ease),transform .2s var(--ease)}
+.lx-chip:hover{border-color:var(--violet);transform:translateY(-1px)}
+.lx-chip svg{width:16px;height:16px;color:var(--violet)}
+.lx-chip:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+
+/* the purple stage */
+.lx-stage{height:560px;border-radius:38px;background:linear-gradient(148deg,#AC94F4 0%,#815FE4 50%,#6442C7 100%);position:relative;isolation:isolate;overflow:hidden;box-shadow:0 34px 65px -20px rgba(85,56,159,.45);color:#fff}
+.lx-stage::before{content:"";position:absolute;inset:0;opacity:.22;background-image:linear-gradient(#ffffff44 1px,transparent 1px),linear-gradient(90deg,#ffffff44 1px,transparent 1px);background-size:54px 54px;-webkit-mask-image:linear-gradient(115deg,transparent 10%,#000 95%);mask-image:linear-gradient(115deg,transparent 10%,#000 95%)}
+.lx-stage::after{content:"";position:absolute;width:590px;height:590px;left:-190px;bottom:-390px;border:90px solid #C6B4FC2E;border-radius:50%;z-index:-1}
+.lx-orbit{position:absolute;border:1px solid rgba(255,255,255,.25);border-radius:50%;width:490px;height:490px;right:-230px;top:-300px}
+.lx-star{position:absolute;color:var(--lime);font-size:30px;line-height:1}
+.lx-star.a{left:48px;top:78px} .lx-star.b{right:46px;top:100px;font-size:20px}
+.lx-cap{position:absolute;top:40px;left:48px;font-size:12.5px;font-weight:750;letter-spacing:.13em;text-transform:uppercase;opacity:.85}
+.lx-card{position:absolute;left:14%;top:100px;width:74%;background:var(--sheet);color:var(--ink);box-shadow:0 22px 35px rgba(47,25,107,.25);border-radius:22px;transform:rotate(-4deg);padding:24px 24px 22px}
+.lx-card-top{display:flex;justify-content:space-between;align-items:center;font-weight:840;letter-spacing:-.05em;font-size:17px}
+.lx-card-top span{color:var(--violet)}
+.lx-dots{display:flex;gap:4px} .lx-dots i{width:5px;height:5px;border-radius:50%;background:var(--line)}
+.lx-card-k{font-size:11.5px;letter-spacing:.14em;font-weight:780;color:var(--ink-3);text-transform:uppercase;margin:24px 0 8px}
+.lx-card h2{font-size:28px;letter-spacing:-.05em;line-height:1.1;margin:0 0 18px}
+.lx-fmt{display:flex;gap:8px}
+.lx-fmt button{flex:1;border:1px solid var(--line);background:var(--sheet-2);border-radius:12px;padding:11px 12px;display:flex;gap:9px;align-items:center;font-size:14px;font-weight:760;color:var(--ink-2);cursor:pointer;text-align:left;transition:all .2s var(--ease)}
+.lx-fmt button[aria-pressed="true"]{border-color:#8D71E3;background:var(--lilac-soft);color:var(--lilac-ink)}
+.lx-fmt i{font-style:normal;width:24px;height:24px;border-radius:8px;display:grid;place-items:center;background:var(--lilac-soft);font-size:13px;color:var(--violet);flex-shrink:0}
+.lx-fmt button:focus-visible,.lx-out:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+.lx-out{all:unset;box-sizing:border-box;cursor:pointer;margin-top:14px;padding:14px;background:var(--sheet-2);border-radius:14px;display:flex;gap:12px;align-items:center;width:100%;transition:background .2s var(--ease)}
+.lx-out:hover{background:var(--lilac-soft)}
+.lx-out-ic{width:44px;height:44px;flex-shrink:0;display:grid;place-items:center;border-radius:12px;background:linear-gradient(145deg,#D0C1FF,#F0EAFF);color:#5B3FC4;font-size:21px}
+.lx-out b{display:block;font-size:15px;font-weight:780}
+.lx-out span{display:block;font-size:13.5px;color:var(--ink-3);margin-top:3px}
+.lx-out .lx-split{font-size:12.5px;font-weight:700;color:var(--lilac-ink);margin-top:2px}
+.lx-out-go{margin-left:auto;display:grid;place-items:center;width:28px;height:28px;border-radius:50%;background:var(--lime);color:#2F3A12;font-size:14px;flex-shrink:0}
+.lx-float{position:absolute;background:var(--sheet);color:var(--ink);border-radius:16px;box-shadow:0 16px 30px rgba(39,23,98,.2);padding:14px 16px}
+.lx-float.a{left:4%;bottom:28px;transform:rotate(-9deg);min-width:160px}
+.lx-float.b{right:3%;bottom:-4px;transform:rotate(8deg);width:196px}
+.lx-float-ic{width:34px;height:34px;border-radius:10px;display:grid;place-items:center;font-size:17px;margin-bottom:9px;background:var(--lime-soft);color:var(--lime-ink)}
+.lx-float.b .lx-float-ic{background:var(--lilac-soft);color:var(--violet);margin:0}
+.lx-float small{display:block;font-size:12px;color:var(--ink-3)}
+.lx-float b{display:block;font-size:15px;font-weight:830;letter-spacing:-.03em;margin-top:2px}
+.lx-float p{margin:9px 0 0;font-size:12.5px;line-height:1.5;color:var(--ink-3)}
+.lx-float .row{gap:9px}
+.lx-bar{height:6px;background:var(--sheet-2);border-radius:99px;overflow:hidden;margin-top:10px}
+.lx-bar::after{content:"";display:block;width:72%;height:100%;background:#8A68E3;border-radius:99px}
+.lx-motto{display:flex;align-items:center;justify-content:center;gap:22px;padding:56px 0 0;color:var(--ink-3);font-size:12.5px;letter-spacing:.14em;font-weight:780;text-transform:uppercase;text-align:center}
+.lx-motto::before,.lx-motto::after{content:"";height:1px;width:85px;background:var(--line);flex-shrink:0}
+
+/* language ticker */
+.lx-marq{margin-top:46px;overflow:hidden;padding:18px 0;background:var(--lime-soft);border-radius:18px;-webkit-mask-image:linear-gradient(90deg,transparent,#000 8%,#000 92%,transparent);mask-image:linear-gradient(90deg,transparent,#000 8%,#000 92%,transparent)}
+.lx-marq-track{display:flex;width:max-content;gap:28px;align-items:center;animation:lx-scroll 40s linear infinite}
+.lx-marq span{font-size:13.5px;font-weight:850;letter-spacing:.18em;text-transform:uppercase;white-space:nowrap;color:var(--lime-ink)}
+.lx-marq i{font-style:normal;color:var(--violet);font-size:17px}
+@keyframes lx-scroll{to{transform:translateX(-50%)}}
+
+/* the rest of the page */
+.lx.lx-sec{margin-top:var(--lx-gap)}
+.lx-aud{background:var(--sheet);border:1px solid var(--line);border-radius:30px;padding:34px;display:grid;grid-template-columns:1fr 1fr;gap:38px;min-height:440px}
+.lx-aud-c{display:flex;flex-direction:column;padding:8px 12px}
+.lx-seg{display:inline-flex;align-self:flex-start;gap:5px;border:1px solid var(--line);background:var(--desk);border-radius:12px;padding:5px;margin-bottom:40px}
+.lx-seg button{border:0;background:transparent;border-radius:8px;padding:11px 16px;font-weight:740;font-size:14.5px;color:var(--ink-3);cursor:pointer;transition:.2s var(--ease)}
+.lx-seg button[aria-selected="true"]{background:var(--ink);color:var(--sheet);box-shadow:0 5px 15px -6px color-mix(in srgb,var(--ink) 50%,transparent)}
+.lx-seg button:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+.lx-aud-c h3{font-size:clamp(30px,3.2vw,44px);line-height:1.15;letter-spacing:-.055em;font-weight:820;max-width:480px}
+.lx-aud-c p{font-size:16.5px;line-height:1.8;color:var(--ink-2);max-width:470px;margin:18px 0 26px}
+.lx-go{all:unset;cursor:pointer;display:inline-flex;gap:13px;align-items:center;font-size:16px;font-weight:790;color:var(--violet);align-self:flex-start}
+.lx-go span{width:38px;height:38px;border-radius:50%;background:var(--lilac-soft);display:grid;place-items:center;transition:transform .2s var(--ease)}
+.lx-go:hover span{transform:translateX(5px)}
+.lx-go:focus-visible{outline:2px solid var(--focus);outline-offset:4px;border-radius:8px}
+.lx-prev{background:var(--lilac-soft);border-radius:22px;min-height:340px;position:relative;overflow:hidden;display:flex;align-items:center;justify-content:center}
+.lx-prev::before{content:"";position:absolute;border:1px solid color-mix(in srgb,var(--sheet) 70%,transparent);inset:26px;border-radius:24px}
+.lx-prev::after{content:"";width:330px;height:330px;border-radius:50%;border:56px solid color-mix(in srgb,var(--sheet) 30%,transparent);position:absolute;right:-120px;bottom:-180px}
+.lx-pcard{position:relative;z-index:2;background:var(--sheet);border-radius:18px;padding:20px;width:min(330px,84%);box-shadow:0 24px 42px -12px #614CB84D;transform:rotate(4deg)}
+.lx-phead{display:flex;align-items:center;gap:11px;margin-bottom:16px}
+.lx-pav{width:44px;height:44px;display:grid;place-items:center;border-radius:12px;background:var(--lilac-soft);color:var(--violet);font-size:21px;flex-shrink:0}
+.lx-phead b{display:block;font-size:15.5px;font-weight:830;letter-spacing:-.03em}
+.lx-phead small{display:block;font-size:13px;color:var(--ink-3);margin-top:2px}
+.lx-prow{display:flex;align-items:center;gap:9px;border:1px solid var(--line);border-radius:11px;padding:10px 11px;margin-top:7px;color:var(--ink-2);font-size:13.5px;font-weight:620}
+.lx-prow i{font-style:normal;width:22px;height:22px;border-radius:7px;display:grid;place-items:center;background:var(--lime-soft);color:var(--lime-ink);flex-shrink:0;font-size:12px}
+.lx-pfoot{margin-top:14px;background:#221B3A;border-radius:10px;padding:12px 14px;color:#fff;font-size:13.5px;font-weight:740;display:flex;justify-content:space-between}
+.lx-pspark{position:absolute;left:10%;top:15%;font-size:36px;color:var(--violet);transform:rotate(-17deg)}
+.lx-pbadge{position:absolute;right:7%;top:16%;z-index:3;background:var(--lime);color:#2F3A12;font-size:13px;font-weight:800;transform:rotate(9deg);padding:12px 16px;border-radius:10px;box-shadow:0 10px 30px -8px #6A50955C}
+
+.lx-feat{display:grid;grid-template-columns:1.1fr .9fr .9fr;grid-auto-rows:minmax(270px,auto);gap:16px}
+.lx-f{border-radius:24px;padding:30px;position:relative;overflow:hidden;background:var(--sheet);border:1px solid var(--line);transition:transform .23s var(--ease),box-shadow .23s var(--ease)}
+.lx-f:hover{transform:translateY(-4px);box-shadow:0 22px 55px -24px var(--shadow)}
+.lx-fk{font-size:12px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3)}
+.lx-f h3{margin:14px 0 10px;font-size:26px;letter-spacing:-.045em;line-height:1.15;max-width:270px;font-weight:800}
+.lx-f p{font-size:15px;line-height:1.7;color:var(--ink-2);max-width:300px}
+.lx-sym{position:absolute;right:24px;bottom:22px;font-size:58px;line-height:1;opacity:.55}
+.lx-f.main{grid-row:span 2;background:var(--plum);color:#fff;border:0;padding:38px;display:flex;flex-direction:column;align-items:flex-start}
+.lx-f.main h3{color:#fff;font-size:38px;max-width:320px;margin:22px 0 16px}
+.lx-f.main p{color:#C7BBDD;font-size:16px;max-width:340px}
+.lx-f.main .lx-fk{color:#B9A1F3}
+.lx-f.main .btn{margin-top:22px;position:relative;z-index:2;background:#fff;color:#211B39;border-color:#fff}
+.lx-globe{position:absolute;bottom:-60px;left:calc(50% - 185px);width:370px;height:330px;border-radius:50%;background:radial-gradient(ellipse at center,#9A73FB 0,#7253D0 37%,#3F305F 66%,transparent 67%);pointer-events:none}
+.lx-globe i{position:absolute;inset:30px;border:1px solid #ffffff66;border-radius:50%;transform:rotate(-20deg) scaleY(.57)}
+.lx-globe i + i{transform:rotate(45deg) scaleY(.57)}
+.lx-globe b{position:absolute;inset:0;display:grid;place-items:center;color:#D9FA8B;font:800 150px/1 var(--f-ui);transform:rotate(-12deg);text-shadow:0 18px 32px #30245150}
+.lx-f.lime{background:var(--lime-soft);border:0}
+.lx-f.lime p{color:color-mix(in srgb,var(--lime-ink) 80%,var(--ink-2))}
+.lx-f.lime .lx-sym{color:var(--lime-ink)}
+.lx-f.lilac{background:var(--lilac-soft);border:0}
+.lx-f.lilac .lx-sym{color:var(--violet)}
+.lx-f.wide{grid-column:span 2;display:flex;align-items:center;justify-content:space-between;gap:20px}
+.lx-f.wide h3{max-width:none}
+.lx-books{height:175px;width:185px;position:relative;flex-shrink:0}
+.lx-books i{position:absolute;bottom:0;width:65px;height:138px;border-radius:6px 14px 8px 6px;box-shadow:7px 12px 17px #362B4C25;transform:rotate(-12deg);display:grid;place-items:center;font-size:30px;font-style:normal}
+.lx-books i:nth-child(1){left:6px;background:#D7EAA0;color:#4E6142}
+.lx-books i:nth-child(2){left:61px;background:#A895F0;color:#fff;height:168px;transform:rotate(4deg)}
+.lx-books i:nth-child(3){left:119px;background:#F5BDAB;color:#713D5A;height:150px;transform:rotate(15deg)}
+
+/* teachers */
+.lx-teach .tgrid{margin-top:4px}
+.lx .tcard{border-radius:22px;background:var(--sheet);padding:22px}
+.lx .tcard:hover{border-color:var(--violet);transform:translateY(-3px);box-shadow:0 20px 40px -26px var(--shadow)}
+.lx .tcard-go{color:var(--violet);text-decoration:none;font-weight:750}
+.lx .lchip{border-radius:999px}
+.lx .lp-filter{margin-bottom:22px}
+.lx-lv{margin-top:18px;border-radius:24px;background:var(--sheet);border:1px solid var(--line);padding:28px 30px;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:24px;align-items:center}
+.lx-lv h3{font-size:24px;letter-spacing:-.04em}
+.lx-lv p{color:var(--ink-2);font-size:15.5px;line-height:1.7;margin-top:8px;max-width:62ch}
+
+/* steps */
+.lx-steps{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:26px}
+.lx-step{border-top:1px solid var(--line);padding-top:24px;position:relative}
+.lx-step b{width:46px;height:46px;display:grid;place-items:center;background:var(--lilac-soft);color:var(--violet);border-radius:15px;font-size:16px;font-weight:850;letter-spacing:-.03em}
+.lx-step h3{font-size:22px;letter-spacing:-.045em;margin:24px 0 9px;font-weight:800}
+.lx-step p{font-size:15px;color:var(--ink-2);line-height:1.75}
+.lx-step:not(:last-child)::after{content:"→";position:absolute;right:14px;top:22px;color:var(--lilac);font-size:24px}
+
+/* story band */
+.lx-story{border-radius:34px;background:#231D3E;color:#fff;position:relative;overflow:hidden;padding:84px 70px;display:grid;grid-template-columns:1fr 1fr;gap:70px;align-items:center}
+.lx-story::before{content:"";position:absolute;inset:0;background:radial-gradient(ellipse at 90% 40%,#6C4DB04A,transparent 52%);pointer-events:none}
+.lx-story > *{position:relative}
+.lx-story .lx-k{color:#D9FA88} .lx-story .lx-k::before{display:none}
+.lx-story h2{color:#fff;font-size:clamp(38px,4.2vw,60px);line-height:1.08;letter-spacing:-.055em;font-weight:820;max-width:560px;margin-top:14px}
+.lx-story h2 em{color:#DCF78E}
+.lx-story p{font-size:17px;line-height:1.85;color:#C5BED2;max-width:470px;margin:20px 0 28px}
+.lx-story .btn{background:#fff;color:#211B39;border-color:#fff}
+.lx-art{min-height:380px;display:grid;place-items:center;position:relative}
+.lx-orb{width:300px;height:300px;border-radius:50%;background:radial-gradient(circle at 26% 24%,#C8B6FF 0,#8A6BE4 36%,#534099 75%);box-shadow:0 25px 65px #0D081D6A,inset -24px -20px 35px #3122686B;display:grid;place-items:center;position:relative;transform:rotate(-11deg)}
+.lx-orb::before,.lx-orb::after{content:"";position:absolute;inset:24px -40px;border:1.5px solid #E5D4FF88;border-radius:50%;transform:rotate(28deg) scaleY(.33)}
+.lx-orb::after{transform:rotate(-38deg) scaleY(.33)}
+.lx-orb b{font:870 128px/1 var(--f-ui);color:#E4FB9B;letter-spacing:-.1em;text-shadow:0 12px 20px #49338272}
+.lx-pspark2{position:absolute;font-size:28px;color:#E1F994;left:6%;top:18%}
+.lx-note{position:absolute;right:0;bottom:16px;background:#fff;color:#26203B;padding:16px 19px;border-radius:14px;transform:rotate(7deg);box-shadow:0 20px 28px #130D2759;max-width:210px}
+.lx-note b{font-size:14px;display:flex;align-items:center;gap:7px}
+.lx-note b::before{content:"";width:8px;height:8px;border-radius:50%;background:#9AC657}
+.lx-note small{display:block;color:#6E6879;font-size:13px;line-height:1.5;margin-top:6px}
+
+/* faq */
+.lx-faq{display:grid;grid-template-columns:.8fr 1.2fr;gap:80px}
+.lx-faq-h h2{font-size:clamp(34px,4vw,54px);line-height:1.1;letter-spacing:-.055em;font-weight:820;margin:12px 0 14px;max-width:420px}
+.lx-faq-h p{font-size:16px;line-height:1.75;color:var(--ink-3);max-width:330px}
+.lx-acc{border-top:1px solid var(--line)}
+.lx-acc details{border-bottom:1px solid var(--line)}
+.lx-acc summary{list-style:none;cursor:pointer;padding:23px 0;display:flex;align-items:center;justify-content:space-between;gap:20px;font-weight:770;font-size:17.5px;color:var(--ink);letter-spacing:-.01em}
+.lx-acc summary::-webkit-details-marker{display:none}
+.lx-acc summary::after{content:"+";width:30px;height:30px;flex-shrink:0;display:grid;place-items:center;background:var(--lilac-soft);color:var(--violet);border-radius:50%;font-size:22px;font-weight:400;transition:transform .2s var(--ease),background .2s var(--ease)}
+.lx-acc details[open] summary::after{transform:rotate(45deg);background:var(--violet);color:var(--on-coral)}
+.lx-acc summary:focus-visible{outline:2px solid var(--focus);outline-offset:4px;border-radius:6px}
+.lx-acc details p{padding:0 50px 24px 0;font-size:16px;line-height:1.8;color:var(--ink-2)}
+
+/* bottom call to action + footer */
+.lx-end{border-radius:30px;background:var(--lime-soft);padding:60px 62px;display:flex;align-items:center;justify-content:space-between;gap:28px;flex-wrap:wrap}
+.lx-end .lx-k{color:var(--lime-ink)} .lx-end .lx-k::before{background:var(--lime-ink)}
+.lx-end h2{font-size:clamp(34px,4vw,54px);line-height:1.1;letter-spacing:-.055em;font-weight:820;margin-top:12px;max-width:640px}
+.lx-end-btns{display:flex;flex-wrap:wrap;gap:10px}
+.lx-foot{display:flex;align-items:flex-start;justify-content:space-between;gap:30px;flex-wrap:wrap;padding:46px 0 20px}
+.lx-foot .brand{margin:0}
+.lx-foot p{font-size:14.5px;color:var(--ink-3);max-width:290px;line-height:1.7;margin-top:12px}
+.lx-flinks{display:flex;gap:26px;flex-wrap:wrap;align-items:center}
+.lx-flinks a,.lx-flinks button{all:unset;cursor:pointer;font-size:14.5px;color:var(--ink-2);font-weight:700}
+.lx-flinks :is(a,button):hover{color:var(--violet)}
+.lx-flinks :is(a,button):focus-visible{outline:2px solid var(--focus);outline-offset:3px;border-radius:4px}
+.lx-copy{border-top:1px solid var(--line);padding:18px 0 4px;font-size:13.5px;color:var(--ink-3);display:flex;justify-content:space-between;gap:15px;flex-wrap:wrap}
+
+/* entrance: the hero rises, the stage tilts in */
+.lx-hero > div:first-child > *{animation:lx-rise .6s var(--ease) both}
+.lx-hero > div:first-child > :nth-child(2){animation-delay:.07s} .lx-hero > div:first-child > :nth-child(3){animation-delay:.14s} .lx-hero > div:first-child > :nth-child(4){animation-delay:.2s} .lx-hero > div:first-child > :nth-child(5){animation-delay:.26s}
+.lx-stage{animation:lx-in .7s .12s var(--ease) both}
+.lx-float.a{animation:lx-bob 6s 1s ease-in-out infinite}
+.lx-float.b{animation:lx-bob2 7s 1.4s ease-in-out infinite}
+@keyframes lx-bob{0%,100%{transform:rotate(-9deg) translateY(0)}50%{transform:rotate(-9deg) translateY(-8px)}}
+@keyframes lx-bob2{0%,100%{transform:rotate(8deg) translateY(0)}50%{transform:rotate(8deg) translateY(-7px)}}
+@media (prefers-reduced-motion: reduce){ .lx-marq-track,.lx-float.a,.lx-float.b,.lx-stage,.lx-hero > div:first-child > *{animation:none} }
+
+/* sizes */
+@media (max-width:1200px){ .lx-float{display:none} }
+@media (max-width:1120px){
+  .lx-hero{gap:28px} .lx-stage{height:510px} .lx-card{left:11%;width:79%;top:104px}
+  .lx-feat{grid-template-columns:1fr 1fr} .lx-f.wide{grid-column:span 2}
+  .lx-steps{grid-template-columns:1fr 1fr} .lx-step:nth-child(2)::after{display:none}
+  .lx-story{gap:30px;padding:70px 48px}
+}
+@media (max-width:860px){
+  #main:has(.lx){--lx-gap:84px}
+  .lx-hero{grid-template-columns:1fr;gap:44px;padding-top:44px}
+  .lx-stage{max-width:580px;width:100%;margin-inline:auto}
+  .lx-head{display:block} .lx-head > p{margin-top:14px;max-width:560px}
+  .lx-aud{grid-template-columns:1fr;gap:18px;padding:20px}
+  .lx-story{grid-template-columns:1fr;padding:56px 32px}
+  .lx-faq{grid-template-columns:1fr;gap:30px}
+  .lx-end{padding:42px 34px;flex-direction:column;align-items:flex-start}
+  .lx-lv{grid-template-columns:1fr}
+}
+@media (max-width:620px){
+  #main:has(.lx){--lx-gap:66px}
+  .lx-ann{font-size:13px;padding:10px 12px}
+  .lx-hero{padding-top:30px}
+  .lx-tag{font-size:10.5px;margin-bottom:22px}
+  .lx-hero h1{font-size:clamp(42px,11vw,60px)}
+  .lx-desc{font-size:16.5px;margin:22px 0 24px}
+  .lx-btn{font-size:15px;padding:15px 18px}
+  .lx-ctas .lx-btn{flex:1 1 auto}
+  .lx-stats{gap:22px} .lx-stats b{font-size:26px}
+  .lx-stage{height:440px;border-radius:26px}
+  .lx-card{left:8%;width:84%;top:92px;padding:18px}
+  .lx-cap{top:30px;left:28px}
+  .lx-star.a{left:26px;top:58px}
+  .lx-card h2{font-size:22px;margin-bottom:14px}
+  .lx-card-k{margin:18px 0 7px}
+  .lx-fmt button{font-size:13px;padding:9px;gap:7px}
+  .lx-float{display:none}
+  .lx-motto{gap:12px;font-size:11px;padding-top:40px}
+  .lx-motto::before,.lx-motto::after{width:24px}
+  .lx-head h2,.lx-faq-h h2,.lx-end h2{font-size:36px}
+  .lx-seg{margin-bottom:24px}
+  .lx-aud-c h3{font-size:32px}
+  .lx-aud-c{padding:8px 4px}
+  .lx-prev{min-height:300px}
+  .lx-feat{grid-template-columns:1fr;grid-auto-rows:auto;gap:12px}
+  .lx-f{min-height:220px;padding:26px}
+  .lx-f.main{grid-row:auto;min-height:440px}
+  .lx-f.main h3{font-size:32px}
+  .lx-globe{width:315px;height:285px;left:calc(50% - 158px);bottom:-100px}
+  .lx-f.wide{grid-column:auto}
+  .lx-books{transform:scale(.72);transform-origin:right center;margin-right:-24px}
+  .lx-f.wide .lx-ftext{max-width:58%}
+  .lx-steps{grid-template-columns:1fr;gap:28px} .lx-step::after{display:none}
+  .lx-story{padding:46px 22px;border-radius:26px} .lx-story h2{font-size:40px}
+  .lx-art{min-height:290px} .lx-orb{width:240px;height:240px} .lx-orb b{font-size:104px}
+  .lx-acc summary{font-size:16.5px} .lx-acc details p{padding-right:0}
+  .lx-end{border-radius:24px;padding:34px 22px}
+  .lx-end-btns{width:100%} .lx-end-btns .btn{flex:1 1 auto}
+}
+.lx-prev[hidden],.lx-aud-p[hidden]{display:none}
+.lx-aud-p{display:flex;flex-direction:column}
 </style>
 </head>
 <body>
@@ -1783,11 +2157,11 @@ function renderTop(){
     const nm = S.mode==='student' ? (S.myProfile?.name || S.me?.email || tr('student')) : S.role==='staff' ? (S.team?.[S.staffTid]?.name || S.me?.email || tr('teacher')) : (S.me?.name || tr('teacher'));
     right = `<div class="who">${avatar(nm,S.uid)}<span><b style="color:var(--ink)">${esc(nm)}</b><br><span class="faint small">${S.role==='staff'?tr('c.staffSees'):S.mode==='teacher'?tr('top.teacherSees'):tr('top.private')}</span></span></div><button class="btn sm ghost" data-act="sign-out">${tr('top.signOut')}</button>`;
   } else if(S.realDb){
-    right = S.view.name==='landing' ? `<button class="btn sm primary" data-act="c-signin">${tr('c.signin')}</button>` : `<button class="btn sm ghost" data-act="c-landing">${I.back} ${tr('c.toCentre')}</button>`;
+    right = S.view.name==='landing' ? `<button class="btn sm ghost lx-signin" data-act="c-signin">${tr('c.signin')}</button><button class="btn sm primary lx-top-start" data-act="c-trial">${tr('lx.start')} ${LX_ARROW}</button>` : `<button class="btn sm ghost" data-act="c-landing">${I.back} ${tr('c.toCentre')}</button>`;
   }
   if(S.mode==='teacher' && (S.user||S.demo)) right = liveTopBtn() + right;
   const langs = `<div class="seg lang" role="group" aria-label="${tr('lang.label')}"><span class="lang-ic" aria-hidden="true">${I.globe}</span>${LANGS.map(l=>`<button data-act="lang" data-l="${l.k}" aria-pressed="${l.k===LANG}" title="${l.full}" lang="${l.k}">${l.n}</button>`).join('')}</div>`;
-  $('#top').innerHTML = `<div class="brand"><span class="mark" aria-hidden="true">${I.pen}</span><span class="logo">Lex<i>ora</i></span><span class="sub">${S.mode==='guest'?tr('c.sub'):S.view.name==='login'?tr('sub.login'):S.role==='staff'?tr('c.subStaff'):S.mode==='teacher'?tr('sub.teacher'):tr('sub.student')}</span></div>${installBtn()}${langs}${right}`;
+  $('#top').innerHTML = `<div class="brand">${brandMark()}<span class="sub">${S.mode==='guest'?tr('c.sub'):S.view.name==='login'?tr('sub.login'):S.role==='staff'?tr('c.subStaff'):S.mode==='teacher'?tr('sub.teacher'):tr('sub.student')}</span></div>${S.mode==='guest'&&S.view.name==='landing'?`<nav class="lx-nav" aria-label="${tr('lx.navLabel')}">${lxLinks()}</nav>`:''}${installBtn()}${langs}${right}`;
 }
 const PM_VIEWS = new Set(['news','newsEdit','study','set','setEdit']);
 function navBtn(name,label,icon,count,dim){ const cur = S.view.name===name || (name==='students' && S.view.name==='student') || (name==='inbox' && S.view.name==='review') || (name==='home' && S.view.name==='entry') || (name==='market' && PM_VIEWS.has(S.view.name) && S.mode==='teacher') || (name==='services' && (PM_VIEWS.has(S.view.name)||S.view.name==='services'));
@@ -5137,31 +5511,102 @@ function vLanding(){
       <span class="tkv"><span><b class="num">${+st.students||0}</b>${tr('c.kStudents')}</span><span><b class="num">${st.gain>0?'+'+st.gain:'–'}</b>${tr('c.kGain')}</span>${S.role==='owner'?`<span><b class="num">${+t.years||'–'}</b>${tr('c.kYears')}</span>`:''}${t.lessonLen?`<span><b class="num">${t.lessonLen}</b>${tr('c.kMin')}</span>`:''}</span>
       ${fromPrice(t)?`<span class="tcard-price">${tr('pc.from',{p:som(fromPrice(t))})} <span class="faint">/ ${tr('pc.month')}</span></span>`:''}
       <span class="tcard-go">${tr('c.viewProfile')} →</span></button>`; };
-  const loading = !S.teamLoaded;
-  return `<section class="lp-hero"><div class="lp-hero-in">
-      <h1>${tr('c.h')}</h1>
-      <p>${tr('c.p')}</p>
-      <div class="row lp-cta"><button class="btn pen" data-act="c-trial">${tr('c.trial')}</button><a class="btn lp-ghost" href="#teachers">${tr('c.meet')}</a></div>
-      <div class="lp-more"><button class="lp-link" data-act="c-gchat">${I.chat} ${tr('dm.guestBtn')}${guestDot()}</button><button class="lp-link" data-act="c-apply">${tr('c.joinBtn')}</button></div>
-      <div class="lp-stats"><div><b class="num">${all.length||'–'}</b><span>${tr('c.sTeachers')}</span></div><div><b class="num">${students||'–'}</b><span>${tr('c.sStudents')}</span></div><div><b class="num">${langs.length||'–'}</b><span>${tr('c.sLangs')}</span></div></div>
-    </div><figure class="lp-sheet" lang="en"><div class="lp-sheet-h">Rainy exam day</div><div class="lp-sheet-d">${tr('c.sheetD')}</div>
-      <div class="lp-stamp" aria-hidden="true"><span><b>6.0</b>Band</span></div>
-      <div class="ruled">Today was <span class="mk t-art" data-fix="a rainy day">rainy day</span>. I woke up <span class="mk t-prep" data-fix="at">in</span> 7 o'clock and I was very tired. At the university we had <span class="mk t-art" data-fix="an">a</span> exam in mathematics.</div>
-      <figcaption>${tr('c.sheetCap')}</figcaption></figure></section>
-    ${promoBanner('guest')}
-    <section class="section" id="teachers"><div class="page-head" style="margin-bottom:14px"><div><h1>${tr('c.teachersH')}</h1><p>${tr('c.teachersP')}</p></div></div>
+  const loading = !S.teamLoaded, fmt = S.lxFmt==='group' ? 'group' : 'ind', aud = S.lxAud==='t' ? 't' : 's';
+  const names = [...new Set([...CLUB_LANGS, ...langs])].map(langName);
+  const tick = names.map(n=>`<span>${esc(n)}</span><i>✦</i>`).join('');
+  const panel = (k, on) => { const p = k==='s' ? 's' : 't';
+    return `<div class="lx-aud-p" id="lx-aud-${k}" role="tabpanel" aria-labelledby="lx-tab-${k}" ${on?'':'hidden'}>
+      <h3>${tr('lx.aud'+p.toUpperCase()+'H')}</h3><p>${tr('lx.aud'+p.toUpperCase()+'P')}</p>
+      <button class="lx-go" data-act="${k==='s'?'c-trial':'c-apply'}">${k==='s'?tr('c.trial'):tr('c.joinBtn')} <span aria-hidden="true">↗</span></button></div>`; };
+  const prev = k => `<div class="lx-prev" id="lx-prev-${k}" ${k===aud?'':'hidden'} aria-hidden="true"><span class="lx-pspark">✳</span><span class="lx-pbadge">${tr('lx.'+k+'Badge')}</span>
+      <div class="lx-pcard"><div class="lx-phead"><span class="lx-pav">${k==='s'?'✺':'✎'}</span><span><b>${tr('lx.'+k+'CardH')}</b><small>${tr('lx.'+k+'CardP')}</small></span></div>
+        ${[1,2,3].map(i=>`<div class="lx-prow"><i>✓</i><span>${tr('lx.'+k+'R'+i)}</span></div>`).join('')}
+        <div class="lx-pfoot"><span>${k==='s'?tr('c.trial'):tr('c.joinBtn')}</span><span>↗</span></div></div></div>`;
+  const faq = [1,2,3,4,5,6].map(i=>`<details><summary>${tr('lx.q'+i)}</summary><p>${tr('lx.a'+i, i===3?{g:som(lxFrom('group')), i:som(lxFrom('ind'))}:undefined)}</p></details>`).join('');
+  return `<div class="lx lx-ann" role="note"><span class="lx-spark" aria-hidden="true">✦</span>${promoOn(S.promo)?`<span><b>${tr('c.promoK')}</b> ${promoText(S.promo)}</span>`:`<span>${tr('lx.ann')}</span>`}<button data-act="c-trial">${tr('c.trial')} ↗</button></div>
+    <section class="lx lx-hero"><div>
+        <span class="lx-tag">${tr('lx.tag')}</span>
+        <h1>${tr('lx.h')}</h1>
+        <p class="lx-desc">${tr('lx.p')}</p>
+        <div class="lx-ctas"><button class="btn primary lx-btn" data-act="c-trial">${tr('c.trial')} ${LX_ARROW}</button><a class="btn lx-btn outline" href="#lx-how">${tr('lx.how')} <span aria-hidden="true">›</span></a></div>
+        <div class="lx-meta"><div class="lx-stats"><div><b class="num">${all.length||'–'}</b><span>${tr('c.sTeachers')}</span></div><div><b class="num">${students||'–'}</b><span>${tr('c.sStudents')}</span></div><div><b class="num">${names.length}</b><span>${tr('c.sLangs')}</span></div></div>
+          <div class="lx-links"><button class="lx-chip" data-act="c-gchat">${I.chat} ${tr('dm.guestBtn')}${guestDot()}</button><button class="lx-chip" data-act="c-apply">${I.team} ${tr('c.joinBtn')}</button></div></div>
+      </div>
+      <div class="lx-stage" role="group" aria-label="${tr('lx.space')}"><span class="lx-orbit"></span><span class="lx-star a" aria-hidden="true">✳</span><span class="lx-star b" aria-hidden="true">✦</span>
+        <span class="lx-cap">${tr('lx.space')} / 001</span>
+        <div class="lx-card"><div class="lx-card-top"><span>✳ lexora.</span><span class="lx-dots" aria-hidden="true"><i></i><i></i><i></i></span></div>
+          <p class="lx-card-k">${tr('lx.forYou')}</p><h2>${tr('lx.which')}</h2>
+          <div class="lx-fmt" role="group" aria-label="${tr('c.fFormat')}"><button data-act="lx-fmt" data-f="ind" aria-pressed="${fmt==='ind'}"><i aria-hidden="true">◉</i>${tr('pc.ind')}</button><button data-act="lx-fmt" data-f="group" aria-pressed="${fmt==='group'}"><i aria-hidden="true">✻</i>${tr('pc.group')}</button></div>
+          <button class="lx-out" id="lx-out" data-act="c-trial" data-fmt="${fmt}" aria-live="polite">${lxOut(fmt)}</button></div>
+        <div class="lx-float a" aria-hidden="true"><span class="lx-float-ic">✺</span><small>${tr('lx.club')}</small><b>${tr('lx.clubT')}</b><span class="lx-bar" style="display:block"></span></div>
+        <div class="lx-float b" aria-hidden="true"><div class="row"><span class="lx-float-ic">▤</span><b>${tr('lx.libH')}</b></div><p>${tr('lx.libP')}</p></div>
+      </div></section>
+    <p class="lx lx-motto">${tr('lx.motto')}</p>
+    <div class="lx lx-marq" aria-hidden="true"><div class="lx-marq-track">${tick}${tick}</div></div>
+
+    <section class="lx lx-sec section" id="lx-who"><div class="lx-head"><div><span class="lx-k">${tr('lx.audK')}</span><h2>${tr('lx.audH')}</h2></div><p>${tr('lx.audP')}</p></div>
+      <div class="lx-aud"><div class="lx-aud-c"><div class="lx-seg" role="tablist" aria-label="${tr('lx.audK')}">
+          <button role="tab" id="lx-tab-s" data-act="lx-aud" data-a="s" aria-selected="${aud==='s'}" aria-controls="lx-aud-s" tabindex="${aud==='s'?0:-1}">${tr('lx.audS')}</button>
+          <button role="tab" id="lx-tab-t" data-act="lx-aud" data-a="t" aria-selected="${aud==='t'}" aria-controls="lx-aud-t" tabindex="${aud==='t'?0:-1}">${tr('lx.audT')}</button></div>
+        ${panel('s', aud==='s')}${panel('t', aud==='t')}</div>
+        ${prev('s')}${prev('t')}</div></section>
+
+    <section class="lx lx-sec section" id="lx-feat"><div class="lx-head"><div><span class="lx-k">${tr('lx.featK')}</span><h2>${tr('lx.featH')}</h2></div><p>${tr('lx.featP')}</p></div>
+      <div class="lx-feat">
+        <div class="lx-f main"><span class="lx-fk">${tr('lx.f1K')}</span><h3>${tr('lx.f1H')}</h3><p>${tr('lx.f1P')}</p><a class="btn" href="#teachers">${tr('c.meet')} ${LX_ARROW}</a><span class="lx-globe" aria-hidden="true"><i></i><i></i><b>L</b></span></div>
+        <div class="lx-f lime"><span class="lx-fk">${tr('lx.f2K')}</span><h3>${tr('lx.f2H')}</h3><p>${tr('lx.f2P')}</p><span class="lx-sym" aria-hidden="true">✳</span></div>
+        <div class="lx-f lilac"><span class="lx-fk">${tr('lx.f3K')}</span><h3>${tr('lx.f3H')}</h3><p>${tr('lx.f3P')}</p><span class="lx-sym" aria-hidden="true">◉</span></div>
+        <div class="lx-f wide"><div class="lx-ftext"><span class="lx-fk">${tr('lx.f4K')}</span><h3>${tr('lx.f4H')}</h3><p>${tr('lx.f4P')}</p></div><div class="lx-books" aria-hidden="true"><i>⌁</i><i>✺</i><i>✦</i></div></div>
+      </div></section>
+
+    <section class="lx lx-sec section lx-teach" id="teachers"><div class="lx-head"><div><span class="lx-k">${tr('lx.teamK')}</span><h2>${tr('c.teachersH')}</h2></div><p>${tr('c.teachersP')}</p></div>
       ${langs.length>1?`<div class="lp-filter" role="group" aria-label="${tr('c.filter')}"><button data-act="c-lang" data-l="" aria-pressed="${!f}">${tr('c.all')}</button>${langs.map(l=>`<button data-act="c-lang" data-l="${esc(l)}" aria-pressed="${f===l}">${esc(l)}</button>`).join('')}</div>`:''}
       ${loading?`<div class="loading">${tr('c.loading')}</div>`: list.length?`<div class="tgrid">${list.map(card).join('')}</div>`:`<div class="empty"><h3>${tr('c.noneH')}</h3><p>${tr('c.noneP')}</p></div>`}
-    </section>
-    <section class="section lp-how"><h2>${tr('c.howH')}</h2><div class="lp-steps">
-      ${[1,2,3,4].map(i=>`<div class="card lp-step"><span class="lp-n">${i}</span><h3>${tr('c.how'+i+'H')}</h3><p class="muted small">${tr('c.how'+i+'P')}</p></div>`).join('')}</div></section>
-    <section class="section lp-levels card"><div><h2>${tr('c.lvH')}</h2><p class="muted">${tr('c.lvP')}</p></div>
-      <div class="lp-lv">${[1,2,3,4,5].map(n=>`<span class="tlevel lv${n}">${stars(n)}<b>${tr('lv.'+n)}</b></span>`).join('')}</div></section>
-    <section class="section card lp-join"><div><span class="label">${tr('c.joinK')}</span><h2>${tr('c.joinH')}</h2><p class="muted">${tr('c.joinP')}</p></div>
-      <button class="btn primary" data-act="c-apply">${I.team} ${tr('c.joinBtn')}</button></section>
-    <section class="section lp-end"><h2>${tr('c.endH')}</h2><p class="muted">${tr('c.endP')}</p>
-      <div class="row" style="justify-content:center;gap:10px;flex-wrap:wrap;margin-top:14px"><button class="btn pen" data-act="c-trial">${tr('c.trial')}</button><button class="btn" data-act="c-gchat">${tr('dm.guestBtn')}${guestDot()}</button><button class="btn" data-act="c-signin">${tr('c.signin')}</button></div></section>`;
+      <div class="lx-lv"><div><h3>${tr('c.lvH')}</h3><p>${tr('c.lvP')}</p></div><div class="lp-lv">${[1,2,3,4,5].map(n=>`<span class="tlevel lv${n}">${stars(n)}<b>${tr('lv.'+n)}</b></span>`).join('')}</div></div></section>
+
+    <section class="lx lx-sec section" id="lx-how"><div class="lx-head"><div><span class="lx-k">${tr('lx.navHow')}</span><h2>${tr('lx.howH')}</h2></div><p>${tr('lx.howP')}</p></div>
+      <div class="lx-steps">${[1,2,3,4].map(i=>`<div class="lx-step"><b>0${i}</b><h3>${tr('c.how'+i+'H')}</h3><p>${tr('c.how'+i+'P')}</p></div>`).join('')}</div></section>
+
+    <section class="lx lx-sec section lx-story"><div><span class="lx-k">✦ &nbsp;${tr('lx.storyK')}</span><h2>${tr('lx.storyH')}</h2><p>${tr('lx.storyP')}</p><button class="btn lx-btn" data-act="c-trial">${tr('c.trial')} ${LX_ARROW}</button></div>
+      <div class="lx-art" aria-hidden="true"><span class="lx-pspark2">✦</span><div class="lx-orb"><b>L.</b></div><div class="lx-note"><b>${tr('lx.noteH')}</b><small>${tr('lx.noteP')}</small></div></div></section>
+
+    <section class="lx lx-sec section lx-faq" id="lx-faq"><div class="lx-faq-h"><span class="lx-k">${tr('lx.faqK')}</span><h2>${tr('lx.faqH')}</h2><p>${tr('lx.faqP')}</p></div>
+      <div class="lx-acc">${faq}</div></section>
+
+    <section class="lx lx-sec section lx-end"><div><span class="lx-k">${tr('lx.endK')}</span><h2>${tr('lx.endH')}</h2></div>
+      <div class="lx-end-btns"><button class="btn primary lx-btn" data-act="c-trial">${tr('c.trial')} ${LX_ARROW}</button><button class="btn lx-btn" data-act="c-gchat">${tr('dm.guestBtn')}${guestDot()}</button></div></section>
+    <footer class="lx lx-foot"><div><div class="brand">${brandMark()}</div><p>${tr('lx.footP')}</p></div>
+      <nav class="lx-flinks" aria-label="Lexora">${lxLinks()}<button data-act="c-apply">${tr('c.joinBtn')}</button><button data-act="c-signin">${tr('c.signin')}</button></nav></footer>
+    <div class="lx lx-copy"><span>© ${new Date().getFullYear()} Lexora · lexoralc.uz</span><span>${tr('lx.made')}</span></div>`;
 }
+const LX_ARROW = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>';
+const brandMark = () => `<span class="mark" aria-hidden="true">L</span><span class="logo">lexora<i>.</i></span>`;
+const lxLinks = () => [['lx-who','lx.navWho'],['lx-feat','lx.navFeat'],['teachers','lx.navTeachers'],['lx-how','lx.navHow'],['lx-faq','lx.navFaq']].map(([id,k])=>`<a href="#${id}">${tr(k)}</a>`).join('');
+// the lowest monthly price for a format: the junior floor across the centre's languages
+function lxFrom(fmt){
+  const L=[...new Set(teamList(false).flatMap(t=>t.langs||[]))];
+  return Math.min(...(L.length?L:['English']).map(l=>priceRange(l, fmt, 'junior').lo));
+}
+const lxOut = fmt => `<span class="lx-out-ic" aria-hidden="true">${fmt==='ind'?'✦':'✻'}</span><span><b>${tr(fmt==='ind'?'lx.indT':'lx.grpT')}</b><span>${tr('pc.from',{p:som(lxFrom(fmt))})} / ${tr('pc.month')}</span><span class="lx-split">${tr('lx.split',{p:som(lxFrom(fmt)/4)})}</span></span><span class="lx-out-go" aria-hidden="true">→</span>`;
+// landing-page switches change the page in place, so nothing jumps
+document.addEventListener('click', ev => {
+  const b=ev.target.closest('[data-act^="lx-"]'); if(!b) return;
+  if(b.dataset.act==='lx-fmt'){
+    const fmt = S.lxFmt = b.dataset.f==='group' ? 'group' : 'ind';
+    document.querySelectorAll('[data-act="lx-fmt"]').forEach(x=>x.setAttribute('aria-pressed', String(x.dataset.f===fmt)));
+    const o=$('#lx-out'); if(o){ o.dataset.fmt=fmt; o.innerHTML=lxOut(fmt); }
+  } else if(b.dataset.act==='lx-aud'){
+    const a = S.lxAud = b.dataset.a==='t' ? 't' : 's';
+    ['s','t'].forEach(k=>{ const on=k===a, tab=$('#lx-tab-'+k);
+      if(tab){ tab.setAttribute('aria-selected', String(on)); tab.tabIndex = on?0:-1; }
+      $('#lx-aud-'+k)?.toggleAttribute('hidden', !on); $('#lx-prev-'+k)?.toggleAttribute('hidden', !on); });
+  }
+});
+// arrow keys move between the two audience tabs
+document.addEventListener('keydown', ev => {
+  const t=ev.target.closest?.('[data-act="lx-aud"]'); if(!t || !['ArrowLeft','ArrowRight'].includes(ev.key)) return;
+  ev.preventDefault(); const next=$('#lx-tab-'+(t.dataset.a==='s'?'t':'s')); next?.click(); next?.focus();
+});
 function openTeacherProfile(tid){
   const t=S.team[tid]; if(!t) return; const st=t.stats||{}, L=tLevel(st.score);
   showDlg(`<div>${dlgHead(tr('c.profileK'), esc(t.name||''))}
@@ -5191,10 +5636,10 @@ function trialQuote(lang, tid, fmt){
     : teachers.length ? tr('c.qRangeAny',{n:teachers.length}) : tr('c.qNoT');
   const html = `<div class="row" style="justify-content:space-between;gap:10px;align-items:baseline;flex-wrap:wrap"><span class="label">${tr('c.qH')} · ${esc(langName(lang))} · ${tr('pc.'+fmt)}</span></div>
     <b class="tq-price num">${esc(plain)}</b>
-    <ul class="tq-list small"><li>${tr('c.qPer',{v:esc(lesson)})}${len?' · '+tr('c.qLen',{len:lenText(len)}):''}</li><li>${tr('c.qFmt.'+fmt)}</li><li>${note}</li><li><b>${tr('c.qFree')}</b></li>${promoOn(S.promo)?`<li>${promoText(S.promo)}</li>`:''}</ul>`;
+    <ul class="tq-list small"><li>${tr('c.qPer',{v:esc(lesson)})}${len?' · '+tr('c.qLen',{len:lenText(len)}):''}</li><li>${tr('c.qFmt.'+fmt)}</li><li>${tr('lx.splitQ',{v: lo===hi ? som(lo/4) : som(lo/4).replace(' '+tr('lg.som'),'')+' – '+som(hi/4)})}</li><li>${note}</li><li><b>${tr('c.qFree')}</b></li>${promoOn(S.promo)?`<li>${promoText(S.promo)}</li>`:''}</ul>`;
   return {lo, hi, plain, html};
 }
-function openTrial(tid){
+function openTrial(tid, fmt0){
   const all=teamList(false), langs=[...new Set([...CLUB_LANGS, ...all.flatMap(t=>t.langs||[])])];
   const pre = tid && S.team[tid] ? (S.team[tid].langs||[])[0] : '';
   showDlg(`<form id="tr-form" novalidate>${dlgHead(tr('c.trialK'), tr('c.trialH'))}
@@ -5203,7 +5648,7 @@ function openTrial(tid){
       <label class="field"><span>${tr('c.fContact')}</span><input class="inp" id="tr-contact" maxlength="120" placeholder="+998 90 123 45 67 / @telegram" required></label>
       <div class="grid2" style="gap:12px"><label class="field"><span>${tr('c.fLang')}</span><select class="inp" id="tr-lang">${langOpts(langs, pre)}</select></label>
         <label class="field"><span>${tr('c.fLevel')}</span><select class="inp" id="tr-level"><option value="">${tr('c.notSure')}</option><option value="0">${tr('c.beginner')}</option>${LEVELS.map(l=>`<option>${l}</option>`).join('')}</select></label></div>
-      <div class="field"><span>${tr('c.fFormat')}</span><div class="seg tq-fmt" role="radiogroup">${PFORMATS.map((f,i)=>`<label class="lchip pick"><input type="radio" name="tr-fmt" value="${f}" ${i===0?'checked':''}> ${tr('pc.'+f)}</label>`).join('')}</div></div>
+      <div class="field"><span>${tr('c.fFormat')}</span><div class="seg tq-fmt" role="radiogroup">${PFORMATS.map(f=>`<label class="lchip pick"><input type="radio" name="tr-fmt" value="${f}" ${f===(PFORMATS.includes(fmt0)?fmt0:'group')?'checked':''}> ${tr('pc.'+f)}</label>`).join('')}</div></div>
       <label class="field"><span>${tr('c.fTeacher')}</span><select class="inp" id="tr-tid"><option value="">${tr('c.anyTeacher')}</option>${all.map(t=>`<option value="${esc(t.tid)}" ${t.tid===tid?'selected':''}>${esc(t.name||'')}</option>`).join('')}</select></label>
       <div class="tq card" id="tr-quote" aria-live="polite"></div>
       <label class="field"><span>${tr('c.fMsg')} <span class="faint">${tr('optional')}</span></span><textarea class="inp" id="tr-msg" rows="3" maxlength="500" placeholder="${tr('c.fMsgPh')}"></textarea></label>
@@ -7199,7 +7644,7 @@ document.addEventListener('click', async ev => {
     case 'c-landing': S.view={name:'landing'}; renderTop(); renderNav(); renderMain(); break;
     case 'c-lang': S.view.lang=b.dataset.l; renderMain(); break;
     case 'c-tprof': openTeacherProfile(b.dataset.tid); break;
-    case 'c-trial': openTrial(b.dataset.tid||''); break;
+    case 'c-trial': openTrial(b.dataset.tid||'', b.dataset.fmt||''); break;
     case 'c-gchat': openGuestChat(b.dataset.tid||''); break;
     case 'c-dm-new': { const uid=b.dataset.uid, p=S.profiles?.[uid]; if(!p) break;
       const tid = S.role==='staff' ? S.staffTid : tidOf(p);   // the owner writes in the chat of the student's own teacher
