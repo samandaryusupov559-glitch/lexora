@@ -4754,7 +4754,7 @@ function vBoard(){
     <div class="card bd-card"><h3>${I.flag} ${tr('bd.annH')}</h3>
       <textarea class="inp" id="ann-txt" rows="3" placeholder="${tr('bd.annPh')}"></textarea>
       <div class="row" style="margin-top:10px;justify-content:space-between"><label class="small row" style="gap:6px;cursor:pointer"><input type="checkbox" id="ann-pin"> ${tr('bd.pin')}</label><button class="btn primary sm" data-act="ann-add">${tr('bd.publish')}</button></div>
-      <div class="stack" style="margin-top:16px;gap:8px">${ann.length?ann.map(a=>`<div class="ann-item ${a.pin?'pin':''}"><p>${esc(a.text)}</p><div class="row small faint" style="justify-content:space-between;margin-top:6px"><span>${a.pin?`<b class="pin-tag">${tr('bd.pinned')}</b> · `:''}${ago(a.at)}</span><span class="row" style="gap:2px"><button class="btn ghost sm" data-act="ann-pin" data-id="${esc(a.id)}">${a.pin?tr('bd.unpin'):tr('bd.pin')}</button><button class="btn ghost sm" data-act="ann-del" data-id="${esc(a.id)}" style="color:var(--pen)">${tr('delete')}</button></span></div></div>`).join(''):`<p class="small faint">${tr('bd.noAnn')}</p>`}</div>
+      <div class="stack" style="margin-top:16px;gap:8px">${ann.length?ann.map(a=>`<div class="ann-item ${a.pin?'pin':''}"><p>${esc(a.text)}</p><div class="row small faint" style="justify-content:space-between;margin-top:6px"><span>${a.pin?`<b class="pin-tag">${tr('bd.pinned')}</b> · `:''}${ago(a.at)}</span><span class="row" style="gap:2px"><button class="btn ghost sm" data-act="ann-pin" data-id="${esc(a.id)}">${a.pin?tr('bd.unpin'):tr('bd.pin')}</button><button class="btn ghost sm" data-act="ann-send" data-id="${esc(a.id)}">${tr('bd.resend')}</button><button class="btn ghost sm" data-act="ann-del" data-id="${esc(a.id)}" style="color:var(--pen)">${tr('delete')}</button></span></div></div>`).join(''):`<p class="small faint">${tr('bd.noAnn')}</p>`}</div>
     </div>
     <div class="card bd-card"><h3>${I.bulb} ${tr('bd.postsH')}</h3><p class="small muted" style="margin:-6px 0 12px">${tr('bd.postsP')}</p>
       <div class="field"><span>${tr('bd.kind')}</span><div class="seg" id="post-kind">${KINDS.map((k,i)=>`<button data-act="post-kind" data-k="${k}" aria-pressed="${i===0}">${tr('kind.'+k)}</button>`).join('')}</div></div>
@@ -4772,7 +4772,7 @@ function vBoard(){
 function postCard(p, teacher){
   return `<article class="post k-${esc(p.kind)}"><div class="row" style="justify-content:space-between">${kindPill(p.kind)}<span class="small faint">${ago(p.at)}</span></div>
     <h3 lang="en">${esc(p.title)}</h3><p>${esc(p.body)}</p>${p.ex?`<p class="post-ex"><span class="label">${tr('learn.ex')}</span><span lang="en">${esc(p.ex)}</span></p>`:''}
-    ${teacher?`<button class="btn ghost sm" data-act="post-del" data-id="${esc(p.id)}" style="color:var(--pen);align-self:flex-end">${tr('delete')}</button>`:''}</article>`;
+    ${teacher?`<div class="row" style="gap:2px;align-self:flex-end"><button class="btn ghost sm" data-act="post-send" data-id="${esc(p.id)}">${tr('bd.resend')}</button><button class="btn ghost sm" data-act="post-del" data-id="${esc(p.id)}" style="color:var(--pen)">${tr('delete')}</button></div>`:''}</article>`;
 }
 async function saveBoard(mut, okMsg){
   const next = clone(S.board); mut(next);
@@ -6718,6 +6718,15 @@ function hwNotify(h, before, now, old){
   if(fresh.length) notify('hw', fresh, mk(false)).catch(()=>{});
   if(same.length) notify('hw', same, mk(true)).catch(()=>{});
 }
+// a teacher presses “Remind” on homework given earlier: only the students who have not ticked it get a Telegram reminder
+async function hwRemind(b){
+  const h=(S.hw||{})[b.dataset.hid]; if(!h) return;
+  const left=hwUids(h).filter(u=>!S.hwFor?.[u]?.done?.[h.id]);
+  if(!left.length){ toast(tr('hw.allDone')); return; }
+  b.disabled=true;
+  await notify('hw', left, ()=>({subject:tr('hw.emRem',{t:h.title}), kicker:tr('hw.emK'), lines:[tr('hw.emRemL'), h.due?tr('hw.due',{d:dloc(parseDate(h.due),{day:'numeric',month:'long'})}):'', (h.note||'').slice(0,300)], btn:tr('hw.emBtn'), href:siteUrl()+'#homework'}));
+  toast(tr('hw.reminded',{n:left.length}));
+}
 async function hwDrop(uid, hid){
   const ref=S.db.doc('hwFor/'+uid), s=await ref.get(); if(!s.exists) return;
   const d=s.data(); if(!d.items?.[hid]) return; delete d.items[hid]; if(d.done) delete d.done[hid]; await ref.set(d);
@@ -6729,7 +6738,7 @@ function vHwTeacher(){
   const list=hwList(), names=Object.fromEntries(myStudentList().map(x=>[x.uid,x.name])), groups=Object.fromEntries(myGroups().map(g=>[g.id,g.name]));
   const card = h => { const uids=hwUids(h), done=uids.filter(u=>S.hwFor?.[u]?.done?.[h.id]).length;
     return `<article class="card hw-card"><div class="hw-top"><div style="min-width:0"><h3>${esc(h.title)}</h3><div class="hw-meta">${hwDue(h.due)}<span class="pill ${h.fmt==='group'?'bk-wait':'bk-ok'}">${tr(h.fmt==='group'?'hw.grp':'hw.ind')}</span><span class="small faint num">${tr('hw.nDone',{n:done,m:uids.length})}</span></div></div>
-      <div class="row hw-acts"><button class="btn sm" data-act="hw-share" data-hid="${esc(h.id)}">${tr('hw.share')}</button><button class="btn ghost sm" data-act="hw-edit" data-hid="${esc(h.id)}">${tr('edit')}</button><button class="btn ghost sm del-btn" data-act="hw-del" data-hid="${esc(h.id)}">${tr('delete')}</button></div></div>
+      <div class="row hw-acts">${done<uids.length?`<button class="btn sm" data-act="hw-remind" data-hid="${esc(h.id)}" title="${esc(tr('hw.remindT',{n:uids.length-done}))}">${tr('hw.remind')}</button>`:''}<button class="btn sm" data-act="hw-share" data-hid="${esc(h.id)}">${tr('hw.share')}</button><button class="btn ghost sm" data-act="hw-edit" data-hid="${esc(h.id)}">${tr('edit')}</button><button class="btn ghost sm del-btn" data-act="hw-del" data-hid="${esc(h.id)}">${tr('delete')}</button></div></div>
       ${h.note?`<p class="hw-note">${esc(h.note)}</p>`:''}${hwFiles(h.files, h.id, 't')}
       <div class="tchips hw-to">${(h.to?.gids||[]).map(g=>`<span class="lchip">${esc(groups[g]||'–')}</span>`).join('')}${(h.to?.uids||[]).map(u=>`<span class="lchip ghost">${esc(names[u]||'–')}</span>`).join('')}</div></article>`; };
   return `<div class="page-head"><div><h1>${tr('hw.h')}</h1><p>${tr('hw.p')}</p></div><button class="btn primary" data-act="hw-edit">+ ${tr('hw.add')}</button></div>
@@ -7474,11 +7483,13 @@ document.addEventListener('click', async ev => {
     case 'ann-add': { const text=$('#ann-txt').value.trim(); if(!text){ toast(tr('bd.needText')); break; } b.disabled=true;
       if(await saveBoard(n=>n.ann.push({id:newId(), text, pin:$('#ann-pin').checked, at:nowTs()}), tr('bd.annSaved'))){ renderMain(); notify('ann','all',()=>({subject:tr('em.annT'), kicker:tr('em.annK'), lines:[text]})); } else b.disabled=false; break; }
     case 'ann-pin': saveBoard(n=>{ const a=n.ann.find(x=>x.id===b.dataset.id); if(a) a.pin=!a.pin; }); break;
+    case 'ann-send': { const a=(S.board?.ann||[]).find(x=>x.id===b.dataset.id); if(!a) break; b.disabled=true; await notify('ann','all',()=>({subject:tr('em.annT'), kicker:tr('em.annK'), lines:[a.text]})); toast(tr('bd.resent')); break; }
     case 'ann-del': saveBoard(n=>{ n.ann=n.ann.filter(x=>x.id!==b.dataset.id); }, tr('bd.deleted')); break;
     case 'post-kind': document.querySelectorAll('[data-act="post-kind"]').forEach(x=>x.setAttribute('aria-pressed',String(x===b))); break;
     case 'post-add': { const title=$('#post-title').value.trim(), body=$('#post-body').value.trim(), ex=$('#post-ex').value.trim(); const kind=document.querySelector('[data-act="post-kind"][aria-pressed="true"]')?.dataset.k||'tip';
       if(!title||!body){ toast(tr('bd.needTitle')); break; } b.disabled=true;
       if(await saveBoard(n=>n.posts.push({id:newId(), kind, title, body, ex, at:nowTs()}), tr('bd.postSaved'))){ renderMain(); notify('post','all',()=>({subject:`${tr('kind.'+kind)}: ${title}`, kicker:tr('kind.'+kind), title, lines:[body, ex?`${tr('learn.ex')}: ${ex}`:'']})); } else b.disabled=false; break; }
+    case 'post-send': { const p=(S.board?.posts||[]).find(x=>x.id===b.dataset.id); if(!p) break; b.disabled=true; await notify('post','all',()=>({subject:`${tr('kind.'+p.kind)}: ${p.title}`, kicker:tr('kind.'+p.kind), title:p.title, lines:[p.body, p.ex?`${tr('learn.ex')}: ${p.ex}`:'']})); toast(tr('bd.resent')); break; }
     case 'post-del': saveBoard(n=>{ n.posts=n.posts.filter(x=>x.id!==b.dataset.id); }, tr('bd.deleted')); break;
     case 'learn-f': S.view.f=b.dataset.k; renderMain(); break;
     // plans
@@ -7503,6 +7514,7 @@ document.addEventListener('click', async ev => {
     case 'cr-t': critDlg('t', b.dataset.tid, tName(b.dataset.tid), S.myTCrit?.[b.dataset.tid]?.c); break;
     case 'hw-edit': openHw(b.dataset.hid||''); break;
     case 'hw-share': openHwShare(b.dataset.hid); break;
+    case 'hw-remind': hwRemind(b); break;
     case 'hw-del': hwDelete(b.dataset.hid); break;
     case 'hw-open': hwOpen(b.dataset.hid, b.dataset.i, b.dataset.who); break;
     case 'hw-tick': hwTick(b.dataset.hid, b.checked); break;
