@@ -3619,7 +3619,7 @@ function vNewsT(){
     if(!paid && !doc) return `<td class="nwc off" title="${esc(tr('nw.notPaid'))}">–</td>`;
     return `<td> <button class="nwc st-${st} ${d===tkToday()?'tdy':''}" data-act="nwe-open" data-uid="${esc(r.uid)}" data-d="${d}" title="${esc(h||tr('nw.st.'+st,{h:hh(P.hour)}))}">${st==='empty'?'+':st==='out'?'✓':st==='soon'?hh(P.hour):'—'}${doc?`<i>${(doc.stories||[]).length}</i>`:''}</button></td>`; };
   return `${nwTop(w)}<div class="page-head"><div><h1>${esc(P.name)}</h1><p>${tr('nw.pT',{p:som(P.price),n:P.days,h:hh(P.hour)})}</p></div>
-    <div class="row"><button class="btn" data-act="nw-ai">${I.spark} ${tr('nw.ai')}</button><button class="btn" data-act="pm-give" data-k="news">${tr('pm.give')}</button><button class="btn ghost" data-act="pm-set" data-k="news">${tr('pm.settings')}</button></div></div>${rulesNote()}
+    <div class="row"><button class="btn" data-act="nw-remind" title="${esc(tr('nw.remindT'))}">${tr('nw.remind')}</button><button class="btn" data-act="nw-ai">${I.spark} ${tr('nw.ai')}</button><button class="btn" data-act="pm-give" data-k="news">${tr('pm.give')}</button><button class="btn ghost" data-act="pm-set" data-k="news">${tr('pm.settings')}</button></div></div>${rulesNote()}
     ${!P.on?`<div class="notice">${tr('pm.offNote')}</div>`:''}
     ${reqs.length?`<div class="section" style="margin-top:0"><h2>${tr('pm.reqH')}</h2><div class="list">${reqs.map(o=>poRow(o,true)).join('')}</div></div>`:''}
     <div class="stats section" ${reqs.length?'':'style="margin-top:0"'}><div class="stat"><b>${active}</b><span>${tr('nw.k.readers')}</span></div><div class="stat"><b>${money(income)}</b><span>${tr('nw.k.income')}</span></div>
@@ -3630,6 +3630,18 @@ function vNewsT(){
       :`<div class="empty"><h3>${tr('nw.noReaders')}</h3><p>${tr('nw.noReadersP')}</p></div>`}
     <p class="small faint nw-legend">+ ${tr('nw.st.empty')} · ${hh(P.hour)} ${tr('nw.st.soonL')} · ✓ ${tr('nw.st.out')} · — ${tr('nw.st.hidden')}</p></div>
     `;
+}
+
+// “Remind today's readers”: readers whose issue for today is out and who have not done any of today's quizzes yet
+async function nwRemind(b){
+  const P=pmInfo().news, d=tkToday(), now=Date.now();
+  if(releaseMs(d,P.hour)>now){ toast(tr('nw.noneToRemind')); return; }
+  const who=nwReaders(weekOf(d)).filter(r=>{ const doc=S.nwDays[nwId(r.uid,d)]; return doc?.st==='ok' && nwReady(doc.d) && doc.d.on!==false && releaseMs(d,P.hour)<=r.until && !Object.keys(S.pScores[r.uid]?.news?.[d]||{}).length; });
+  if(!who.length){ toast(tr('nw.noneToRemind')); return; }
+  b.disabled=true;
+  for(const r of who){ const st=(S.nwDays[nwId(r.uid,d)].d.stories||[]).map(x=>'• '+(x.h||'')).join('\n');
+    await notify('order',[r.uid],()=>({subject:tr('nw.emRem',{name:P.name}), kicker:P.name, lines:[st, tr('nw.emRemL')], btn:'📰 '+tr('nw.read'), href:siteUrl()})); }
+  toast(tr('nw.reminded',{n:who.length}));
 }
 
 /* teacher: one day's editor */
@@ -4130,7 +4142,7 @@ function stCard(x, teacher, uid){
       prog = n ? `<div class="st-prog"><div class="goal ${m>=n?'done':''}"><i style="width:${Math.min(100,m/n*100)}%"></i></div><span class="small muted num">${tr('st.mastered',{a:m,b:n})}</span></div>` : ''; }
     else { const r=S.myScores?.study?.[x.id]; prog = r ? `<div class="st-prog"><div class="goal ${r.best>=r.n?'done':''}"><i style="width:${r.n?r.best/r.n*100:0}%"></i></div><span class="small muted num">${tr('st.best',{s:r.best,n:r.n})}</span></div>` : ''; }
   }
-  const btn = teacher ? `<button class="btn ghost sm" data-act="st-open" data-id="${esc(x.id)}" data-uid="${esc(uid||'')}">👁 ${tr('st.try')}</button><button class="btn sm" data-act="st-edit" data-id="${esc(x.id)}" data-uid="${esc(uid||'')}">${tr('edit')}</button>`
+  const btn = teacher ? `<button class="btn ghost sm" data-act="st-open" data-id="${esc(x.id)}" data-uid="${esc(uid||'')}">👁 ${tr('st.try')}</button><button class="btn sm" data-act="st-edit" data-id="${esc(x.id)}" data-uid="${esc(uid||'')}">${tr('edit')}</button>${uid&&x.on!==false&&hasPassNow(uid,'study')?`<button class="btn ghost sm" data-act="st-remind" data-id="${esc(x.id)}" data-uid="${esc(uid)}" title="${esc(tr('st.remindT'))}">${tr('st.remind')}</button>`:''}`
     : hasStudy() ? `<button class="btn pen sm" data-act="st-open" data-id="${esc(x.id)}">${tr(x.kind==='test'?'st.startTest':x.kind==='words'?'st.practise':'st.start')}</button>` : `<span class="small faint">${I.lock}</span>`;
   return `<article class="st-card k-${x.kind} ${x.on===false?'off':''}"><div class="st-top"><span class="st-kind">${I[ST_IC[x.kind]]||''} ${tr('st.k.'+x.kind)}</span>${x.level?`<span class="pill">${esc(x.level)}</span>`:''}</div>
     <h3>${esc(x.title)}</h3>${x.desc?`<p class="small muted">${esc(x.desc)}</p>`:''}<p class="small faint">${tr('st.n.'+x.kind,{n:x.n||0,m:x.mins||0})}${x.g?' · '+tr('st.gN',{n:x.g}):''}${x.on===false?' · '+tr('mk.hidden'):''}</p>
@@ -4373,6 +4385,14 @@ async function stWriteSet(uid, id, m, words, grammar){
   await S.db.doc('study/'+id).set(doc); S.stSets[id]={st:'ok', d:doc};
   const idx=clone(S.stIdx[uid])||{sets:[]}; idx.sets=(idx.sets||[]); const i=idx.sets.findIndex(x=>x.id===id); i>=0?idx.sets[i]=meta:idx.sets.push(meta);
   await S.db.doc('studyIndex/'+uid).set(idx); S.stIdx[uid]=idx;
+}
+// “Remind” on a practice set given earlier: the student gets it in Telegram again (only while their pack is active)
+async function stRemind(b){
+  const uid=b.dataset.uid, m=(S.stIdx[uid]?.sets||[]).find(x=>x.id===b.dataset.id); if(!m) return;
+  if(!hasPassNow(uid,'study')){ toast(tr('st.noPass')); return; }
+  b.disabled=true;
+  await notify('order',[uid],()=>({subject:tr('st.emRem',{t:m.title}), kicker:tr('st.name'), lines:[tr('st.emRemL')]}));
+  toast(tr('st.reminded'));
 }
 async function steSave(){
   steRead(); const E=S.ste, m=E.meta;
@@ -7583,6 +7603,7 @@ document.addEventListener('click', async ev => {
     case 'say': { const src=S.view.name==='newsEdit'?S.nwe?.d:S.nwDays[nwId(S.uid,b.dataset.date)]?.d, st=(src?.stories||[]).find(x=>x.id===b.dataset.k); if(st) speak([st.h, st.sub, st.body].filter(Boolean).join('.\n')); break; }
     case 'say-t': speak(b.dataset.t); break;
     case 'nw-ai': openNwAi(); break;
+    case 'nw-remind': nwRemind(b); break;
     case 'nwe-open': openNwEdit(b.dataset.uid, b.dataset.d); break;
     case 'nwe-tab': nweRead(); S.nwe.tab=b.dataset.t; renderMain(); break;
     case 'nwe-add': { nweRead(); const d=S.nwe.d; (d.stories ||= []).push({id:newId(), sec:'world', h:'', sub:'', body:'', img:'', words:[], quiz:[]}); S.nwe.dirty=true; renderMain();
@@ -7595,6 +7616,7 @@ document.addEventListener('click', async ev => {
     case 'nwe-del': { if(!armDel(b)) break; const d=S.nwe.date, id=nwId(S.nwe.uid,d); try{ await S.db.doc('newsDays/'+id).delete(); delete S.nwDays[id]; S.nwe=null; toast(tr('bd.deleted')); go('news',{week:weekOf(d)}); }catch(e){ dbErr(e,'news'); } break; }
     case 'st-new': openSetEdit(null, b.dataset.uid); break;
     case 'st-edit': openSetEdit(b.dataset.id, b.dataset.uid); break;
+    case 'st-remind': stRemind(b); break;
     case 'st-open': S.fc=null; S.quiz=null; S.test=null; go('set',{id:b.dataset.id, uid:b.dataset.uid}); break;
     case 'st-f': S.view.f=b.dataset.k; renderMain(); break;
     case 'st-leave': { if(S.test?.start && !S.test.done && !b.dataset.armed){ b.dataset.armed='1'; b.innerHTML=`${I.back} ${tr('st.leaveSure')}`; break; } clearInterval(S.tsInt); S.test=null; S.quiz=null; go('study'); break; }
