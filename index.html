@@ -2164,8 +2164,11 @@ function renderTop(){
         <button data-act="demo-role" data-role="student" aria-pressed="${S.mode==='student'}">${tr('student')}</button>
       </div>${back}</div>`;
   } else if(S.user){
-    const nm = S.mode==='student' ? (S.myProfile?.name || S.me?.email || tr('student')) : S.role==='staff' ? (S.team?.[S.staffTid]?.name || S.me?.email || tr('teacher')) : (S.me?.name || tr('teacher'));
-    right = `<div class="who">${avatar(nm,S.uid)}<span><b style="color:var(--ink)">${esc(nm)}</b><br><span class="faint small">${S.role==='staff'?tr('c.staffSees'):S.mode==='teacher'?tr('top.teacherSees'):tr('top.private')}</span></span></div><button class="btn sm ghost" data-act="sign-out">${tr('top.signOut')}</button>`;
+    // top right: the person's own name and what they are (owner · teacher / teacher / student)
+    const mail = (S.me?.email||'').split('@')[0];
+    const nm = S.mode==='student' ? (S.myProfile?.name || S.me?.name || mail || tr('student')) : S.role==='staff' ? (S.team?.[S.staffTid]?.name || S.me?.name || mail || tr('teacher')) : (S.team?.[MAIN_TID]?.name || S.me?.name || mail || tr('teacher'));
+    const status = S.mode==='student' ? tr('student') : S.role==='staff' ? tr('teacher') : tr('c.owner')+' · '+tr('teacher');
+    right = `<div class="who">${avatar(nm,S.uid)}<span><b style="color:var(--ink)">${esc(nm)}</b><br><span class="faint small">${esc(status)}</span></span></div><button class="btn sm ghost" data-act="sign-out">${tr('top.signOut')}</button>`;
   } else if(S.realDb){
     right = S.view.name==='landing' ? `<button class="btn sm ghost lx-signin" data-act="c-signin">${tr('c.signin')}</button><button class="btn sm primary lx-top-start" data-act="c-trial">${tr('lx.start')} ${LX_ARROW}</button>` : `<button class="btn sm ghost" data-act="c-landing">${I.back} ${tr('c.toCentre')}</button>`;
   }
@@ -5452,7 +5455,7 @@ function startCentre(role){
   S.team={}; S.teamLoaded=false; S.leads={}; S.offers={items:[]}; S.sreq={}; S.staffMap={}; S.tpriv={}; S.meetSlots={};
   S.myLessons=null; S.myTPriv=null; S._tprivKey=null; S._tprivUn=null;
   const quiet=()=>{};
-  const teamFrom = q => { const o={}; q.docs.forEach(d=>{ if(d.exists) o[d.id]=d.data(); }); S.team=o; S.teamLoaded=true; };
+  const teamFrom = q => { const o={}; q.docs.forEach(d=>{ if(d.exists) o[d.id]=d.data(); }); S.team=o; S.teamLoaded=true; if(S.user) renderTop(); };
   S.promo=null; S.pricing=null; S._w={}; S.unsubs.push(stopWatches);
   S.dms={}; S.gchats={}; S.myDms={}; S.asgCfg={}; S._chRead=null; chatUnwatch(); S._gDocUn=null; S.gchat=undefined; S.unsubs.push(chatUnwatch);
   if(role==='guest'){
