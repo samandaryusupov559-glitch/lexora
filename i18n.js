@@ -70,7 +70,7 @@ en: {
   "nav.home": "My journal", "nav.write": "Write", "nav.mistakes": "My mistakes", "nav.words": "Words to learn",
   "tl.submitted": "New", "tl.inreview": "In progress", "tl.reviewed": "Returned", "tl.revise": "Revision asked",
   "sl.submitted": "Sent", "sl.inreview": "Being checked", "sl.reviewed": "Checked", "sl.revise": "Please revise",
-  "load.teacher": "Gathering notebooks…", "load.student": "Opening your notebook…", "load.page": "Fetching the page…",
+  "load.teacher": "Loading…", "load.student": "Loading…", "load.page": "Fetching the page…",
 
   "card.newFb": "New feedback", "words": {one: "{n} word", other: "{n} words"}, "card.sent": "sent {ago}", "card.revision": "revision", "band": "Band",
   "inbox.h": "Inbox", "inbox.p": "New journal entries land here, oldest first.", "inbox.emptyH": "No entries yet",
@@ -184,7 +184,7 @@ en: {
   /* ---------- payments (tuition ledger) ---------- */
   "lg.title": "Payments", "lg.sub": "Monthly fees, payments and debts. Only you can see this page.",
   "lg.som": "so‘m", "lg.month": "Month", "lg.prev": "Previous month", "lg.next": "Next month", "lg.thisMonth": "This month",
-  "lg.loading": "Opening the ledger…",
+  "lg.loading": "Loading…",
   "lg.errRules": "Payments can’t be loaded because the Firebase security rules are out of date. Paste the new <b>firestore.rules</b> into Firebase → Firestore Database → Rules and press Publish (see README).",
   "lg.errLoad": "Payments can’t be reached right now. Check your internet and reload the page.",
   "lg.errSave": "Couldn’t save. Check your connection and try again.",
@@ -1545,7 +1545,7 @@ uz: {
   "nav.home": "Kundaligim", "nav.write": "Yozish", "nav.mistakes": "Xatolarim", "nav.words": "O‘rganiladigan so‘zlar",
   "tl.submitted": "Yangi", "tl.inreview": "Tekshirilmoqda", "tl.reviewed": "Qaytarildi", "tl.revise": "Qayta yozish so‘raldi",
   "sl.submitted": "Yuborildi", "sl.inreview": "Tekshirilmoqda", "sl.reviewed": "Tekshirildi", "sl.revise": "Qayta yozing",
-  "load.teacher": "Daftarlar yig‘ilmoqda…", "load.student": "Daftaringiz ochilmoqda…", "load.page": "Sahifa yuklanmoqda…",
+  "load.teacher": "Yuklanmoqda…", "load.student": "Yuklanmoqda…", "load.page": "Sahifa yuklanmoqda…",
 
   "card.newFb": "Yangi izoh", "words": {other: "{n} so‘z"}, "card.sent": "{ago} yuborilgan", "card.revision": "qayta yozilgan", "band": "Ball",
   "inbox.h": "Kiruvchi", "inbox.p": "Yangi yozuvlar shu yerga keladi, eng eskisi birinchi.", "inbox.emptyH": "Hali yozuvlar yo‘q",
@@ -1658,7 +1658,7 @@ uz: {
 
   "lg.title": "To‘lovlar", "lg.sub": "Oylik to‘lovlar, tushumlar va qarzlar. Bu sahifani faqat siz ko‘rasiz.",
   "lg.som": "so‘m", "lg.month": "Oy", "lg.prev": "Oldingi oy", "lg.next": "Keyingi oy", "lg.thisMonth": "Joriy oy",
-  "lg.loading": "Daftar ochilmoqda…",
+  "lg.loading": "Yuklanmoqda…",
   "lg.errRules": "To‘lovlar yuklanmadi, chunki Firebase xavfsizlik qoidalari eskirgan. Yangi <b>firestore.rules</b> matnini Firebase → Firestore Database → Rules bo‘limiga qo‘yib, Publish tugmasini bosing (README’ga qarang).",
   "lg.errLoad": "Hozir to‘lovlarga ulanib bo‘lmadi. Internetni tekshirib, sahifani yangilang.",
   "lg.errSave": "Saqlash imkoni bo‘lmadi. Internetni tekshirib, qayta urinib ko‘ring.",
@@ -3018,7 +3018,7 @@ ru: {
   "nav.home": "Мой дневник", "nav.write": "Написать", "nav.mistakes": "Мои ошибки", "nav.words": "Слова для изучения",
   "tl.submitted": "Новая", "tl.inreview": "Проверяется", "tl.reviewed": "Возвращена", "tl.revise": "Нужна переделка",
   "sl.submitted": "Отправлено", "sl.inreview": "Проверяется", "sl.reviewed": "Проверено", "sl.revise": "Перепишите",
-  "load.teacher": "Собираем тетради…", "load.student": "Открываем вашу тетрадь…", "load.page": "Загружаем страницу…",
+  "load.teacher": "Загрузка…", "load.student": "Загрузка…", "load.page": "Загружаем страницу…",
 
   "card.newFb": "Новый отзыв", "words": {one: "{n} слово", few: "{n} слова", many: "{n} слов", other: "{n} слова"}, "card.sent": "отправлено {ago}", "card.revision": "переделка", "band": "Балл",
   "inbox.h": "Входящие", "inbox.p": "Сюда приходят новые записи, сначала самые старые.", "inbox.emptyH": "Записей пока нет",
@@ -3131,7 +3131,7 @@ ru: {
 
   "lg.title": "Оплата", "lg.sub": "Ежемесячная оплата, платежи и долги. Эту страницу видите только вы.",
   "lg.som": "сум", "lg.month": "Месяц", "lg.prev": "Предыдущий месяц", "lg.next": "Следующий месяц", "lg.thisMonth": "Текущий месяц",
-  "lg.loading": "Открываем журнал оплаты…",
+  "lg.loading": "Загрузка…",
   "lg.errRules": "Оплату не удалось загрузить: правила безопасности Firebase устарели. Вставьте новый <b>firestore.rules</b> в Firebase → Firestore Database → Rules и нажмите Publish (см. README).",
   "lg.errLoad": "Сейчас не удаётся подключиться к данным оплаты. Проверьте интернет и обновите страницу.",
   "lg.errSave": "Не удалось сохранить. Проверьте интернет и попробуйте ещё раз.",

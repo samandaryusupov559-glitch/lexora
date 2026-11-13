@@ -382,7 +382,11 @@ textarea.hand:focus{outline:none;border-color:var(--pen);box-shadow:0 0 0 3px co
 .mist .m .q{font-family:var(--f-write);font-size:17.5px;color:var(--blue)}
 .mist .m .q s{color:var(--ink-3);text-decoration-color:var(--pen);text-decoration-thickness:1.6px}
 .mist .m .q em{font-style:normal;font-family:var(--f-hand);font-weight:700;color:var(--pen);font-size:20px}
-.loading{padding:70px 0;text-align:center;color:var(--ink-3);font-family:var(--f-hand);font-size:24.5px}
+.loading{padding:64px 0;display:flex;flex-direction:column;align-items:center;gap:20px;text-align:center;color:var(--ink-3);font-size:15px;font-weight:600;letter-spacing:.01em}
+.loading::before{content:"";width:44px;height:44px;border-radius:50%;border:3px solid var(--line);border-top-color:var(--pen);border-right-color:var(--pen);animation:lx-spin .8s cubic-bezier(.5,.15,.5,.85) infinite}
+.loading::after{content:"";order:2;width:min(420px,82%);height:58px;border-radius:6px;background:linear-gradient(90deg,var(--sheet-2) 25%,var(--sheet-3) 50%,var(--sheet-2) 75%);background-size:220% 100%;animation:lx-shimmer 1.4s linear infinite;-webkit-mask:repeating-linear-gradient(#000 0 10px,transparent 10px 24px);mask:repeating-linear-gradient(#000 0 10px,transparent 10px 24px)}
+@keyframes lx-spin{to{transform:rotate(360deg)}}
+@keyframes lx-shimmer{from{background-position:120% 0}to{background-position:-120% 0}}
 .notice{padding:13px 16px;border-radius:12px;background:var(--pen-soft);color:var(--pen);font-size:15.5px;font-weight:600;margin-bottom:16px}
 .notice.info{background:var(--blue-soft);color:var(--blue)}
 /* language switcher */
@@ -1713,7 +1717,7 @@ h3{font-weight:700;letter-spacing:-.02em}
 <div class="wrap">
   <div class="layout">
     <nav class="nav" id="nav" aria-label="Sections"></nav>
-    <main id="main"><div class="loading">Opening your notebook…</div></main>
+    <main id="main"><div class="loading" role="status">Loading…</div></main>
   </div>
 </div>
 <div id="pop"></div>
