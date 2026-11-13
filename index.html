@@ -447,10 +447,11 @@ textarea.hand:focus{outline:none;border-color:var(--pen);box-shadow:0 0 0 3px co
 dialog.dlg{border:1px solid var(--line);border-top:4px solid var(--pen);border-radius:8px 8px 18px 18px;background:var(--sheet);color:var(--ink);padding:0;width:min(560px,calc(100% - 24px));max-height:calc(100dvh - 32px);box-shadow:0 30px 70px -20px var(--shadow);overflow:hidden}
 dialog.dlg[open]{animation:rise .25s var(--ease) both}
 dialog.dlg::backdrop{background:var(--scrim);backdrop-filter:blur(2px)}
-.dlg form{display:flex;flex-direction:column;max-height:calc(100dvh - 36px)}
+.dlg>form,.dlg>div{display:flex;flex-direction:column;max-height:calc(100dvh - 36px);min-height:0}
+html:has(dialog.dlg[open]){overflow:hidden}
 .dlg-head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;padding:18px 20px 12px;border-bottom:1px dashed var(--line)}
 .dlg-head h2{font-family:var(--f-display);font-weight:400;font-size:27px;line-height:1.1;margin-top:3px;overflow-wrap:anywhere}
-.dlg-body{padding:16px 20px;display:flex;flex-direction:column;gap:14px;overflow:auto}
+.dlg-body{padding:16px 20px;display:flex;flex-direction:column;gap:14px;overflow:auto;min-height:0;flex:1 1 auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
 .dlg-foot{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;padding:12px 20px 16px;border-top:1px solid var(--line);background:var(--sheet-2)}
 /* student pay card */
 .paycard{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:14px;align-items:center;width:100%;text-align:left;padding:14px 18px;margin-top:18px;border-radius:16px;border:1px solid var(--line);background:var(--sheet);box-shadow:0 12px 26px -24px var(--shadow);position:relative;overflow:hidden;transition:transform .25s var(--ease)}
