@@ -540,6 +540,11 @@ function fixPem(k) {
   const body = m[2].replace(/[^A-Za-z0-9+/=]/g, '');
   return body ? `-----BEGIN ${m[1]}-----\n${body.match(/.{1,64}/g).join('\n')}\n-----END ${m[1]}-----\n` : k;
 }
+// safe hint for debugging a bad JAAS_KEY: only its type and size, never its content
+function keyShape() {
+  const raw = String(jaas().key || ''), m = raw.match(/-----BEGIN ([A-Z ]+)-----/);
+  return 'key: ' + (raw ? (m ? m[1] : 'no BEGIN line') + ', ' + raw.length + ' chars' : 'empty');
+}
 const callOn = () => { const j = jaas(); return !!(j.app && j.kid && j.key); };
 const b64u = x => Buffer.from(typeof x === 'string' ? x : JSON.stringify(x)).toString('base64url');
 function jaasJwt(room, user, mod, now = Date.now(), until = now + 3 * 3600e3) {
@@ -585,7 +590,7 @@ exports.callToken = onRequest({ cors: CALL_ORIGINS, invoker: 'public' }, async (
   const m = String(req.get('Authorization') || '').match(/^Bearer (.+)$/); let uid;
   try { uid = (await admin.auth().verifyIdToken(m ? m[1] : '')).uid; } catch (e) { res.status(401).json({ ok: false, error: 'auth' }); return; }
   try { const r = await callRun(uid, String((req.body || {}).room || ''), !!(req.body || {}).ping); res.status(r.code).json(r.body); }
-  catch (e) { logger.error('callToken', e); res.status(500).json({ ok: false, error: 'server', why: String((e && e.message) || e).slice(0, 160) }); }
+  catch (e) { logger.error('callToken', e); res.status(500).json({ ok: false, error: 'server', why: String((e && e.message) || e).slice(0, 100) + ' | ' + keyShape() }); }
 });
 
 /* attendance: who has stopped having lessons, and whose lesson time dropped (for the owner's report) */
