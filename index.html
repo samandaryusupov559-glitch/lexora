@@ -1394,6 +1394,9 @@ h1,h2,h3,.lp-stats b,.today .d,.tkv.big b,.rank-me b,.pm-until b,.stat b{font-va
 .auth-form .btn.primary{width:100%;justify-content:center;background:var(--pen);border-color:var(--pen);color:var(--on-coral);padding-block:13px;box-shadow:0 12px 24px -14px var(--pen)}
 .auth-form .btn.primary:hover{filter:brightness(1.08)}
 .auth-form .row .btn.ghost.sm{padding:6px 8px;font-size:13.5px}
+.hw-tabs{margin:2px 0 18px}
+.hw-tabs .cnt{margin-left:7px;min-width:20px;padding:0 7px;border-radius:999px;background:var(--coral);color:var(--on-orange);font-size:12.5px;font-weight:800;line-height:19px;display:inline-block;text-align:center}
+.seg button[aria-pressed="true"] .cnt{background:var(--coral)}
 .auth-alt{margin-top:20px;padding-top:18px;border-top:1px solid var(--line);display:flex;justify-content:center}
 .auth-alt .btn{background:transparent;border:1px solid var(--line);color:var(--ink);font-weight:700}
 .auth-alt .btn:hover{border-color:var(--pen);color:var(--pen)}
@@ -2248,7 +2251,7 @@ function renderTop(){
   $('#top').innerHTML = `${(S.view.name==='login'||S.view.name==='verify'||S.mode==='guest')?'':navOpenBtn()}<div class="brand">${brandMark()}</div>${S.mode==='guest'&&S.view.name==='landing'?`<nav class="lx-nav" aria-label="${tr('lx.navLabel')}">${lxLinks()}</nav>`:''}${installBtn()}${S.mode==='guest'&&S.view.name==='landing'?'':themeSeg()}${langs}${right}`;
 }
 const PM_VIEWS = new Set(['news','newsEdit','study','set','setEdit']);
-function navBtn(name,label,icon,count,dim){ const cur = S.view.name===name || (name==='students' && S.view.name==='student') || (name==='inbox' && S.view.name==='review') || (name==='home' && S.view.name==='entry') || (name==='market' && PM_VIEWS.has(S.view.name) && S.mode==='teacher') || (name==='services' && (PM_VIEWS.has(S.view.name)||S.view.name==='services'));
+function navBtn(name,label,icon,count,dim){ const cur = S.view.name===name || (name==='students' && S.view.name==='student') || (name==='homework' && S.mode==='teacher' && (S.view.name==='inbox'||S.view.name==='review')) || (name==='home' && S.view.name==='entry') || (name==='market' && PM_VIEWS.has(S.view.name) && S.mode==='teacher') || (name==='services' && (PM_VIEWS.has(S.view.name)||S.view.name==='services'));
   return `<button data-act="go" data-v="${name}" ${cur?'aria-current="page"':''}>${I[icon]}<span>${label}</span>${count?`<span class="cnt ${dim?'dim':''}">${count}</span>`:''}</button>`; }
 /* light / dark / auto (follows the device) */
 const THEMES = {
@@ -2281,13 +2284,13 @@ function renderNav(){
   if(S.role==='staff'){
     const waiting = allEntries().filter(e=>e.status==='submitted').length;
     document.title = (waiting?`(${waiting}) `:'')+'Lexora · '+tr('title.teacher');
-    n.innerHTML = navCollapseBtn() + navBtn('inbox',tr('nav.inbox'),'inbox',waiting) + navBtn('chat',tr('dm.nav'),'chat',chatUnreadT()) + navBtn('students',tr('nav.students'),'people',Object.keys(S.profiles).length,true) + navBtn('me',tr('c.meH'),'team') + navBtn('groups',tr('c.grpH'),'people') + navBtn('homework',tr('hw.nav'),'hw') + navBtn('exams',tr('ex.nav'),'cards',S.role==='owner'?exOrderRows().length:0) + navBtn('club',tr('c.clubNav'),'bulb',clubVideoOn()?'●':0) + navBtn('library',tr('c.libNav'),'book') + navBtn('centre',tr('c.centreH'),'spark',Object.values(S.leads||{}).filter(l=>!l.st).length+pendingTorders()) + navBtn('bank',tr('nav.bank'),'bank') + `<div class="nav-foot">${tr('c.navFootStaff')}</div>`;
+    n.innerHTML = navCollapseBtn() + navBtn('chat',tr('dm.nav'),'chat',chatUnreadT()) + navBtn('students',tr('nav.students'),'people',Object.keys(S.profiles).length,true) + navBtn('me',tr('c.meH'),'team') + navBtn('groups',tr('c.grpH'),'people') + navBtn('homework',tr('hw.nav'),'hw',waiting) + navBtn('exams',tr('ex.nav'),'cards',S.role==='owner'?exOrderRows().length:0) + navBtn('club',tr('c.clubNav'),'bulb',clubVideoOn()?'●':0) + navBtn('library',tr('c.libNav'),'book') + navBtn('centre',tr('c.centreH'),'spark',Object.values(S.leads||{}).filter(l=>!l.st).length+pendingTorders()) + navBtn('bank',tr('nav.bank'),'bank') + `<div class="nav-foot">${tr('c.navFootStaff')}</div>`;
     return;
   }
   if(S.mode==='teacher'){
     const waiting = allEntries().filter(e=>e.status==='submitted').length;
     document.title = (waiting?`(${waiting}) `:'')+'Lexora · '+tr('title.teacher');
-    n.innerHTML = navCollapseBtn() + navBtn('inbox',tr('nav.inbox'),'inbox',waiting) + navBtn('chat',tr('dm.nav'),'chat',chatUnreadT()) + navBtn('students',tr('nav.students'),'people',myStudentIds().length,true) + navBtn('team',tr('c.teamH'),'team',newLeads()+pendingStaffReq()+pendingApps()+pendingEnrolls()+pendingTorders()) + (S.team?.[MAIN_TID]?navBtn('me',tr('c.meH'),'pen'):'') + navBtn('groups',tr('c.grpH'),'people') + navBtn('homework',tr('hw.nav'),'hw') + navBtn('exams',tr('ex.nav'),'cards',S.role==='owner'?exOrderRows().length:0) + navBtn('club',tr('c.clubNav'),'bulb',clubVideoOn()?'●':0) + navBtn('library',tr('c.libNav'),'book') + navBtn('ledger',tr('nav.ledger'),'coin',pendingClaims()||lgOwing(),!pendingClaims()) + navBtn('bookings',tr('nav.book'),'spark',pendingRequests()) + navBtn('market',tr('nav.shop'),'bag',pendingOrders()+pendingPasses()) + navBtn('rating',tr('rt.h'),'trophy') + navBtn('board',tr('nav.board'),'flag') + navBtn('insights',tr('nav.insights'),'chart') + navBtn('prompt',tr('nav.prompt'),'bulb') + navBtn('bank',tr('nav.bank'),'bank') +
+    n.innerHTML = navCollapseBtn() + navBtn('chat',tr('dm.nav'),'chat',chatUnreadT()) + navBtn('students',tr('nav.students'),'people',myStudentIds().length,true) + navBtn('team',tr('c.teamH'),'team',newLeads()+pendingStaffReq()+pendingApps()+pendingEnrolls()+pendingTorders()) + (S.team?.[MAIN_TID]?navBtn('me',tr('c.meH'),'pen'):'') + navBtn('groups',tr('c.grpH'),'people') + navBtn('homework',tr('hw.nav'),'hw',waiting) + navBtn('exams',tr('ex.nav'),'cards',S.role==='owner'?exOrderRows().length:0) + navBtn('club',tr('c.clubNav'),'bulb',clubVideoOn()?'●':0) + navBtn('library',tr('c.libNav'),'book') + navBtn('ledger',tr('nav.ledger'),'coin',pendingClaims()||lgOwing(),!pendingClaims()) + navBtn('bookings',tr('nav.book'),'spark',pendingRequests()) + navBtn('market',tr('nav.shop'),'bag',pendingOrders()+pendingPasses()) + navBtn('rating',tr('rt.h'),'trophy') + navBtn('board',tr('nav.board'),'flag') + navBtn('insights',tr('nav.insights'),'chart') + navBtn('prompt',tr('nav.prompt'),'bulb') + navBtn('bank',tr('nav.bank'),'bank') +
       `<div class="nav-foot">${tr('nav.foot')}</div>`;
   } else {
     const unseen = studentEntries().filter(e=>e.isNew).length;
@@ -2396,15 +2399,20 @@ function entryCard(e, teacher=true){
     <span class="side">${status}${band!=null && (e.status==='reviewed'||e.status==='revise')?`<span class="small num faint">${tr('band')} <b style="color:var(--ink)">${fmtBand(band)}</b></span>`:''}</span>
   </button>`;
 }
+// the teacher's Homework page has two tabs: the homework they give, and the entries students sent in to be marked
+function hwTabs(cur){
+  const w=allEntries().filter(e=>e.status==='submitted').length;
+  return `<div class="seg hw-tabs" role="group" aria-label="${esc(tr('hw.nav'))}"><button type="button" data-act="go" data-v="homework" aria-pressed="${cur==='homework'}">${tr('hw.nav')}</button><button type="button" data-act="go" data-v="inbox" aria-pressed="${cur==='inbox'}">${tr('nav.inbox')}${w?`<span class="cnt">${w}</span>`:''}</button></div>`;
+}
 function vInbox(){
   const all = allEntries();
   const waiting = all.filter(e=>e.status==='submitted').sort((a,b)=>(a.submittedAt||0)-(b.submittedAt||0));
   const prog = all.filter(e=>e.status==='inreview').sort((a,b)=>(b.rv?.updatedAt||0)-(a.rv?.updatedAt||0));
   const done = all.filter(e=>e.status==='reviewed'||e.status==='revise').sort((a,b)=>(b.rv?.reviewedAt||0)-(a.rv?.reviewedAt||0)).slice(0,8);
-  if(!all.length) return `<div class="page-head"><div><h1>${tr('inbox.h')}</h1><p>${tr('inbox.p')}</p></div></div>
+  if(!all.length) return hwTabs('inbox')+`<div class="page-head"><div><h1>${tr('inbox.h')}</h1><p>${tr('inbox.p')}</p></div></div>
     <div class="empty"><h3>${tr('inbox.emptyH')}</h3><p>${tr('inbox.emptyP')}</p>
 </div>`;
-  return `<div class="page-head"><div><h1>${tr('inbox.h')}</h1><p>${waiting.length? tr('inbox.waiting',{n:waiting.length}) : tr('inbox.caught')}</p></div>${allTToggle()}
+  return hwTabs('inbox')+`<div class="page-head"><div><h1>${tr('inbox.h')}</h1><p>${waiting.length? tr('inbox.waiting',{n:waiting.length}) : tr('inbox.caught')}</p></div>${allTToggle()}
     ${waiting.length?`<button class="btn pen" data-act="open-review" data-sid="${esc(waiting[0].sid)}" data-eid="${esc(waiting[0].eid)}">${I.pen} ${tr('inbox.start')}</button>`:''}</div>${teacherDash()}
     ${waiting.length?`<div class="list">${waiting.map(e=>entryCard(e)).join('')}</div>`:''}
     ${prog.length?`<div class="section"><h2>${tr('inbox.prog')}</h2><div class="list">${prog.map(e=>entryCard(e)).join('')}</div></div>`:''}
@@ -6940,7 +6948,7 @@ function vHwTeacher(){
       <div class="row hw-acts">${done<uids.length?`<button class="btn sm" data-act="hw-remind" data-hid="${esc(h.id)}" title="${esc(tr('hw.remindT',{n:uids.length-done}))}">${tr('hw.remind')}</button>`:''}<button class="btn sm" data-act="hw-share" data-hid="${esc(h.id)}">${tr('hw.share')}</button><button class="btn ghost sm" data-act="hw-edit" data-hid="${esc(h.id)}">${tr('edit')}</button><button class="btn ghost sm del-btn" data-act="hw-del" data-hid="${esc(h.id)}">${tr('delete')}</button></div></div>
       ${h.note?`<p class="hw-note">${esc(h.note)}</p>`:''}${hwFiles(h.files, h.id, 't')}
       <div class="tchips hw-to">${(h.to?.gids||[]).map(g=>`<span class="lchip">${esc(groups[g]||'–')}</span>`).join('')}${(h.to?.uids||[]).map(u=>`<span class="lchip ghost">${esc(names[u]||'–')}</span>`).join('')}</div></article>`; };
-  return `<div class="page-head"><div><h1>${tr('hw.h')}</h1><p>${tr('hw.p')}</p></div><button class="btn primary" data-act="hw-edit">+ ${tr('hw.add')}</button></div>
+  return hwTabs('homework')+`<div class="page-head"><div><h1>${tr('hw.h')}</h1><p>${tr('hw.p')}</p></div><button class="btn primary" data-act="hw-edit">+ ${tr('hw.add')}</button></div>
     ${list.length?`<div class="list">${list.map(card).join('')}</div>`:`<div class="empty"><h3>${tr('hw.noneH')}</h3><p>${tr('hw.noneP')}</p><p style="margin-top:14px"><button class="btn primary" data-act="hw-edit">${tr('hw.add')}</button></p></div>`}`;
 }
 // the student's list: open first (soonest due on top), then the ones already done
