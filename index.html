@@ -1757,6 +1757,7 @@ h3{font-weight:700;letter-spacing:-.02em}
 .lx-aud-p{display:flex;flex-direction:column}
 </style>
 <link rel="stylesheet" href="editorial-landing.css?v=1">
+<link rel="stylesheet" href="editorial-themes.css?v=1">
 </head>
 <body>
 
@@ -2292,6 +2293,7 @@ function applyTheme(){
   const v=themePref(), root=document.documentElement;
   if(v==='auto') root.removeAttribute('data-theme'); else root.setAttribute('data-theme', v);
   const dark = v==='dark' || (v==='auto' && matchMedia('(prefers-color-scheme: dark)').matches);
+  root.setAttribute('data-lx-appearance', dark?'dark':'light');
   document.querySelectorAll('meta[name="theme-color"]').forEach(m=>{ if(!m.dataset.o) m.dataset.o=m.content; m.content = v==='auto' ? m.dataset.o : (dark?'#0F1424':'#F8F6EE'); });
   document.querySelectorAll('[data-theme-set]').forEach(b=>b.setAttribute('aria-pressed', String(b.dataset.themeSet===v)));
 }
