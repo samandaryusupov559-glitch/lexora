@@ -7263,6 +7263,114 @@ async function uploadFile(file, onPct){
   }catch(e){ return {ok:false, error:String(e&&e.message||e)}; }
 }
 const kindOf = f => /^audio\//.test(f.type)?'audio' : /^video\//.test(f.type)?'video' : 'book';
+
+/* ---------- library: the form fills the rest in by itself (title, kind, language, level, description, cover) from the file or the link.
+   No AI is used: it reads the file name, the audio tags (ID3), the length of audio/video, the page count of a PDF and a YouTube link's title.
+   Anything the teacher has typed or changed is never overwritten, and everything can still be edited. ---------- */
+function libGuessLang(text){
+  const t=String(text||''), low=t.toLowerCase();
+  if(/[가-힯]/.test(t)) return 'Korean';
+  if(/[぀-ヿ]/.test(t)) return 'Japanese';
+  if(/[一-鿿]/.test(t)) return 'Chinese';
+  if(/[؀-ۿ]/.test(t)) return 'Arabic';
+  if(/[Ѐ-ӿ]/.test(t)) return 'Russian';
+  const words=[['English',/\b(english|ingliz|ielts|toefl|cambridge|oxford|headway|grammar in use)\b/],['German',/\b(german|deutsch|nemis|goethe|telc|schritte)\b/],
+    ['Turkish',/\b(turkish|t[üu]rk[çc]e|turk tili|yeni hitit)\b/],['Korean',/\b(korean|topik|hangul|koreys)\b/],['Spanish',/\b(spanish|espa[ñn]ol|ispan|dele)\b/],
+    ['Chinese',/\b(chinese|hsk|xitoy|mandarin)\b/],['Japanese',/\b(japanese|jlpt|yapon|nihongo)\b/],['French',/\b(french|fran[çc]ais|fransuz|delf|dalf)\b/],
+    ['Italian',/\b(italian|italiano|italyan)\b/],['Arabic',/\b(arabic|arab tili)\b/],['Russian',/\b(russian|rus tili|russkiy)\b/]];
+  for(const [l,re] of words) if(re.test(low)) return l;
+  if(/[ğşı]/.test(low)) return 'Turkish'; if(/[äöüß]/.test(low)) return 'German'; if(/[ñ¿¡]/.test(low)) return 'Spanish';
+  return '';
+}
+function libGuessLevel(text){
+  const t=' '+String(text||'').toLowerCase().replace(/[_.\-–—]+/g,' ')+' ';
+  const m=t.match(/(?:^|[^a-z0-9])([abc][12])(?![a-z0-9])/); if(m) return m[1].toUpperCase();
+  if(/upper ?intermediate/.test(t)) return 'B2'; if(/pre ?intermediate/.test(t)) return 'A2'; if(/intermediate/.test(t)) return 'B1';
+  if(/elementary/.test(t)) return 'A2'; if(/beginner|starter|basic|boshlang|начальн|нулев/.test(t)) return 'A1';
+  if(/proficiency/.test(t)) return 'C2'; if(/advanced/.test(t)) return 'C1';
+  return '';
+}
+const libDur = s => { s=Math.round(s); const h=Math.floor(s/3600), m=Math.floor(s%3600/60), x=s%60; return (h?h+':'+String(m).padStart(2,'0'):m)+':'+String(x).padStart(2,'0'); };
+// length of an audio/video file, and for a video one still picture to use as its cover
+function mediaInfo(file, kind){
+  return new Promise(ok=>{
+    const url=URL.createObjectURL(file), el=document.createElement(kind==='video'?'video':'audio'); el.preload='metadata'; el.muted=true;
+    let tm; const done=r=>{ clearTimeout(tm); URL.revokeObjectURL(url); ok(r); }; tm=setTimeout(()=>done({}),8000);
+    el.onerror=()=>done({});
+    el.onloadedmetadata=()=>{ const dur=isFinite(el.duration)?el.duration:0;
+      if(kind!=='video') return done({dur});
+      el.onseeked=()=>{ try{ const w=Math.min(640,el.videoWidth||640), h=Math.round(w*(el.videoHeight||360)/(el.videoWidth||640)), c=document.createElement('canvas'); c.width=w; c.height=h; c.getContext('2d').drawImage(el,0,0,w,h);
+          c.toBlob(b=>done({dur, frame:b?new File([b],'cover.jpg',{type:'image/jpeg'}):null}),'image/jpeg',.8); }catch(e){ done({dur}); } };
+      try{ el.currentTime=Math.min(Math.max(dur*.1,.5), dur||1); }catch(e){ done({dur}); } };
+    el.src=url; });
+}
+// mp3 tags: title, artist, album and the embedded picture (read from the first 1.5 MB only)
+async function id3Info(file){
+  try{
+    const buf=new Uint8Array(await file.slice(0,1.5*1048576).arrayBuffer());
+    if(buf[0]!==0x49||buf[1]!==0x44||buf[2]!==0x33) return {};
+    const ver=buf[3], size=((buf[6]&127)<<21)|((buf[7]&127)<<14)|((buf[8]&127)<<7)|(buf[9]&127), end=Math.min(10+size, buf.length), out={};
+    const dec=(arr,enc)=>{ try{ return new TextDecoder(enc===1?'utf-16':enc===2?'utf-16be':enc===3?'utf-8':'windows-1252').decode(arr).replace(/\0+$/,'').trim(); }catch(e){ return ''; } };
+    const sync=(a,i)=>((a[i]&127)<<21)|((a[i+1]&127)<<14)|((a[i+2]&127)<<7)|(a[i+3]&127);
+    let p=10;
+    if(buf[5]&0x40) p += ver===4 ? sync(buf,10) : ((buf[10]<<24)|(buf[11]<<16)|(buf[12]<<8)|buf[13])+4;
+    while(p+10<=end){
+      const id=String.fromCharCode(buf[p],buf[p+1],buf[p+2],buf[p+3]); if(!/^[A-Z0-9]{4}$/.test(id)) break;
+      const sz = ver===4 ? sync(buf,p+4) : ((buf[p+4]<<24)|(buf[p+5]<<16)|(buf[p+6]<<8)|buf[p+7]), a=p+10, b=a+sz;
+      if(sz<=0 || b>buf.length) break;
+      if(id==='TIT2'||id==='TPE1'||id==='TALB') out[id]=dec(buf.subarray(a+1,b),buf[a]);
+      else if(id==='APIC' && !out.pic){ const enc=buf[a]; let q=a+1; while(q<b && buf[q]!==0) q++; const mime=dec(buf.subarray(a+1,q),0); q+=2;
+        if(enc===1||enc===2){ while(q+1<b && !(buf[q]===0&&buf[q+1]===0)) q+=2; q+=2; } else { while(q<b && buf[q]!==0) q++; q+=1; }
+        if(q<b) out.pic=new File([buf.slice(q,b)], 'cover', {type:/png/i.test(mime)?'image/png':'image/jpeg'}); }
+      p=b;
+    }
+    return out;
+  }catch(e){ return {}; }
+}
+async function pdfPages(file){
+  if(file.size>80*1048576) return 0;
+  try{ const t=new TextDecoder('latin1').decode(new Uint8Array(await file.arrayBuffer())); let n=0;
+    for(const m of t.matchAll(/\/Type\s*\/Pages\b[^>]*?\/Count\s+(\d+)/g)) n=Math.max(n,+m[1]);
+    if(!n) for(const m of t.matchAll(/\/Count\s+(\d+)[^>]*?\/Type\s*\/Pages\b/g)) n=Math.max(n,+m[1]);
+    return n; }catch(e){ return 0; }
+}
+async function ytInfo(u){
+  try{ const r=await fetch('https://www.youtube.com/oembed?format=json&url='+encodeURIComponent(u)); if(!r.ok) return {}; const j=await r.json(); return {title:j.title||'', by:j.author_name||''}; }catch(e){ return {}; }
+}
+// connects the library form (new items only): after a file or a link is chosen, fills what the teacher has not touched
+function libAutoWire(){
+  const $f=k=>$('#lb-'+k), hint=$('#lb-auto'); let run=0, lastUrl='';
+  ['title','desc','lang','level','kind'].forEach(k=>{ const el=$f(k); if(el) ['input','change'].forEach(ev=>el.addEventListener(ev,()=>{ el.dataset.u='1'; })); });
+  const ci=$f('cvfile'); if(ci) ci.addEventListener('change', e=>{ if(e.isTrusted){ ci.dataset.u='1'; delete ci.dataset.auto; } });
+  async function auto(src){
+    const my=++run; hint.hidden=false; hint.textContent=tr('c.libAutoBusy'); const v={}, f=src.file;
+    if(f){
+      v.kind=kindOf(f); v.title=f.name.replace(/\.[^.]+$/,'').replace(/[_-]+/g,' ').replace(/\s+/g,' ').trim();
+      const ext=((f.name.match(/\.([^.]+)$/)||[])[1]||'').toUpperCase(); let meta={}, tags={}, pages=0;
+      if(v.kind==='audio'||v.kind==='video'){ [meta,tags]=await Promise.all([mediaInfo(f,v.kind), v.kind==='audio'&&/mpeg|mp3/i.test(f.type+f.name)?id3Info(f):{}]); }
+      else if(/pdf/i.test(f.type+f.name)) pages=await pdfPages(f);
+      if(my!==run) return;
+      if(tags.TIT2) v.title=(tags.TPE1?tags.TPE1+' — ':'')+tags.TIT2;
+      v.desc=[ext, pages?tr('c.libPages',{n:pages}):'', meta.dur?libDur(meta.dur):'', tags.TALB||'', (f.size/1048576).toFixed(1)+' MB'].filter(Boolean).join(' · ');
+      v.cover=meta.frame||tags.pic||null; v.text=v.title+' '+f.name;
+    } else {
+      const yt=ytId(src.url);
+      if(yt){ v.kind='video'; const i=await ytInfo(src.url); if(my!==run) return; if(i.title) v.title=i.title; v.desc='YouTube'+(i.by?' · '+i.by:''); v.text=(i.title||'')+' '+(i.by||''); }
+      else if(!driveId(src.url)) v.kind='link';
+    }
+    v.lang=libGuessLang(v.text); v.level=libGuessLevel(v.text);
+    const filled=[], put=(k,val,label)=>{ const el=$f(k); if(!el||!val||el.dataset.u||el.value===val) return; if(el.tagName==='SELECT' && ![...el.options].some(o=>o.value===val)) return; el.value=val; filled.push(label); };
+    put('title',v.title,tr('c.oTitle')); put('kind',v.kind,tr('c.libKind')); put('lang',v.lang,tr('c.fLang')); put('level',v.level,tr('c.libLevel')); put('desc',v.desc,tr('mk.desc'));
+    if(ci && !ci.dataset.u){
+      if(v.cover){ const dt=new DataTransfer(); dt.items.add(v.cover); ci.files=dt.files; ci.dataset.auto='1'; ci.dispatchEvent(new Event('change')); filled.push(tr('cv.h')); }
+      else if(ci.dataset.auto){ ci.value=''; delete ci.dataset.auto; $('#lb-cvprev').innerHTML='🖼'; }
+    }
+    hint.hidden=!filled.length; hint.textContent=filled.length?tr('c.libAuto',{f:filled.join(', ')}):'';
+  }
+  const fromUrl=()=>{ const u=$f('url').value.trim(); if(!/^https?:\/\//.test(u) || u===lastUrl) return; lastUrl=u; auto({url:u}); };
+  $f('url').addEventListener('change', fromUrl); $f('url').addEventListener('paste', ()=>setTimeout(fromUrl,60));
+  return auto;
+}
 function openLibEdit(id){
   const x=id?S.lib?.[id]||{}:{kind:'book', level:'A1', lang:S.view.lang||tLangsOf(myTid())[0]};
   const langs = S.role==='staff' ? myLangs() : [...new Set([...CLUB_LANGS, ...CLANGS, ...Object.values(S.lib||{}).map(y=>y.lang).filter(Boolean)])];
@@ -7274,17 +7382,17 @@ function openLibEdit(id){
     ${id?'':`<label class="lib-drop"><input type="file" id="lb-file" accept=".pdf,.epub,.doc,.docx,.ppt,.pptx,audio/*,video/*" hidden><b>📤 ${tr('c.libPick')}</b><span class="small faint" id="lb-fname">${tr('c.libPickHint')}</span><progress id="lb-prog" max="100" value="0" hidden style="width:100%"></progress></label>
     <p class="small faint" style="text-align:center;margin:-4px 0 0">${tr('c.libOr')}</p>`}
     <label class="field"><span>${tr('c.libUrl')}</span><input class="inp" id="lb-url" value="${esc(x.url||'')}" placeholder="https://youtu.be/… / https://drive.google.com/…"></label>
+    ${id?'':`<p class="small" id="lb-auto" hidden style="margin:-4px 0 0;color:var(--ok)"></p>`}
     ${coverField('lb', x.img||'', false)}
     <label class="field"><span>${tr('mk.desc')} <span class="faint">${tr('optional')}</span></span><textarea class="inp" id="lb-desc" rows="2" maxlength="400">${esc(x.desc||'')}</textarea></label>
     <p class="small faint">${tr('c.libShare')}</p><p class="lg-err" id="lb-err"></p></div>
     <div class="dlg-foot"><button type="button" class="btn ghost" data-act="dlg-close">${tr('cancel')}</button><button class="btn primary">${tr('save')}</button></div></form>`, {type:'libedit'});
   if(S.role==='owner') publishUpload(S.mail?.url, S.mail?.secret).catch(()=>{});
   coverWire('lb');
-  const fi=$('#lb-file'); if(fi) fi.addEventListener('change', ()=>{ const f=fi.files[0]; if(!f) return;
+  const fi=$('#lb-file'), libAuto=id?null:libAutoWire(); if(fi) fi.addEventListener('change', ()=>{ const f=fi.files[0]; if(!f) return;
     $('#lb-fname').textContent=f.name+' · '+(f.size/1048576).toFixed(1)+' MB'+(f.size>LIB_MAX?' — '+tr('c.libBig'):'');
-    $('#lb-prog').hidden=true;
-    if(!$('#lb-title').value.trim()) $('#lb-title').value=f.name.replace(/\.[^.]+$/,'').replace(/[_-]+/g,' ');
-    $('#lb-kind').value=kindOf(f); $('#lb-url').value=''; });
+    $('#lb-prog').hidden=true; $('#lb-url').value='';
+    libAuto({file:f}); });
   $('#lb-form').addEventListener('submit', async e=>{ e.preventDefault(); const err=$('#lb-err'), title=$('#lb-title').value.trim(), file=fi?.files?.[0]; let url=$('#lb-url').value.trim();
     if(!title){ err.textContent=tr('c.needTitle'); return; }
     if(file){ const btn=$('#lb-form .btn.primary'), pr=$('#lb-prog'); btn.disabled=true; err.textContent=''; $('#lb-fname').textContent=tr('c.libUploading'); pr.hidden=false; pr.value=0;
