@@ -245,7 +245,7 @@ service cloud.firestore {
       allow write: if isTeacher();
       allow update: if isStaff() && staffTid() == tid
         && request.resource.data.diff(resource.data).affectedKeys()
-             .hasOnly(['name', 'photo', 'headline', 'langs', 'levels', 'years', 'bio', 'achievements', 'lessonLen', 'services', 'lastSeen', 'prices'])
+             .hasOnly(['name', 'photo', 'headline', 'langs', 'levels', 'years', 'bio', 'achievements', 'lessonLen', 'services', 'lastSeen', 'prices', 'agreedAt'])
         && request.resource.data.get('prices', {}) is map && request.resource.data.get('prices', {}).size() <= 20;
     }
     // A teacher's own Google Meet link: the owner, that teacher and that teacher's students.
@@ -265,7 +265,7 @@ service cloud.firestore {
     }
     // "Become a teacher" applications from visitors. Anyone may send one; only the owner reads them.
     match /applications/{id} {
-      allow create: if request.resource.data.keys().hasOnly(['name', 'contact', 'email', 'photo', 'langs', 'levels', 'years', 'lessonLen', 'bio', 'achievements', 'msg', 'at', 'prices'])
+      allow create: if request.resource.data.keys().hasOnly(['name', 'contact', 'email', 'photo', 'langs', 'levels', 'years', 'lessonLen', 'bio', 'achievements', 'msg', 'at', 'prices', 'agree'])
         && request.resource.data.keys().hasAll(['name', 'contact', 'langs', 'years', 'at'])
         && request.resource.data.name is string && request.resource.data.name.size() > 0 && request.resource.data.name.size() <= 80
         && request.resource.data.contact is string && request.resource.data.contact.size() >= 3 && request.resource.data.contact.size() <= 120
@@ -600,6 +600,22 @@ service cloud.firestore {
             && (resource == null
                   ? request.resource.data.keys().hasOnly(['name', 'items'])
                   : request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name', 'items'])));
+    }
+    // In-site video call: a teacher opens a room for their own lesson and names who may enter.
+    // Passes (callToken) and the call log (callLog/, callMins/) are server-only.
+    match /calls/{room} {
+      allow read: if isTeacher() || (isStaff() && resource.data.tid == staffTid()) || (signedIn() && request.auth.uid in resource.data.uids);
+      allow create, update: if room.size() >= 3 && room.size() <= 80
+        && request.resource.data.keys().hasOnly(['tid', 'uids', 'label', 'at', 'until', 'by'])
+        && request.resource.data.uids is list && request.resource.data.uids.size() <= 60
+        && request.resource.data.until is int && request.resource.data.until <= request.time.toMillis() + 90 * 24 * 3600 * 1000
+        && request.resource.data.by == request.auth.uid
+        && (isTeacher() || (isStaff() && request.resource.data.tid == staffTid() && (resource == null || resource.data.tid == staffTid())));
+      allow delete: if isTeacher();
+    }
+    // Contact details of trial requests and visitors: the owner only (the shared docs keep none, see the bot).
+    match /privContact/{id} {
+      allow read: if isTeacher();
     }
     // Google Meet links for a student's booked lessons. Only the owner writes them.
     match /lessons/{uid} {

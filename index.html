@@ -857,6 +857,15 @@ td.nwc.off{color:var(--ink-3);font-size:18px}
 .tprof-ph img{width:100%;height:100%;object-fit:cover;object-position:center top;display:block}
 .ph-zoom{border:0;padding:0;background:transparent;max-width:none;max-height:none;cursor:zoom-out;overflow:visible}
 .ph-zoom::backdrop{background:rgba(10,14,25,.88)}
+/* in-site video call */
+.call-wrap{display:flex;flex-direction:column;gap:12px;height:calc(100vh - 150px);min-height:460px}
+.call-head{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.call-box{flex:1;min-height:0;border-radius:20px;overflow:hidden;background:#111;border:1px solid var(--line)}
+.call-box .loading,.call-box .empty{background:var(--sheet);height:100%;display:grid;place-content:center;text-align:center;padding:20px}
+.call-box iframe{display:block;border:0}
+.agr{margin:12px 0 0;padding-left:22px;display:flex;flex-direction:column;gap:10px;line-height:1.5}
+.agr-d summary{cursor:pointer;font-weight:600;color:var(--blue)}
+.agr-d .agr{font-size:14.5px;margin-bottom:6px}
 .ph-zoom img{display:block;max-width:92vw;max-height:90vh;border-radius:14px;box-shadow:0 10px 50px rgba(0,0,0,.5)}
 .tchips{display:flex;gap:6px;flex-wrap:wrap}
 .lchip{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:999px;background:var(--blue-soft);color:var(--blue);font-weight:700;font-size:13px}
@@ -2012,8 +2021,8 @@ class FireCol{
 // a Telegram button can open one page right after sign-in: #club (the speaking club), #services (what the student bought)
 // pages a link can open (#club, #homework…: the Telegram bot's buttons use them)
 const OPEN_VIEWS = ['club','services','homework','pay','ledger'];
-function readOpen(){ const v=location.hash.slice(1); if(!OPEN_VIEWS.includes(v)) return; LS.set('open-view', v); history.replaceState(null, '', location.pathname+location.search); }
-function startView(def, ok=OPEN_VIEWS){ const v=LS.get('open-view',''); LS.del('open-view'); return {name: ok.includes(v) ? v : def}; }
+function readOpen(){ const c=location.hash.match(/^#call=([\w-]{3,80})$/); if(c){ LS.set('open-call', c[1]); history.replaceState(null, '', location.pathname+location.search); return; } const v=location.hash.slice(1); if(!OPEN_VIEWS.includes(v)) return; LS.set('open-view', v); history.replaceState(null, '', location.pathname+location.search); }
+function startView(def, ok=OPEN_VIEWS){ const c=LS.get('open-call',''); if(c){ LS.del('open-call'); LS.del('open-view'); return {name:'call', room:c}; } const v=LS.get('open-view',''); LS.del('open-view'); return {name: ok.includes(v) ? v : def}; }
 // an invite link from the centre: #join=<teacher id>.<request id> — the person signs up straight to that teacher
 function readJoin(){
   const m=location.hash.match(/^#join=([\w-]+)(?:\.([\w-]+))?/); if(!m) return false;
@@ -2021,10 +2030,17 @@ function readJoin(){
   history.replaceState(null, '', location.pathname+location.search); return true;
 }
 // a ready message for a trial request: Telegram opens the chat with the text typed in, SMS opens the phone's messages
+// the same test as the bot: phone or card numbers (9+ digits), @usernames, emails, messenger links
+const CONTACT_RES=[/(?:^|[^\w.])@[a-z][\w]{4,31}\b/i, /[\w.+-]+@[\w-]+\.[a-z]{2,}/i, /\b(?:t\.me|telegram\.(?:me|dog)|wa\.me|whatsapp\.com|instagram\.com|tg:\/\/)/i];
+function hasContact(t){ t=String(t||''); return CONTACT_RES.some(r=>r.test(t)) || (t.match(/\+?\d[\d\s\-().]{7,}\d/g)||[]).some(x=>x.replace(/\D/g,'').length>=9); }
+// contact details live in privContact/ (owner only); teachers see a lock instead
+const leadContact = l => l?.contact || S.privC?.['lead_'+l?.id]?.contact || '';
+const gContact = (id,c) => c?.contact || S.privC?.['g_'+id]?.contact || '';
+const lockedContact = () => `<span class="faint" title="${esc(tr('ch.lockedP'))}">🔒 Lexora</span>`;
 function leadMsgText(l){ return tr('c.msgTpl',{name:(l.name||'').split(' ')[0], teacher:tName(l.tid), link:joinUrl(l.tid, l.id)}); }
 function leadSendBtns(l){
   if(!l.tid || l.st==='joined') return '';
-  const x=String(l.contact||'').trim(), t=encodeURIComponent(leadMsgText(l)), tg=x.match(/^@?([A-Za-z][\w]{3,31})$/);
+  const x=String(leadContact(l)).trim(), t=encodeURIComponent(leadMsgText(l)), tg=x.match(/^@?([A-Za-z][\w]{3,31})$/);
   let d=x.replace(/\D/g,''); if(d.length===9) d='998'+d;
   const out=[];
   if(tg && !/^\d/.test(tg[1])) out.push(`<a class="btn sm pen" href="https://t.me/${esc(tg[1])}?text=${t}" target="_blank" rel="noopener">✈ ${tr('c.msgTg')}</a>`);
@@ -2036,7 +2052,7 @@ async function boot(){
   S.joinAsk = readJoin(); readOpen();
   let cfg=null;
   try{ cfg = await import('./config.js'); }catch(e){}
-  const fc = cfg && cfg.firebaseConfig;
+  const fc = cfg && cfg.firebaseConfig; S.fbProject = (fc && fc.projectId) || '';
   if(!fc || !fc.apiKey || /PASTE/i.test(fc.apiKey) || !cfg.TEACHER_EMAIL || /PASTE/i.test(cfg.TEACHER_EMAIL)){ S.setupMissing=true; startDemo('teacher'); return; }
   let fa,au,fs;
   try{ [fa,au,fs] = await Promise.all([
@@ -2261,6 +2277,9 @@ function animateEnter(m){
 }
 function renderMain0(){
   const m=$('#main'); const v=S.view.name;
+  // a running call is never redrawn (that would drop it); leaving the page ends it
+  if(v==='call' && S.callRoom===S.view.room && $('#call-box')) return;
+  if(v!=='call' && S.callRoom) callStop();
   if(v==='login'){ m.innerHTML=vLogin(); setTimeout(()=>$('#login-email')?.focus(),50); return; }
   if(v==='landing'){ m.innerHTML=vLanding(); return; }
   if(v==='verify'){ m.innerHTML=vVerify(); return; }
@@ -2268,12 +2287,14 @@ function renderMain0(){
   if(S.mode==='student' && S.myProfile===undefined){ m.innerHTML=`<div class="loading">${tr('load.student')}</div>`; return; }
   const fn = {inbox:vInbox, students:vStudents, student:vStudent, insights:vInsights, prompt:vPrompt, bank:vBank, review:vReview, ledger:vLedger, board:vBoard, bookings:vBookings, market:vMarket, learn:vLearn, book:vBook, rating:()=>S.mode==='teacher'?vRatingT():vRatingS(),
               home:vHome, write:vWrite, entry:vEntry, mistakes:vMistakes, words:vWords, setup:vSetup, pay:vPay,
-              news:vNews, newsEdit:vNewsEdit, study:vStudy, services:vServices, set:vSet, setEdit:vSetEdit, team:vTeam, me:vMe, centre:vCentre, teachers:vStuTeachers, groups:vGroups, homework:vHomework, exams:vExams, exam:vExam, club:vClub, library:vLibrary, chat:vChat}[v];
-  if(tgNeeded()){ m.innerHTML=vTgGate(); return; }   // everyone (students, teachers, the owner) connects Telegram first
+              news:vNews, newsEdit:vNewsEdit, call:vCall, study:vStudy, services:vServices, set:vSet, setEdit:vSetEdit, team:vTeam, me:vMe, centre:vCentre, teachers:vStuTeachers, groups:vGroups, homework:vHomework, exams:vExams, exam:vExam, club:vClub, library:vLibrary, chat:vChat}[v];
+  if(tgNeeded()){ m.innerHTML=vTgGate(); return; }
+  if(S.role==='staff' && S.team?.[S.staffTid] && !S.team[S.staffTid].agreedAt){ m.innerHTML=vAgree(); return; }   // a teacher accepts the agreement once   // everyone (students, teachers, the owner) connects Telegram first
   m.innerHTML = fn ? fn() : '';
   after[v] && after[v]();
 }
 const after = {
+  call:()=>callStart(S.view.room),
   news:()=>{ if($('#nw-wx')) nwFillWeather(); nwArmTimer(); },
   newsEdit:()=>{ if($('#nw-wx')) nwFillWeather(); },
   exam:()=>exTick(),
@@ -5469,8 +5490,9 @@ function startCentre(role){
   const col = (path, key, after) => S.unsubs.push(S.db.collection(path).onSnapshot(q=>{ const o={}; q.docs.forEach(d=>{ if(d.exists) o[d.id]=d.data(); }); S[key]=o; after&&after(); refreshAny(); }, quiet));
   const one = (path, key, def, after) => S.unsubs.push(S.db.doc(path).onSnapshot(s=>{ S[key]=s.exists?s.data():def; after&&after(); refreshAny(); }, ()=>{ S[key]=def; }));
   const where1 = (path, f, v, key) => S.unsubs.push(S.db.collection(path).where(f,v).onSnapshot(q=>{ const o={}; q.docs.forEach(d=>{ if(d.exists) o[d.id]=d.data(); }); S[key]=o; refreshAny(); }, quiet));
-  one('site/pricing','pricing',null); one('site/bot','bot',null); S.myTg=undefined; S.tgLinkUrl=''; one('tg/'+S.uid,'myTg',null, ()=>{ if(S.myTg && S.tgLinkUrl){ S.tgLinkUrl=''; toast(tr('tg.done')); } });
+  one('site/pricing','pricing',null); one('site/bot','bot',null); one('site/call','callCfg',null); S.myTg=undefined; S.tgLinkUrl=''; one('tg/'+S.uid,'myTg',null, ()=>{ if(S.myTg && S.tgLinkUrl){ S.tgLinkUrl=''; toast(tr('tg.done')); } });
   if(role==='owner'){
+    col('privContact','privC');
     col('leads','leads', asgSoon); col('leaves','leaves', ()=>setTimeout(finishLeaves, 1500)); col('dm','dms'); col('gchat','gchats', asgSoon); one('centre/assign','asgCfg',{}, asgSoon); col('staffReq','sreq'); col('teacherPriv','tpriv'); col('applications','apps');
     col('enroll','enrolls'); col('enrollStatus','enrollSt'); col('roster','rosters'); col('live','lives'); col('torders','torders'); one('site/promo','promo',{});
     one('groups/'+MAIN_TID,'myGroups',null); col('homework','hw'); col('hwFor','hwFor'); col('exams','exams'); one('examList/main','examList',{items:{}}, exBoardSync); col('examOrders','exOrders'); col('examAccess','exAcc'); col('examRuns','exRuns', ()=>{ exBoardSync(); ratingScheduleSync(); }); col('stCrit','stCrit', ratingScheduleSync); col('tCrit','tCrit'); one('board/exams','exBoard',null); startClub(); col('library','lib'); one('centre/upload','upCfg',null);
@@ -5816,7 +5838,7 @@ function vTeam(){
   const act=centreActivity(25);
   const row = t => { const st=teacherStats(t.tid), L=tLevel(st.score), la=lastActive(t.tid), em=t.tid===MAIN_TID?S.me?.email:S.staffMap?.[t.tid];
     return `<div class="trow card">
-      <div class="trow-who">${tPhoto(t,t.tid)}<div style="min-width:0"><b>${esc(t.name||'')}</b>${t.tid===MAIN_TID?` <span class="pill">${tr('c.you')}</span>`:''}${t.visible===false?` <span class="pill st-inreview">${tr('c.hidden')}</span>`:''}
+      <div class="trow-who">${tPhoto(t,t.tid)}<div style="min-width:0"><b>${esc(t.name||'')}</b>${t.tid===MAIN_TID?` <span class="pill">${tr('c.you')}</span>`:''}${t.visible===false?` <span class="pill st-inreview">${tr('c.hidden')}</span>`:''}${t.tid!==MAIN_TID?(t.agreedAt?` <span class="pill bk-ok">${tr('agr.signed')}</span>`:` <span class="pill bk-wait">${tr('agr.notSigned')}</span>`):''}
         <div class="small muted">${(t.langs||[]).map(esc).join(' · ')||'–'}</div>
         <div class="small faint">${em?tr('c.signsIn',{email:esc(em)}):tr('c.noLogin')}</div></div></div>
       <div class="trow-lv">${levelBadge(st)}<div class="tprog" title="${L.next!=null?tr('c.toNext',{n:L.toNext}):''}"><i style="width:${L.pct}%"></i></div><span class="small faint num">${tr('c.pts',{n:st.score})}${L.next!=null?' · '+tr('c.toNext',{n:L.toNext}):''}</span></div>
@@ -5830,7 +5852,7 @@ function vTeam(){
     ${hasMain?'':`<div class="notice info" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"><span>${tr('c.mainFirst')}</span><button class="btn sm primary" data-act="c-tedit" data-tid="${MAIN_TID}">${tr('c.mainBtn')}</button></div>`}
     ${list.length?`<div class="tlist">${list.map(row).join('')}</div>`:`<div class="empty"><h3>${tr('c.teamEmptyH')}</h3><p>${tr('c.teamEmptyP')}</p></div>`}
     ${appsSection()}${enrollSection()}${pricingSection()}${tordersSection(false)}
-    <div class="section"><div class="row" style="justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap"><h2 style="margin:0">${tr('c.leadsH')}</h2>${asgBar()}</div><p class="small muted" style="margin:6px 0 12px">${tr('c.asgP')} ${tr('c.joinP')}</p>${leads.length?`<div class="list">${leads.map(l=>`<div class="req ${l.st?'ok':'wait'}">${avatar(l.name,l.id)}<div style="min-width:0"><b>${esc(l.name)}</b> <span class="faint">·</span> <span class="num">${contactHtml(l.contact)}</span>${l.tgChat?` <span class="pill bk-ok">✈ ${tr('tg.on')}</span>`:''}
+    <div class="section"><div class="row" style="justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap"><h2 style="margin:0">${tr('c.leadsH')}</h2>${asgBar()}</div><p class="small muted" style="margin:6px 0 12px">${tr('c.asgP')} ${tr('c.joinP')}</p>${leads.length?`<div class="list">${leads.map(l=>`<div class="req ${l.st?'ok':'wait'}">${avatar(l.name,l.id)}<div style="min-width:0"><b>${esc(l.name)}</b> <span class="faint">·</span> <span class="num">${leadContact(l)?contactHtml(leadContact(l)):lockedContact()}</span>${l.tgChat?` <span class="pill bk-ok">✈ ${tr('tg.on')}</span>`:''}
         <div class="small muted">${[l.lang, l.level==='beginner'?tr('c.beginner'):l.level, l.fmt?tr('pc.'+l.fmt):'', l.quote||'', l.tid?tr('c.forT',{name:esc(tName(l.tid))}):tr('c.anyTeacher')].filter(Boolean).map(x=>x).join(' · ')} · ${ago(l.at)}</div>${l.msg?`<div class="small req-note">“${esc(l.msg)}”</div>`:''}<div style="margin-top:8px">${asgPicker('lead', l.id, l)}</div></div>
         <div class="req-act">${leadSendBtns(l)}${l.st==='joined'?`<span class="pill bk-ok">${tr('c.joined')}</span>`:l.tid?`<button class="btn sm" data-act="c-join-copy" data-tid="${esc(l.tid)}" data-id="${esc(l.id)}">${I.copy} ${tr('c.joinLink')}</button>`:''}${l.st?`${l.st==='joined'?'':`<span class="pill bk-ok">${tr('c.contacted')}</span>`}<button class="btn ghost sm" data-act="c-lead-del" data-id="${esc(l.id)}" style="color:var(--pen)">${tr('delete')}</button>`:`<button class="btn sm primary" data-act="c-lead-done" data-id="${esc(l.id)}">${tr('c.markContacted')}</button>`}</div></div>`).join('')}</div>`:`<p class="faint">${tr('c.noLeads')}</p>`}</div>
     <div class="section"><h2>${tr('c.actH')}</h2>${act.length?`<div class="tact">${act.map(e=>`<div class="tact-row"><span class="tact-dot ${e.kind==='entry'?'in':''}"></span><span>${e.kind==='entry'
@@ -5884,7 +5906,7 @@ function vCentre(){
       return `<div class="req ${s}"><div style="min-width:0"><b>${esc(o?.title||r.title||'–')}</b><div class="small muted">${ago(r.at)}</div>${r.note?`<div class="small req-note">“${esc(r.note)}”</div>`:''}</div><div class="req-act"><span class="pill bk-${s}">${tr('bk.st.'+s)}</span></div></div>`; }).join('')}</div></div>`:''}
     ${tordersSection(true)}
     ${Object.keys(S.myRoster?.students||{}).length?`<div class="section"><h2>${tr('c.myExtra')}</h2><div class="tchips">${Object.entries(S.myRoster.students).map(([uid,x])=>`<span class="lchip ghost">${esc(x.name||'')}${x.lang?' · '+esc(x.lang):''}</span>`).join('')}</div></div>`:''}
-    <div class="section"><h2>${tr('c.myLeads')}</h2><p class="small muted" style="margin:-6px 0 12px">${tr('c.joinP')}</p>${leads.length?`<div class="list">${leads.map(l=>`<div class="req ${l.st?'ok':'wait'}">${avatar(l.name,l.id)}<div style="min-width:0"><b>${esc(l.name)}</b> · <span class="num">${contactHtml(l.contact)}</span><div class="small muted">${[l.lang, l.level==='beginner'?tr('c.beginner'):l.level, l.fmt?tr('pc.'+l.fmt):'', l.quote||''].filter(Boolean).join(' · ')} · ${ago(l.at)}</div>${l.msg?`<div class="small req-note">“${esc(l.msg)}”</div>`:''}</div><div class="req-act">${leadSendBtns(l)}${l.st==='joined'?`<span class="pill bk-ok">${tr('c.joined')}</span>`:`<button class="btn sm" data-act="c-join-copy" data-tid="${esc(l.tid)}" data-id="${esc(l.id)}">${I.copy} ${tr('c.joinLink')}</button>`}</div></div>`).join('')}</div>`:`<p class="faint">${tr('c.noLeads')}</p>`}</div>`;
+    <div class="section"><h2>${tr('c.myLeads')}</h2><p class="small muted" style="margin:-6px 0 12px">${tr('c.joinP')}</p>${leads.length?`<div class="list">${leads.map(l=>`<div class="req ${l.st?'ok':'wait'}">${avatar(l.name,l.id)}<div style="min-width:0"><b>${esc(l.name)}</b> · <span class="num">${leadContact(l)?contactHtml(leadContact(l)):lockedContact()}</span><div class="small muted">${[l.lang, l.level==='beginner'?tr('c.beginner'):l.level, l.fmt?tr('pc.'+l.fmt):'', l.quote||''].filter(Boolean).join(' · ')} · ${ago(l.at)}</div>${l.msg?`<div class="small req-note">“${esc(l.msg)}”</div>`:''}</div><div class="req-act">${leadSendBtns(l)}${l.st==='joined'?`<span class="pill bk-ok">${tr('c.joined')}</span>`:`<button class="btn sm" data-act="c-join-copy" data-tid="${esc(l.tid)}" data-id="${esc(l.id)}">${I.copy} ${tr('c.joinLink')}</button>`}</div></div>`).join('')}</div>`:`<p class="faint">${tr('c.noLeads')}</p>`}</div>`;
 }
 function openOfferAsk(offerId){
   const o=(S.offers?.items||[]).find(x=>x.id===offerId); if(!o) return;
@@ -5905,7 +5927,7 @@ function teacherSelect(id, cur){
 }
 function myTeacherCard(){
   if(S.mode!=='student') return '';
-  const tid=tidOf(S.myProfile), t=S.team?.[tid], meet=S.myTPriv?.meet;
+  const tid=tidOf(S.myProfile), t=S.team?.[tid], meet=callOn()?'':S.myTPriv?.meet;
   const today=todayStr(), links=Object.entries(S.myLessons?.links||{}).map(([id,x])=>({id,...x})).filter(x=>(x.date||'')>=today).sort((a,b)=>(a.date+a.from).localeCompare(b.date+b.from));
   if(!t && !meet && !links.length) return '';
   return `<div class="card section tmine"><div class="row" style="gap:12px;min-width:0">${t?tPhoto(t,tid):''}<div style="min-width:0"><span class="label">${tr('c.yourTeacher')}</span><b style="display:block">${esc(t?.name||tName(tid))}</b>${t?levelBadge(t.stats):''}</div></div>
@@ -5951,11 +5973,17 @@ function openMeet(slotId){
   showDlg(`<form id="mt-form" novalidate>${dlgHead('Google Meet', slotText(slot))}
     <div class="dlg-body"><p class="muted">${tr('c.meetP')}</p>
       ${m?`<div class="notice info" style="margin:0;display:flex;gap:8px;align-items:center;flex-wrap:wrap"><a href="${esc(m.url)}" target="_blank" rel="noopener" style="word-break:break-all">${esc(m.url)}</a></div>`:''}
-      <button type="button" class="btn pen" id="mt-auto">${I.video} ${m?tr('c.meetRedo'):tr('c.meetAuto')}</button>
+      ${callOn()?`<button type="button" class="btn pen" id="mt-lx">${I.video} ${tr('call.slotBtn')}</button><p class="small faint" style="margin:0">${tr('call.slotP')}</p>`:''}
+      <button type="button" class="btn ${callOn()?'':'pen'}" id="mt-auto">${I.video} ${m?tr('c.meetRedo'):tr('c.meetAuto')}</button>
       <label class="field"><span>${tr('c.meetPaste')}</span><input class="inp" id="mt-url" placeholder="https://meet.google.com/abc-defg-hij" value="${esc(m?.url||'')}"></label>
       <p class="small faint">${tr('c.meetHelp')}</p><p class="lg-err" id="mt-err" role="alert"></p></div>
     <div class="dlg-foot"><button type="button" class="btn ghost" data-act="dlg-close">${tr('close')}</button><button class="btn primary">${tr('c.meetSave')}</button></div></form>`, {type:'meet', id:slotId});
   const done = n => { closeDlg(); toast(tr('c.meetShared',{n})); };
+  $('#mt-lx')?.addEventListener('click', async ()=>{ const b=$('#mt-lx'); b.disabled=true;
+    const uids=[...new Set(Object.entries(S.bookings||{}).flatMap(([uid,bk])=>(bk.items||[]).filter(r=>r.slotId===slotId && S.bstat?.[uid]?.[r.id]==='ok').map(()=>uid)))];
+    const end=Date.parse(slot.date+'T'+(slot.to||slot.from||'23:00')+':00+05:00')||Date.now(), start=Date.parse(slot.date+'T'+(slot.from||'00:00')+':00+05:00')||Date.now();
+    try{ await S.db.doc('calls/s-'+slotId).set({tid:MAIN_TID, uids, label:slotText(slot).replace(/&[a-z]+;/g,' '), at:start, until:Math.max(end+2*3600e3, Date.now()+3600e3), by:S.uid}); done(await saveSlotMeet(slotId, callUrl('s-'+slotId))); }
+    catch(e){ b.disabled=false; $('#mt-err').textContent=lgErrText(e); } });
   $('#mt-auto').addEventListener('click', async ()=>{ const b=$('#mt-auto'); b.disabled=true; b.textContent=tr('c.meetWorking');
     const r=await makeMeet(slot, slotGuests(slotId));
     if(r.ok && r.url){ try{ done(await saveSlotMeet(slotId, r.url)); }catch(e){ $('#mt-err').textContent=lgErrText(e); } }
@@ -5997,6 +6025,8 @@ function openApply(){
       <label class="field"><span>${tr('c.apBio')}</span><textarea class="inp" id="ap-bio" rows="4" maxlength="1500" placeholder="${tr('c.fBioPh')}"></textarea></label>
       <label class="field"><span>${tr('c.apAch')}</span><textarea class="inp" id="ap-ach" rows="3" maxlength="1500" placeholder="${tr('c.fAchPh')}"></textarea></label>
       <label class="field"><span>${tr('c.apMsg')} <span class="faint">${tr('optional')}</span></span><textarea class="inp" id="ap-msg" rows="2" maxlength="500" placeholder="${tr('c.apMsgPh')}"></textarea></label>
+      <details class="agr-d"><summary>${tr('agr.show')}</summary>${agrList()}</details>
+      <label class="small row" style="gap:8px;cursor:pointer;align-items:flex-start;flex-wrap:nowrap"><input type="checkbox" id="ap-agree" style="margin-top:4px"> <span>${tr('agr.check')}</span></label>
       <p class="lg-err" id="ap-err" role="alert"></p></div>
     <div class="dlg-foot"><button type="button" class="btn ghost" data-act="dlg-close">${tr('cancel')}</button><button class="btn pen" id="ap-go">${tr('c.apSend')}</button></div></form>`, {type:'apply'});
   const lv = () => { const y=Math.max(0,Math.round(+$('#ap-years').value||0)), L=tLevel(expPts(y)); $('#ap-lv').innerHTML=`${tr('c.apLv')} <span class="tlevel lv${L.n}">${stars(L.n)}<b>${L.name}</b></span> <span class="small faint">${tr('c.apLvNote')}</span>`; };
@@ -6026,8 +6056,9 @@ function openApply(){
     const noPr=langs.find(l=>!prices[l]); if(noPr){ err.textContent=tr('c.apPrNeed',{l:langName(noPr)}); return; }
     const bio=$('#ap-bio').value.trim(); if(bio.length<20){ err.textContent=tr('c.needBio'); return; }
     if(!$('#ap-photo').value){ err.textContent=tr('c.needPhoto'); return; }
+    if(!$('#ap-agree').checked){ err.textContent=tr('agr.need'); return; }
     const d={name, contact, email, photo:$('#ap-photo').value, langs:langs.slice(0,12), levels:$('#ap-levels').value.trim(), years:Math.max(0,Math.min(60,Math.round(+$('#ap-years').value||0))),
-      lessonLen:+$('#ap-len').value, bio, achievements:$('#ap-ach').value.split('\n').map(x=>x.replace(/^[-•*]\s*/,'').trim()).filter(Boolean).slice(0,20), msg:$('#ap-msg').value.trim(), at:Date.now(), prices};
+      lessonLen:+$('#ap-len').value, bio, achievements:$('#ap-ach').value.split('\n').map(x=>x.replace(/^[-•*]\s*/,'').trim()).filter(Boolean).slice(0,20), msg:$('#ap-msg').value.trim(), at:Date.now(), prices, agree:Date.now()};
     const b=$('#ap-go'); b.disabled=true;
     try{ await S.db.collection('applications').doc().set(d);
       $('#ap-form').innerHTML=`${dlgHead(tr('c.apK'), tr('c.thanksH'))}<div class="dlg-body"><p>${tr('c.apThanks',{name:esc(name.split(' ')[0])})}</p></div><div class="dlg-foot"><button type="button" class="btn primary" data-act="dlg-close">${tr('app.ok')}</button></div>`;
@@ -6051,7 +6082,7 @@ function appsSection(){
 }
 async function acceptApp(id){
   const a=S.apps?.[id]; if(!a) return; const tid='t-'+newId();
-  const t={name:a.name, photo:a.photo||'', headline:'', langs:a.langs||[], levels:a.levels||'', years:+a.years||0, lessonLen:+a.lessonLen||60, bio:a.bio||'', achievements:a.achievements||[], prices:a.prices||{},
+  const t={...(a.agree?{agreedAt:a.agree}:{}), name:a.name, photo:a.photo||'', headline:'', langs:a.langs||[], levels:a.levels||'', years:+a.years||0, lessonLen:+a.lessonLen||60, bio:a.bio||'', achievements:a.achievements||[], prices:a.prices||{},
     visible:true, order:Date.now(), stats:{students:0,active:0,reviews:0,gain:0,band:null,score:expPts(a.years)}};
   await S.db.doc('teachers/'+tid).set(t);
   await S.db.doc('teacherPriv/'+tid).set({meet:''});
@@ -6093,7 +6124,7 @@ const isLive = l => !!(l && l.on && (l.until||0)>Date.now());
 
 function vStuTeachers(){
   const mine=myTids(), all=teamList(false), st=S.myEnrollSt||{}, req=(S.myEnroll?.items||[]);
-  const mineCards = mine.map(tid=>{ const t=S.team[tid]; if(!t) return ''; const lf=S.myLiveFor?.[tid], live=isLive(lf), meet=(live&&lf.url)||meetOf(tid);
+  const mineCards = mine.map(tid=>{ const t=S.team[tid]; if(!t) return ''; const lf=S.myLiveFor?.[tid], live=isLive(lf), meet=(live&&lf.url)||(callOn()?'':meetOf(tid));
     return `<div class="card tmine2">${tPhoto(t,tid)}<div style="min-width:0;flex:1"><b>${esc(t.name||'')}</b> ${live?`<span class="livedot">${tr('c.liveNow')}</span>`:''}
       <div class="small muted">${(t.langs||[]).map(esc).join(' · ')}${t.lessonLen?' · '+lenText(t.lessonLen):''}</div>${levelBadge(t.stats)}</div>
       <div class="tmine-act">${meet?`<a class="btn ${live?'pen':''} sm" href="${esc(meet)}" target="_blank" rel="noopener">${I.video} ${tr('c.join')}</a>`:`<span class="small faint">${tr('c.noMeetYet')}</span>`}
@@ -6249,6 +6280,7 @@ function chatMarkRead(){
 document.addEventListener('visibilitychange', ()=>{ if(!document.hidden) chatMarkRead(); });
 async function chatSend(text){
   const c=chatCur(); if(!c) return; text=String(text||'').trim().slice(0,1000); if(!text) return;
+  if(c.side!=='g' && S.role!=='owner' && hasContact(text)) throw {code:'contact'};
   const now=Date.now(), last={lastAt:now, lastText:chatClip(text)}, base=c.kind==='g'?'gchat/':'dm/';
   if(c.side==='g'){
     await S.db.collection(base+c.id+'/msgs').doc().set({name:(c.doc?.name||tr('dm.guestTag')).slice(0,80), text, at:now, by:'g'});
@@ -6267,7 +6299,7 @@ function wireChatForm(){
   const f=$('#ch-form'); if(!f) return; const ta=$('#ch-text');
   ta.addEventListener('keydown', e=>{ if(e.key==='Enter' && !e.shiftKey && !matchMedia('(hover:none)').matches){ e.preventDefault(); f.requestSubmit(); } });
   f.addEventListener('submit', async e=>{ e.preventDefault(); const text=ta.value; if(!text.trim()) return; const b=f.querySelector('button'); ta.value=''; b.disabled=true;
-    try{ await chatSend(text); }catch(err){ ta.value=text; toast(tr('dm.fail',{code:esc(String(err?.code||err?.message||err))}), 8000); }
+    try{ await chatSend(text); }catch(err){ ta.value=text; toast(err?.code==='contact'?tr('ch.noContact'):tr('dm.fail',{code:esc(String(err?.code||err?.message||err))}), 8000); }
     b.disabled=false; ta.focus(); });
 }
 const chRow = (data, name, id, sub, at, un, on) => `<button class="chrow ${on?'on':''} ${un?'un':''}" data-act="c-ch-open" ${data}>${avatar(name,id)}<span class="chrow-t"><b>${esc(name)}</b><span class="small muted">${esc(sub||'')}</span></span><span class="chrow-m">${at?`<span class="small faint">${esc(ago(at))}</span>`:''}${un?'<span class="chdot"></span>':''}</span></button>`;
@@ -6305,7 +6337,7 @@ function chatHeadT(){
   const v=S.view; let c=(v.k==='g'?S.gchats:S.dms)?.[v.id]; if(!c && v.k==='dm' && v.uid) c={uid:v.uid, tid:v.id.slice(v.uid.length+1), name:S.profiles?.[v.uid]?.name||''}; if(!c) return '';
   if(v.k!=='g'){ const nm=c.name||S.profiles?.[c.uid]?.name||'–'; return `${avatar(nm,c.uid)}<div style="min-width:0"><b>${esc(nm)}</b><div class="small muted">${tr('dm.withT',{name:esc(tName(c.tid))})}</div></div>`; }
   return `${avatar(c.name||'?',v.id)}<div style="min-width:0"><b>${esc(c.name||'–')}</b> <span class="pill">${tr('dm.guestTag')}</span>
-    <div class="small muted">${contactHtml(c.contact)}${c.lang?' · '+esc(c.lang):''}${c.tid?' · '+tr('c.forT',{name:esc(tName(c.tid))}):''}</div></div>${S.role==='owner'?asgPicker('g',v.id,c):''}`;
+    <div class="small muted">${gContact(v.id,c)?contactHtml(gContact(v.id,c)):lockedContact()}${c.lang?' · '+esc(c.lang):''}${c.tid?' · '+tr('c.forT',{name:esc(tName(c.tid))}):''}</div></div>${S.role==='owner'?asgPicker('g',v.id,c):''}`;
 }
 function vChatT(){
   const v=S.view, head=`<div class="page-head"><div><h1>${tr('dm.h')}</h1><p>${tr('dm.pT')}</p></div></div>`;
@@ -6364,7 +6396,7 @@ function openGuestChat(tid){
 function showGuestChat(){
   const c=S.gchat||{};
   const d=showDlg(`${dlgHead(tr('dm.guestK'), tr('dm.guestH'))}<div class="dlg-body">
-      ${c.name?`<p class="small muted" style="margin:0">${esc(c.name)} · ${esc(c.contact||'')}</p>`:''}
+      ${c.name?`<p class="small muted" style="margin:0">${esc(c.name)}${c.contact?' · '+esc(c.contact):''}</p>`:''}
       <div class="club-msgs gch-msgs" id="ch-msgs"></div>
       <form id="ch-form" class="club-in gch-in" novalidate><textarea class="inp" id="ch-text" rows="2" maxlength="1000" placeholder="${tr('dm.ph')}"></textarea><button class="btn pen">${tr('dm.send')}</button></form>
       <p class="small faint" style="margin:0">${tr('dm.guestNote')}</p></div>`, {type:'gchat-live'});
@@ -6455,6 +6487,59 @@ function liveBanner(){
   return Object.keys(L).filter(t=>isLive(L[t]) && urlOf(t)).map(t=>`<div class="livebar"><span class="livedot">${tr('c.liveNow')}</span>
     <span style="min-width:0"><b>${tr('c.liveStarted',{name:esc(L[t].name||tName(t))})}</b><br><span class="small">${L[t].label?esc(L[t].label)+' · ':''}${tr('c.liveAgo',{ago:ago(L[t].at)})}</span></span>
     <a class="btn pen" href="${esc(urlOf(t))}" target="_blank" rel="noopener">${I.video} ${tr('c.join')}</a></div>`).join('');
+}
+
+
+/* ---------------- in-site video call (Jitsi as a Service, 8x8.vc) ---------------- */
+// site/call = {on, app}: written by the bot after each deploy (on only when the JaaS keys are set). Until then lessons use Google Meet.
+// calls/{room} = {tid, uids, label, at, until, by}: who may enter; the bot (callToken) gives each of them a personal pass.
+const callOn = () => !!S.callCfg?.on && !S.demo;
+const callUrl = room => siteUrl()+'#call='+room;
+async function callOpen(uids, label){
+  const room='lx-'+myTid()+'-'+Date.now().toString(36), now=Date.now();
+  await S.db.doc('calls/'+room).set({tid:myTid(), uids:uids.slice(0,60), label:String(label||'').slice(0,80), at:now, until:now+6*3600e3, by:S.uid});
+  return room;
+}
+function vCall(){
+  return `<div class="call-wrap"><div class="call-head"><div style="min-width:0"><span class="label">${tr('call.h')}</span><b id="call-title" style="display:block">Lexora</b></div>
+    <button class="btn ghost sm" data-act="c-call-leave">${I.back} ${tr('call.leave')}</button></div><div id="call-box" class="call-box"><div class="loading">${tr('call.loading')}</div></div></div>`;
+}
+async function callApi(room, ping){
+  const tok=await S.user.getIdToken();
+  const r=await fetch(`https://europe-west1-${S.fbProject}.cloudfunctions.net/callToken`, {method:'POST', headers:{'content-type':'application/json', authorization:'Bearer '+tok}, body:JSON.stringify({room, ping:!!ping})});
+  try{ return await r.json(); }catch(e){ return {ok:false, error:'server'}; }
+}
+let jitsiJs=null;
+const loadJitsi = app => jitsiJs ||= new Promise((ok,bad)=>{ const s=document.createElement('script'); s.src=`https://8x8.vc/${encodeURIComponent(app)}/external_api.js`; s.onload=ok; s.onerror=()=>{ jitsiJs=null; s.remove(); bad(new Error('script')); }; document.head.appendChild(s); });
+async function callStart(room){
+  if(S.callRoom===room) return; callStop(); S.callRoom=room;
+  const fail = k => { if(S.callRoom!==room) return; S.callRoom=null; const b=$('#call-box'); if(b) b.innerHTML=`<div class="empty"><h3>${tr('call.errH')}</h3><p>${tr('call.e.'+k)!=='call.e.'+k?tr('call.e.'+k):tr('call.e.server')}</p></div>`; };
+  if(S.demo || !S.user) return fail('demo');
+  let r; try{ r=await callApi(room); }catch(e){ return fail('net'); }
+  if(!r.ok) return fail(r.error||'server');
+  try{ await loadJitsi(r.room.split('/')[0]); }catch(e){ return fail('net'); }
+  const box=$('#call-box'); if(S.callRoom!==room || !box || !window.JitsiMeetExternalAPI) return;
+  $('#call-title').textContent = r.label || 'Lexora'; box.innerHTML='';
+  const api=new window.JitsiMeetExternalAPI(r.domain, { roomName:r.room, jwt:r.jwt, parentNode:box, width:'100%', height:'100%', lang:LANG==='ru'?'ru':'en',
+    userInfo:{displayName:r.name},
+    // no invite links, no in-call chat (contacts stay out of the lesson too)
+    configOverwrite:{ disableInviteFunctions:true, disableDeepLinking:true, subject:r.label||'Lexora', prejoinConfig:{enabled:true},
+      toolbarButtons:['microphone','camera','desktop','fullscreen','raisehand','tileview','select-background','settings','toggle-camera','whiteboard','hangup'] },
+    interfaceConfigOverwrite:{ MOBILE_APP_PROMO:false, SHOW_JITSI_WATERMARK:false } });
+  S.call={api, room, ping:setInterval(()=>{ callApi(room, true).catch(()=>{}); }, 60e3)};
+  const out=()=>{ if(S.call?.api!==api) return; callStop(); go(S.mode==='student'?'home':'inbox'); };
+  api.addListener('readyToClose', out); api.addListener('videoConferenceLeft', out);
+}
+function callStop(){ const c=S.call; S.call=null; S.callRoom=null; if(!c) return; clearInterval(c.ping); try{ c.api.dispose(); }catch(e){} }
+// lesson links to a Lexora room open here, not in a new tab
+document.addEventListener('click', e=>{ const a=e.target.closest?.('a[href*="#call="]'); if(!a) return; const m=a.getAttribute('href').match(/#call=([\w-]{3,80})/); if(!m) return; e.preventDefault(); e.stopPropagation(); go('call',{room:m[1]}); }, true);
+
+/* ---------- the teacher agreement (no taking students outside Lexora) ---------- */
+const agrList = () => `<ol class="agr">${[1,2,3,4,5,6].map(i=>`<li>${tr('agr.'+i)}</li>`).join('')}</ol>`;
+function vAgree(){
+  return `<div class="paper" style="max-width:760px"><h1 class="login-h" style="font-size:clamp(30px,5vw,42px)">${tr('agr.h')}</h1><p class="muted" style="margin:12px 0 6px">${tr('agr.p')}</p>${agrList()}
+    <label class="row" style="gap:10px;cursor:pointer;align-items:flex-start;flex-wrap:nowrap;margin-top:14px"><input type="checkbox" id="agr-c" style="margin-top:5px"> <span>${tr('agr.check')}</span></label>
+    <p class="lg-err" id="agr-err" role="alert"></p><button class="btn pen" data-act="c-agr-ok" style="margin-top:10px">${tr('agr.accept')}</button></div>`;
 }
 
 /* ---------- teachers' own services (IELTS mock, essay checking, speaking club…) ---------- */
@@ -6699,7 +6784,7 @@ function teacherCritHtml(){
 /* ---------- the student's dashboard: schedule, teacher, status, to-do ---------- */
 function homeDash(){
   if(S.mode!=='student') return '';
-  const today=todayStr(), tid=tidOf(S.myProfile), t=S.team?.[tid], meet=S.myTPriv?.meet;
+  const today=todayStr(), tid=tidOf(S.myProfile), t=S.team?.[tid], meet=callOn()?'':S.myTPriv?.meet;
   const links=Object.entries(S.myLessons?.links||{}).map(([id,x])=>({id,...x})).filter(x=>(x.date||'')>=today).sort((a,b)=>(a.date+a.from).localeCompare(b.date+b.from)).slice(0,4);
   const when = x => { const d=parseDate(x.date); return `<span class="dash-when"><b>${x.date===today?tr('dash.today'):esc(cap(dloc(d,{weekday:'short'})))}</b><span class="num">${esc(dloc(d,{day:'numeric',month:'short'}))}</span></span>`; };
   const sched = `<section class="dash-tile dash-sched"><h3>${tr('dash.sched')}</h3>
@@ -6901,25 +6986,26 @@ function openGroup(id){
 function openStart(){
   const gs=myGroups(), st=myStudentList(), saved=myMeet(), last=LS.get('live-to:'+myTid(),'all');
   const opt=(v,label,extra='')=>`<label class="to-opt"><input type="radio" name="lv-to" value="${esc(v)}" ${last===v?'checked':''}> <span>${label}</span>${extra}</label>`;
-  showDlg(`<form id="st-form" novalidate>${dlgHead('Google Meet', tr('c.startH'))}<div class="dlg-body">
+  showDlg(`<form id="st-form" novalidate>${dlgHead(callOn()?'Lexora':'Google Meet', tr('c.startH'))}<div class="dlg-body">
     <div class="field"><span>${tr('c.startWho')}</span><div class="to-list">
       ${gs.map(g=>opt('g:'+g.id, `${I.team} <b>${esc(g.name)}</b>`, `<span class="small faint">${tr('c.grpN',{n:(g.members||[]).length})}</span>`)).join('')}
       ${opt('one', `<b>${tr('c.startOne')}</b>`, `<select class="inp" id="st-one" style="max-width:240px">${st.map(x=>`<option value="${esc(x.uid)}" ${LS.get('live-one:'+myTid(),'')===x.uid?'selected':''}>${esc(x.name)}</option>`).join('')}</select>`)}
       ${opt('all', `<b>${tr('c.startAll')}</b>`, `<span class="small faint">${tr('c.grpN',{n:st.length})}</span>`)}
     </div>${gs.length?'':`<p class="small faint" style="margin-top:6px">${tr('c.startNoGroups')} <button type="button" class="btn ghost sm" data-act="go" data-v="groups">${tr('c.grpH')}</button></p>`}</div>
-    <label class="field"><span>${tr('c.fMeet')} ${saved?'':`<a class="btn sm" href="https://meet.google.com/new" target="_blank" rel="noopener" style="margin-left:6px">${I.video} meet.google.com/new</a>`}</span><input class="inp" id="st-url" value="${esc(saved||'')}" placeholder="https://meet.google.com/abc-defg-hij"></label>
-    <label class="small row" style="gap:8px;cursor:pointer"><input type="checkbox" id="st-keep" ${saved?'':'checked'}> ${tr('c.liveKeep')}</label>
+    ${callOn()?`<p class="notice info" style="margin:0">${I.video} ${tr('call.inSite')}</p>`:`<label class="field"><span>${tr('c.fMeet')} ${saved?'':`<a class="btn sm" href="https://meet.google.com/new" target="_blank" rel="noopener" style="margin-left:6px">${I.video} meet.google.com/new</a>`}</span><input class="inp" id="st-url" value="${esc(saved||'')}" placeholder="https://meet.google.com/abc-defg-hij"></label>
+    <label class="small row" style="gap:8px;cursor:pointer"><input type="checkbox" id="st-keep" ${saved?'':'checked'}> ${tr('c.liveKeep')}</label>`}
     <p class="lg-err" id="st-err" role="alert"></p></div>
     <div class="dlg-foot"><button type="button" class="btn ghost" data-act="dlg-close">${tr('cancel')}</button><button class="btn pen">${I.video} ${tr('c.liveSend')}</button></div></form>`, {type:'start'});
   if(!document.querySelector('input[name="lv-to"]:checked')) document.querySelector('input[name="lv-to"][value="all"]').checked=true;
-  $('#st-form').addEventListener('submit', async e=>{ e.preventDefault(); const err=$('#st-err'), url=$('#st-url').value.trim();
-    if(!/^https:\/\/meet\.google\.com\//.test(url)){ err.textContent=tr('c.badMeet'); return; }
+  $('#st-form').addEventListener('submit', async e=>{ e.preventDefault(); const err=$('#st-err'), inSite=callOn(), url=inSite?'':$('#st-url').value.trim();
+    if(!inSite && !/^https:\/\/meet\.google\.com\//.test(url)){ err.textContent=tr('c.badMeet'); return; }
     const to=document.querySelector('input[name="lv-to"]:checked').value; let uids=[], label='';
     if(to==='all'){ uids=st.map(x=>x.uid); label=tr('c.startAll'); }
     else if(to==='one'){ const u=$('#st-one')?.value; if(!u){ err.textContent=tr('c.noStudentsYet'); return; } uids=[u]; label=st.find(x=>x.uid===u)?.name||''; LS.set('live-one:'+myTid(),u); }
     else { const g=gs.find(x=>'g:'+x.id===to); uids=g?.members||[]; label=g?.name||''; }
     if(!uids.length){ err.textContent=tr('c.startNobody'); return; }
     LS.set('live-to:'+myTid(),to);
+    if(inSite){ try{ const room=await callOpen(uids, label); closeDlg(); await goLive(callUrl(room), uids, label); go('call',{room}); }catch(x){ err.textContent=lgErrText(x); } return; }
     window.open(url,'_blank','noopener');
     try{ if($('#st-keep').checked && url!==saved){ await S.db.doc('teacherPriv/'+myTid()).set({meet:url}); if(S.role==='staff') S.myTPriv={meet:url}; else S.tpriv={...(S.tpriv||{}), [MAIN_TID]:{meet:url}}; }
       closeDlg(); await goLive(url, uids, label); }catch(x){ err.textContent=lgErrText(x); } });
@@ -7030,6 +7116,7 @@ function drawClubMsgs(grew){ const el=$('#club-msgs'); if(!el) return; const atE
 after.club = () => { clubDayCheck(); const el=$('#club-msgs'); if(el) el.scrollTop=el.scrollHeight; const f=$('#club-form'); if(!f) return;
   const ta=$('#club-text'); ta.addEventListener('keydown', e=>{ if(e.key==='Enter' && !e.shiftKey){ e.preventDefault(); f.requestSubmit(); } });
   f.addEventListener('submit', async e=>{ e.preventDefault(); const text=ta.value.trim(); if(!text) return; clubDayCheck();
+    if(S.role!=='owner' && hasContact(text)){ toast(tr('ch.noContact'), 8000); return; }
     const name = S.mode==='student' ? (S.myProfile?.name||tr('student')) : (S.team?.[myTid()]?.name || S.me?.name || tr('teacher'));
     const d={uid:S.uid, name:name.slice(0,80), text:text.slice(0,500), at:Date.now()}; if(isMod()) d.mod=true;
     ta.value=''; try{ await S.db.collection(clubPath()+'/msgs').doc().set(d); }catch(err){ ta.value=text; toast(tr('c.clubSendFail',{code:esc(String(err?.code||err?.message||err))}), 8000); } }); };
@@ -7753,6 +7840,9 @@ document.addEventListener('click', async ev => {
     case 'c-enroll-x': try{ await S.db.doc('enroll/'+S.uid).set({name:S.myProfile?.name||'', items:(S.myEnroll?.items||[]).filter(i=>i.tid!==b.dataset.tid)}); }catch(e){ dbErr(e,'svc'); } break;
     case 'c-en-set': b.disabled=true; try{ await setEnroll(b.dataset.uid, b.dataset.tid, b.dataset.st); }catch(e){ b.disabled=false; dbErr(e,'svc'); } break;
     case 'c-live': openStart(); break;
+    case 'c-agr-ok': { if(!$('#agr-c')?.checked){ $('#agr-err').textContent=tr('agr.need'); break; } b.disabled=true;
+      try{ const at=Date.now(); await S.db.doc('teachers/'+S.staffTid).update({agreedAt:at}); S.team[S.staffTid]={...S.team[S.staffTid], agreedAt:at}; renderMain(); }catch(e){ b.disabled=false; $('#agr-err').textContent=lgErrText(e); } break; }
+    case 'c-call-leave': callStop(); go(S.mode==='student'?'home':'inbox'); break;
     case 'c-live-end': b.disabled=true; try{ await endLive(); }catch(e){ b.disabled=false; dbErr(e,'svc'); } break;
     case 'c-grp': openGroup(b.dataset.id||null); break;
     case 'c-grp-del': { if(!b.dataset.armed){ b.dataset.armed='1'; b.textContent=tr('del.sure'); break; } const list=myGroups().filter(g=>g.id!==b.dataset.id);

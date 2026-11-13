@@ -231,5 +231,49 @@ const ev = (params, after, before) => ({ params, data: before === undefined ? { 
   ok('the owner is told about a new payment report, once', sent.length === 1 && sent[0].chat_id === 77 && /175 000 so‘m/.test(sent[0].text) && /click/.test(sent[0].text));
   store.delete('tg/own');
 
+  console.log('Keeping students with Lexora');
+  const hc = bot._t.hasContact;
+  ok('phone numbers, @usernames, emails, messenger links and card numbers are caught', ['+998 90 123 45 67', '901234567', 'write me @aziza_k', 'my mail a.b@gmail.com', 't.me/aziza', 'wa.me/99890', '8600 1234 5678 9012'].every(hc));
+  ok('ordinary lesson messages pass', !['See you at 18:00 on 12.11.2026', 'Page 45, exercises 3-7', 'IELTS 6.5 by May', 'Salom ustoz!'].some(hc));
+  ok('hidden text keeps the message but not the number', bot._t.hideContact('call +998 90 123 45 67 please') === 'call 🔒 please');
+  store.set('tg/own', { chatId: 77, role: 'owner', tid: 'main', owner: true });
+  sent.length = 0; await bot.onDmMessage.run(ev({ id: 's1_t-dil', m: 'c' }, { uid: 's1', name: 'Aziza', text: 'my number 90 123 45 67', by: 's', at: 2 }));
+  ok('a chat message with a phone number is not relayed; the owner is told', !sent.some(x => x.chat_id === 22) && sent.some(x => x.chat_id === 77 && /aloqa ma’lumoti/.test(x.text)));
+  store.set('leads/L9', { name: 'Kamola', contact: '+998 93 111 22 33', lang: 'English', tid: 't-dil', at: 1 });
+  sent.length = 0; await bot.onLeadCreated.run({ params: { id: 'L9' }, data: { data: () => store.get('leads/L9'), ref: doc('leads/L9') } });
+  ok('a trial request keeps its contact only for the owner', store.get('leads/L9').contact === '' && store.get('privContact/lead_L9').contact === '+998 93 111 22 33'
+    && sent.some(x => x.chat_id === 77 && /111 22 33/.test(x.text)) && sent.some(x => x.chat_id === 22 && /🔒/.test(x.text) && !/111 22 33/.test(x.text)));
+
+  console.log('In-site video call');
+  const { privateKey, publicKey } = require('crypto').generateKeyPairSync('rsa', { modulusLength: 2048 });
+  process.env.JAAS_APP_ID = 'vpaas-magic-cookie-test'; process.env.JAAS_KID = 'vpaas-magic-cookie-test/abc'; process.env.JAAS_KEY = privateKey.export({ type: 'pkcs8', format: 'pem' });
+  const t0 = Date.parse('2030-04-01T10:00:00Z');
+  store.set('calls/lx-r1', { tid: 't-dil', uids: ['s1'], label: 'Group A', at: t0, until: t0 + 3 * 3600e3 });
+  let cr = await bot._t.callRun('s1', 'lx-r1', false, t0 + 60e3);
+  const parts = (cr.body.jwt || '').split('.'), claims = parts[1] ? JSON.parse(Buffer.from(parts[1], 'base64url').toString()) : {};
+  ok('an invited student gets a personal pass for that room only', cr.code === 200 && cr.body.room === 'vpaas-magic-cookie-test/lx-r1' && claims.room === 'lx-r1' && claims.context.user.name === 'Aziza' && claims.context.user.moderator === 'false' && claims.exp <= Math.floor((t0 + 3 * 3600e3) / 1000) + 1);
+  ok('the pass is signed with the Lexora key', require('crypto').createVerify('RSA-SHA256').update(parts[0] + '.' + parts[1]).verify(publicKey, Buffer.from(parts[2], 'base64url')));
+  cr = await bot._t.callRun('dil', 'lx-r1', false, t0 + 60e3);
+  ok('the lesson’s teacher enters as moderator', cr.code === 200 && JSON.parse(Buffer.from(cr.body.jwt.split('.')[1], 'base64url').toString()).context.user.moderator === 'true');
+  ok('anyone else is refused', (await bot._t.callRun('s2', 'lx-r1', false, t0 + 60e3)).code === 403);
+  store.set('calls/s-later', { tid: 'main', uids: ['s1'], at: t0 + 2 * 864e5, until: t0 + 3 * 864e5 });
+  ok('a booked lesson can’t be entered days early', (await bot._t.callRun('s1', 's-later', false, t0)).code === 425);
+  ok('an ended lesson can’t be entered', (await bot._t.callRun('s1', 'lx-r1', false, t0 + 4 * 3600e3)).code === 410);
+  for (let i = 2; i <= 6; i++) await bot._t.callRun('s1', 'lx-r1', true, t0 + i * 60e3);
+  await bot._t.callRun('s1', 'lx-r1', true, t0 + 6 * 60e3 + 5e3);
+  ok('lesson minutes are logged once a minute', store.get('callLog/lx-r1').people.s1.mins === 5 && store.get('callMins/2030-04-01_s1').mins === 5);
+  delete process.env.JAAS_APP_ID;
+  ok('without keys the in-site call is off', (await bot._t.callRun('s1', 'lx-r1', false, t0)).code === 503);
+
+  console.log('Attendance');
+  const now9 = Date.parse('2030-05-30T08:00:00Z'), dk = ms => bot._t.dayKey(ms);
+  store.set('callMins/' + dk(now9 - 20 * 864e5) + '_s1', { uid: 's1', day: dk(now9 - 20 * 864e5), tid: 't-dil', mod: false, mins: 80 });
+  store.set('callMins/' + dk(now9 - 10 * 864e5) + '_dil', { uid: 'dil', day: dk(now9 - 10 * 864e5), tid: 't-dil', mod: true, mins: 400 });
+  store.set('callMins/' + dk(now9 - 2 * 864e5) + '_dil', { uid: 'dil', day: dk(now9 - 2 * 864e5), tid: 't-dil', mod: true, mins: 80 });
+  const at = await bot._t.attendance(now9);
+  ok('a student with no lesson for 14 days is listed', at.gone.includes('Aziza'));
+  ok('a teacher whose lesson time dropped is listed', at.drop.some(x => /Dilso‘z/.test(x) && /400 → 80/.test(x)));
+  store.delete('tg/own');
+
   console.log(`\n${pass} passed, ${fail} failed`); process.exit(fail ? 1 : 0);
 })().catch(e => { console.error(e); process.exit(1); });

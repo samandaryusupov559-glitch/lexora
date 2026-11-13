@@ -44,7 +44,14 @@ jobs:
         if: env.HAS_SA == 'true' && env.HAS_BOT == 'true'
         env:
           TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
-        run: printf 'TELEGRAM_TOKEN=%s\nSITE_URL=%s\nOWNER_EMAIL=%s\nREGION=%s\n' "$TELEGRAM_TOKEN" "$SITE_URL" "$OWNER_EMAIL" "$REGION" > functions/.env
+          # optional: the in-site video call (Jitsi as a Service, jaas.8x8.vc). Without them lessons keep using Google Meet.
+          JAAS_APP_ID: ${{ secrets.JAAS_APP_ID }}
+          JAAS_KID: ${{ secrets.JAAS_KID }}
+          JAAS_KEY: ${{ secrets.JAAS_KEY }}
+        run: |
+          printf 'TELEGRAM_TOKEN=%s\nSITE_URL=%s\nOWNER_EMAIL=%s\nREGION=%s\n' "$TELEGRAM_TOKEN" "$SITE_URL" "$OWNER_EMAIL" "$REGION" > functions/.env
+          # the private key goes in as one base64 line, so its line breaks survive the .env file
+          printf 'JAAS_APP_ID=%s\nJAAS_KID=%s\nJAAS_KEY=%s\n' "$JAAS_APP_ID" "$JAAS_KID" "$(printf '%s' "$JAAS_KEY" | base64 -w0)" >> functions/.env
 
       - uses: google-github-actions/auth@v2
         if: env.HAS_SA == 'true'

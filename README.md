@@ -127,6 +127,20 @@ Birinchi joylash ba'zan Google xizmatlari endi yoqilayotgani uchun xato bilan tu
 
 Narxi: Blaze tarifining bepul ulushi (oyiga 2 mln chaqiruv) Lexora uchun yetarli, konteyner saqlash uchun oyiga bir necha sent olinadi. Bot kodining sinovi: `cd functions && npm install && npm test`.
 
+## Lexora ichidagi video dars (Jitsi as a Service)
+
+Darslar Google Meet o'rniga Lexoraning o'zida ochiladi. Kalitlar qo'shilmaguncha hammasi avvalgidek Google Meet bilan ishlaydi.
+
+1. https://jaas.8x8.vc saytida bepul akkaunt oching (25 tagacha foydalanuvchi bepul).
+2. **API Keys** bo'limida "Add API key" → "Generate API key pair" ni bosing va yuklangan **private key** faylini saqlang.
+3. GitHub → Settings → Secrets and variables → Actions → "New repository secret" orqali uchtasini qo'shing:
+   - `JAAS_APP_ID` — AppID (`vpaas-magic-cookie-…`)
+   - `JAAS_KID` — kalit ID (`vpaas-magic-cookie-…/…`)
+   - `JAAS_KEY` — private key faylining butun matni (`-----BEGIN PRIVATE KEY-----` dan oxirigacha)
+4. Actions → "Firebase (bot + rules)" → **Run workflow**. Shundan keyin "Darsni boshlash" darsni Lexorada ochadi.
+
+Har bir talaba va ustoz shaxsiy kirish ruxsatini oladi (faqat o'sha dars, o'sha ism uchun). Kim kirgani va qancha o'tirgani har kungi bot hisobotida ko'rinadi.
+
 ## Foydalanish
 
 1. Saytga birinchi bo'lib **o'zingiz** kiring: **Teacher sign-in** tugmasini bosing, `TEACHER_EMAIL` dagi emailni yozing va kelgan havolani o'sha qurilmada oching. O'qituvchi sahifasi ochiladi.
