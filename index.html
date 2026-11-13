@@ -848,6 +848,16 @@ td.nwc.off{color:var(--ink-3);font-size:18px}
 .tph.lg{width:96px;height:96px;border-radius:24px}
 .tph.ini .av{width:100%;height:100%;border-radius:inherit;font-size:22px;box-shadow:none}
 .tph.lg.ini .av{font-size:32px}
+/* teacher photos shown large: on the cards, in the profile, and full screen on click */
+.tcard-ph{display:block;margin:calc(-1*var(--tpad,20px)) calc(-1*var(--tpad,20px)) 2px;aspect-ratio:4/5;overflow:hidden;background:var(--sheet-2);border-top-left-radius:inherit;border-top-right-radius:inherit}
+.tcard-ph img{width:100%;height:100%;object-fit:cover;object-position:center top;display:block;transition:transform .4s var(--ease)}
+.tcard:hover .tcard-ph img{transform:scale(1.03)}
+.lx .tcard{--tpad:22px}
+.tprof-ph{display:block;width:100%;max-width:340px;margin:0 auto 16px;padding:0;border:0;border-radius:20px;overflow:hidden;aspect-ratio:4/5;background:var(--sheet-2);cursor:zoom-in}
+.tprof-ph img{width:100%;height:100%;object-fit:cover;object-position:center top;display:block}
+.ph-zoom{border:0;padding:0;background:transparent;max-width:none;max-height:none;cursor:zoom-out;overflow:visible}
+.ph-zoom::backdrop{background:rgba(10,14,25,.88)}
+.ph-zoom img{display:block;max-width:92vw;max-height:90vh;border-radius:14px;box-shadow:0 10px 50px rgba(0,0,0,.5)}
 .tchips{display:flex;gap:6px;flex-wrap:wrap}
 .lchip{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:999px;background:var(--blue-soft);color:var(--blue);font-weight:700;font-size:13px}
 .lchip.ghost{background:transparent;border:1px dashed var(--line);color:var(--ink-2)}
@@ -5309,6 +5319,8 @@ function tLevel(score){
 }
 const stars = n => `<span class="tstars" aria-label="${tr('lv.aria',{n})}">${[1,2,3,4,5].map(i=>`<i class="${i<=n?'on':''}">★</i>`).join('')}</span>`;
 const levelBadge = (st) => { const L=tLevel(st?.score); return `<span class="tlevel lv${L.n}">${stars(L.n)}<b>${L.name}</b></span>`; };
+// the big photo at the top of a teacher card (only when the teacher has a photo)
+const tCardPh = t => t?.photo ? `<span class="tcard-ph"><img src="${esc(t.photo)}" alt="${esc(t.name||'')}" loading="lazy"></span>` : '';
 function tPhoto(t, tid, cls='tph'){ return t?.photo ? `<img class="${cls}" src="${esc(t.photo)}" alt="" loading="lazy">` : `<span class="${cls} ini">${avatar(t?.name||'?', tid)}</span>`; }
 const teamList = (all) => Object.entries(S.team||{}).filter(([,t])=>all || t.visible).map(([tid,t])=>({tid,...t}))
   .sort((a,b)=>(b.stats?.score||0)-(a.stats?.score||0) || (a.order||0)-(b.order||0) || (a.name||'').localeCompare(b.name||''));
@@ -5524,7 +5536,7 @@ function vLanding(){
   const students=all.reduce((a,t)=>a+(+t.stats?.students||0),0);
   const card = t => { const st=t.stats||{};
     return `<button class="tcard" data-act="c-tprof" data-tid="${esc(t.tid)}">
-      <span class="tcard-top">${tPhoto(t,t.tid)}<span style="min-width:0"><b class="tname">${esc(t.name||'')}</b>${t.headline?`<span class="small muted tcard-hl">${esc(t.headline)}</span>`:''}</span></span>
+      ${tCardPh(t)}<span class="tcard-top">${t.photo?'':tPhoto(t,t.tid)}<span style="min-width:0"><b class="tname">${esc(t.name||'')}</b>${t.headline?`<span class="small muted tcard-hl">${esc(t.headline)}</span>`:''}</span></span>
       ${levelBadge(st)}
       <span class="tchips">${(t.langs||[]).map(l=>`<span class="lchip">${esc(l)}</span>`).join('')}${t.levels?`<span class="lchip ghost">${esc(t.levels)}</span>`:''}</span>
       ${t.bio?`<span class="small tcard-bio">${esc(t.bio.slice(0,150))}${t.bio.length>150?'…':''}</span>`:''}
@@ -5635,7 +5647,8 @@ function openTeacherProfile(tid){
   const t=S.team[tid]; if(!t) return; const st=t.stats||{}, L=tLevel(st.score);
   showDlg(`<div>${dlgHead(tr('c.profileK'), esc(t.name||''))}
     <div class="dlg-body tprof">
-      <div class="row" style="gap:16px;align-items:flex-start">${tPhoto(t,tid,'tph lg')}<div style="min-width:0">
+      ${t.photo?`<button type="button" class="tprof-ph" data-act="c-zoom" aria-label="${esc(t.name||'')}"><img src="${esc(t.photo)}" alt="${esc(t.name||'')}"></button>`:''}
+      <div class="row" style="gap:16px;align-items:flex-start">${t.photo?'':tPhoto(t,tid,'tph lg')}<div style="min-width:0">
         ${t.headline?`<p style="font-weight:600">${esc(t.headline)}</p>`:''}${levelBadge(st)}
         <div class="tchips" style="margin-top:8px">${(t.langs||[]).map(l=>`<span class="lchip">${esc(l)}</span>`).join('')}${t.levels?`<span class="lchip ghost">${esc(t.levels)}</span>`:''}</div></div></div>
       <div class="tkv big"><span><b class="num">${+st.students||0}</b>${tr('c.kStudents')}</span><span><b class="num">${st.gain>0?'+'+st.gain:'–'}</b>${tr('c.kGain')}</span><span><b class="num">${st.band!=null?fmtBand(st.band):'–'}</b>${tr('c.kBand')}</span>${S.role==='owner'?`<span><b class="num">${+t.years||'–'}</b>${tr('c.kYears')}</span>`:''}${t.lessonLen?`<span><b class="num">${lenText(t.lessonLen)}</b>${tr('c.kLen')}</span>`:''}</div>
@@ -5698,7 +5711,7 @@ function teacherFields(t, opt){
   t=t||{};
   return `<div class="tform">
     <div class="row" style="gap:14px;align-items:center">${tPhoto(t, opt.tid||'new','tph lg')}<div class="stack" style="gap:6px;flex:1;min-width:0">
-      <label class="btn sm" style="align-self:flex-start;cursor:pointer">${I.up} ${tr('c.fPhoto')}<input type="file" accept="image/*" id="tf-file" hidden></label>
+      <label class="btn sm" style="align-self:flex-start;cursor:pointer">${I.up} ${tr('c.fPhoto')} *<input type="file" accept="image/*" id="tf-file" hidden></label>
       <input class="inp" id="tf-photo-url" placeholder="${tr('c.fPhotoUrl')}" value="${t.photo&&!t.photo.startsWith('data:')?esc(t.photo):''}">
       <input type="hidden" id="tf-photo" value="${esc(t.photo||'')}"></div></div>
     <label class="field"><span>${tr('c.fTName')}</span><input class="inp" id="tf-name" maxlength="80" value="${esc(t.name||'')}" required></label>
@@ -5719,19 +5732,24 @@ function wireTeacherFields(){
   const f=$('#tf-file'); if(!f) return;
   const show = src => { const ph=document.querySelector('.tform .tph'); if(ph){ const img=document.createElement('img'); img.className='tph lg'; img.src=src; img.alt=''; ph.replaceWith(img); } };
   f.addEventListener('change', async ()=>{ const file=f.files[0]; if(!file) return;
-    try{ const url=await shrinkPhoto(file); $('#tf-photo').value=url; $('#tf-photo-url').value=''; show(url); }catch(e){ toast(tr('c.photoFail')); } });
+    try{ const url=await shrinkPhoto(file); $('#tf-photo').value=url; $('#tf-photo-url').value=''; show(url); }catch(e){ toast(tr(e?.message==='small'?'c.photoSmall':'c.photoFail')); } });
   $('#tf-photo-url').addEventListener('change', e=>{ const v=e.target.value.trim(); if(/^https:\/\//.test(v)){ $('#tf-photo').value=v; show(v); } else if(!v){ $('#tf-photo').value=''; } });
 }
 // square-crop and shrink an uploaded photo so it fits inside the profile document
 function shrinkPhoto(file){
   return new Promise((ok,bad)=>{ const img=new Image(), u=URL.createObjectURL(file);
-    img.onload=()=>{ const n=320, c=document.createElement('canvas'); c.width=c.height=n; const s=Math.min(img.width,img.height);
-      c.getContext('2d').drawImage(img,(img.width-s)/2,(img.height-s)/2,s,s,0,0,n,n); URL.revokeObjectURL(u);
-      const d=c.toDataURL('image/jpeg',0.82); d.length<250000 ? ok(d) : bad(new Error('big')); };
+    img.onload=()=>{ URL.revokeObjectURL(u);
+      if(img.width<300 || img.height<300){ bad(new Error('small')); return; }
+      // portrait 4:5, sharp enough to show large; cut from the middle, keeping the top (the face)
+      const W=480, H=600, sw=Math.min(img.width, img.height*4/5), sh=sw*5/4, sx=(img.width-sw)/2, sy=Math.max(0,(img.height-sh)*0.2);
+      const c=document.createElement('canvas'); c.width=W; c.height=H; c.getContext('2d').drawImage(img,sx,sy,sw,sh,0,0,W,H);
+      let d; for(const q of [0.85,0.75,0.65,0.55]){ d=c.toDataURL('image/jpeg',q); if(d.length<280000) break; }
+      d.length<280000 ? ok(d) : bad(new Error('big')); };
     img.onerror=()=>{ URL.revokeObjectURL(u); bad(new Error('img')); }; img.src=u; });
 }
 function readTeacherFields(){
   const name=$('#tf-name').value.trim(); if(!name) return {err:tr('c.needName')};
+  if(!$('#tf-photo').value.trim()) return {err:tr('c.needPhoto')};
   const langs=[...document.querySelectorAll('.tf-lang:checked')].map(x=>x.value);
   $('#tf-lang-x').value.split(',').map(x=>x.trim()).filter(Boolean).forEach(x=>{ const l=x[0].toUpperCase()+x.slice(1); if(!langs.includes(l)) langs.push(l); });
   const meet=$('#tf-meet').value.trim();
@@ -5962,7 +5980,7 @@ function openApply(){
   showDlg(`<form id="ap-form" novalidate>${dlgHead(tr('c.apK'), tr('c.apH'))}
     <div class="dlg-body"><p class="muted">${tr('c.apP')}</p>
       <div class="row" style="gap:14px;align-items:center"><span class="tph lg ini" id="ap-ph">${avatar('?','new')}</span>
-        <label class="btn sm" style="cursor:pointer">${I.up} ${tr('c.fPhoto')}<input type="file" accept="image/*" id="ap-file" hidden></label><input type="hidden" id="ap-photo"></div>
+        <label class="btn sm" style="cursor:pointer">${I.up} ${tr('c.fPhoto')} *<input type="file" accept="image/*" id="ap-file" hidden></label><input type="hidden" id="ap-photo"></div>
       <label class="field"><span>${tr('c.fName')}</span><input class="inp" id="ap-name" maxlength="80" autocomplete="name"></label>
       <div class="grid2" style="gap:12px"><label class="field"><span>${tr('c.fContact')}</span><input class="inp" id="ap-contact" maxlength="120" placeholder="+998 90 123 45 67 / @telegram"></label>
         <label class="field"><span>Email <span class="faint">${tr('optional')}</span></span><input class="inp" id="ap-email" type="email" maxlength="120" placeholder="name@gmail.com"></label></div>
@@ -5990,7 +6008,7 @@ function openApply(){
       : `<p class="faint small" style="margin:0">${tr('c.apPrNoLang')}</p>`; };
   document.querySelectorAll('.ap-lang').forEach(x=>x.addEventListener('change', drawPr)); $('#ap-lang-x').addEventListener('change', drawPr); $('#ap-years').addEventListener('input', drawPr); drawPr();
   $('#ap-file').addEventListener('change', async e=>{ const f=e.target.files[0]; if(!f) return;
-    try{ const u=await shrinkPhoto(f); $('#ap-photo').value=u; const img=document.createElement('img'); img.className='tph lg'; img.id='ap-ph'; img.src=u; img.alt=''; $('#ap-ph').replaceWith(img); }catch(err){ toast(tr('c.photoFail')); } });
+    try{ const u=await shrinkPhoto(f); $('#ap-photo').value=u; const img=document.createElement('img'); img.className='tph lg'; img.id='ap-ph'; img.src=u; img.alt=''; $('#ap-ph').replaceWith(img); }catch(err){ toast(tr(err?.message==='small'?'c.photoSmall':'c.photoFail')); } });
   $('#ap-form').addEventListener('submit', async e=>{
     e.preventDefault(); const err=$('#ap-err'), name=$('#ap-name').value.trim(), contact=$('#ap-contact').value.trim(), email=$('#ap-email').value.trim().toLowerCase();
     const langs=[...document.querySelectorAll('.ap-lang:checked')].map(x=>x.value);
@@ -6004,6 +6022,7 @@ function openApply(){
     if(pbad){ err.textContent=pbad; return; }
     const noPr=langs.find(l=>!prices[l]); if(noPr){ err.textContent=tr('c.apPrNeed',{l:langName(noPr)}); return; }
     const bio=$('#ap-bio').value.trim(); if(bio.length<20){ err.textContent=tr('c.needBio'); return; }
+    if(!$('#ap-photo').value){ err.textContent=tr('c.needPhoto'); return; }
     const d={name, contact, email, photo:$('#ap-photo').value, langs:langs.slice(0,12), levels:$('#ap-levels').value.trim(), years:Math.max(0,Math.min(60,Math.round(+$('#ap-years').value||0))),
       lessonLen:+$('#ap-len').value, bio, achievements:$('#ap-ach').value.split('\n').map(x=>x.replace(/^[-•*]\s*/,'').trim()).filter(Boolean).slice(0,20), msg:$('#ap-msg').value.trim(), at:Date.now(), prices};
     const b=$('#ap-go'); b.disabled=true;
@@ -6080,7 +6099,7 @@ function vStuTeachers(){
   const others = all.filter(t=>!mine.includes(t.tid));
   const card = t => { const r=req.find(x=>x.tid===t.tid), s=st[t.tid];
     const btn = s==='no' ? `<span class="pill bk-no">${tr('bk.st.no')}</span>` : r ? `<span class="pill bk-wait">${tr('bk.st.wait')}</span><button class="btn ghost sm" data-act="c-enroll-x" data-tid="${esc(t.tid)}">${tr('cancel')}</button>` : `<button class="btn pen sm" data-act="c-enroll" data-tid="${esc(t.tid)}">${tr('c.enroll')}</button>`;
-    return `<article class="tcard as-div"><span class="tcard-top">${tPhoto(t,t.tid)}<span style="min-width:0"><b class="tname">${esc(t.name||'')}</b>${t.headline?`<span class="small muted tcard-hl">${esc(t.headline)}</span>`:''}</span></span>
+    return `<article class="tcard as-div">${tCardPh(t)}<span class="tcard-top">${t.photo?'':tPhoto(t,t.tid)}<span style="min-width:0"><b class="tname">${esc(t.name||'')}</b>${t.headline?`<span class="small muted tcard-hl">${esc(t.headline)}</span>`:''}</span></span>
       ${levelBadge(t.stats)}<span class="tchips">${(t.langs||[]).map(l=>`<span class="lchip">${esc(l)}</span>`).join('')}${t.levels?`<span class="lchip ghost">${esc(t.levels)}</span>`:''}${t.lessonLen?`<span class="lchip ghost">${lenText(t.lessonLen)}</span>`:''}</span>
       ${t.bio?`<span class="small tcard-bio">${esc(t.bio.slice(0,140))}${t.bio.length>140?'…':''}</span>`:''}
       <span class="row" style="gap:6px;margin-top:auto;flex-wrap:wrap;align-items:center"><button class="btn ghost sm" data-act="c-tprof" data-tid="${esc(t.tid)}">${tr('c.viewProfile')}</button>${btn}</span></article>`; };
@@ -7693,6 +7712,10 @@ document.addEventListener('click', async ev => {
     case 'c-landing': S.view={name:'landing'}; renderTop(); renderNav(); renderMain(); break;
     case 'c-lang': S.view.lang=b.dataset.l; renderMain(); break;
     case 'c-tprof': openTeacherProfile(b.dataset.tid); break;
+    case 'c-zoom': { const src=b.querySelector('img')?.src; if(!src) break;
+      // its own modal <dialog>, so it opens above the profile window; Esc or a click closes only the photo
+      const z=document.createElement('dialog'); z.className='ph-zoom'; z.innerHTML=`<img src="${esc(src)}" alt="">`;
+      z.addEventListener('click', ()=>z.close()); z.addEventListener('close', ()=>z.remove()); document.body.appendChild(z); z.showModal(); break; }
     case 'c-trial': openTrial(b.dataset.tid||'', b.dataset.fmt||''); break;
     case 'c-gchat': openGuestChat(b.dataset.tid||''); break;
     case 'c-dm-new': { const uid=b.dataset.uid, p=S.profiles?.[uid]; if(!p) break;
