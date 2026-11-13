@@ -53,7 +53,7 @@ const T = {
     lead: '🆕 Sinov darsi so‘rovi: {name} · {contact}\n{lang}{fmt}{msg}', assigned: '📌 Sizga sinov darsi so‘rovi biriktirildi: {name} · {contact}\n{lang}',
     live: '🔴 {name} darsni boshladi.{label}', checked: '✅ Yozuvingiz tekshirildi: “{title}”.', revise: '✏️ Ustoz “{title}” yozuvini qayta yozishni so‘radi.',
     btnHelp: '❓ Yordam', btnStatus: '📊 Holat', btnMenu: '📋 Menyu',
-    helpS: '❓ Lexora boti nima qiladi\n\n💬 Ustozingiz yozgan xabarlar shu yerga keladi. Xabarga “Reply” qilib javob bersangiz, javob Lexora chatiga tushadi.\n🔴 Dars boshlanganda Google Meet havolasi keladi, “Darsga kirish” tugmasini bosing.\n✅ Yozuvingiz tekshirilganda yoki qayta yozishga qaytarilganda xabar keladi.\n\nHech narsa yozish shart emas, xabarlar o‘zi keladi. Buyruqlar: /help yordam, /status ulanish holati, /menu tugmalar.',
+    helpS: '❓ Lexora boti nima qiladi\n\n💬 Ustozingiz yozgan xabarlar shu yerga keladi. Xabarga “Reply” qilib javob bersangiz, javob Lexora chatiga tushadi.\n🔴 Dars boshlanganda Google Meet havolasi keladi, “Darsga kirish” tugmasini bosing.\n✅ Yozuvingiz tekshirilganda yoki qayta yozishga qaytarilganda xabar keladi.\n⏰ Darsdan 30 va 5 daqiqa oldin, uyga vazifa va to‘lov muddatlari haqida eslatamiz.\n\nHech narsa yozish shart emas, xabarlar o‘zi keladi. Buyruqlar: /help yordam, /status ulanish holati, /menu tugmalar.',
     helpT: '❓ Lexora boti nima qiladi\n\n🆕 Sizga biriktirilgan sinov darsi so‘rovlari shu yerga keladi.\n💬 Talabalaringiz xabarlari keladi. “Reply” qilib javob bersangiz, u Lexora chatiga tushadi.\n🌐 Sayt mehmonlarining savollari ham keladi, ularga ham “Reply” bilan javob bering.\n\nBuyruqlar: /help yordam, /status ulanish holati, /menu tugmalar.',
     helpO: '❓ Lexora boti nima qiladi\n\n🆕 Barcha yangi sinov darsi so‘rovlari shu yerga keladi.\n🌐 Ustoz biriktirilmagan mehmon savollari sizga keladi, “Reply” bilan javob bering.\n💬 O‘z talabalaringiz xabarlari ham shu yerga keladi.\n📊 Har kuni 21:00 da bot bugungi ishi haqida hisobot yuboradi.\n\nBuyruqlar: /report bugungi hisobot, /help yordam, /status ulanish holati, /menu tugmalar.',
     helpG: '❓ Lexora boti nima qiladi\n\nBot Lexoradagi xabarlarni Telegramga yetkazadi: ustoz xabarlari, dars havolalari, tekshirilgan yozuvlar.\n\nUlash uchun: Lexorani oching va “Telegram’ni ulash” tugmasini bosing. Sinov darsi so‘ragan bo‘lsangiz, so‘rovdagi tugma orqali botga o‘ting.\n\nBuyruqlar: /help yordam, /status ulanish holati, /menu tugmalar.',
@@ -76,7 +76,7 @@ const T = {
     lead: '🆕 Заявка на пробный урок: {name} · {contact}\n{lang}{fmt}{msg}', assigned: '📌 Вам назначена заявка на пробный урок: {name} · {contact}\n{lang}',
     live: '🔴 {name} начал(а) урок.{label}', checked: '✅ Ваша запись проверена: «{title}».', revise: '✏️ Преподаватель просит переписать «{title}».',
     btnHelp: '❓ Помощь', btnStatus: '📊 Статус', btnMenu: '📋 Меню',
-    helpS: '❓ Что умеет бот Lexora\n\n💬 Сообщения вашего преподавателя приходят сюда. Ответьте на сообщение через «Ответить» (Reply), и ответ попадёт в чат Lexora.\n🔴 Когда урок начинается, приходит ссылка Google Meet: нажмите «Войти на урок».\n✅ Приходит уведомление, когда запись проверена или возвращена на переписывание.\n\nПисать ничего не нужно, уведомления приходят сами. Команды: /help помощь, /status статус подключения, /menu кнопки.',
+    helpS: '❓ Что умеет бот Lexora\n\n💬 Сообщения вашего преподавателя приходят сюда. Ответьте на сообщение через «Ответить» (Reply), и ответ попадёт в чат Lexora.\n🔴 Когда урок начинается, приходит ссылка Google Meet: нажмите «Войти на урок».\n✅ Приходит уведомление, когда запись проверена или возвращена на переписывание.\n⏰ Напоминаем за 30 и 5 минут до урока, а также о сроках домашних заданий и оплаты.\n\nПисать ничего не нужно, уведомления приходят сами. Команды: /help помощь, /status статус подключения, /menu кнопки.',
     helpT: '❓ Что умеет бот Lexora\n\n🆕 Сюда приходят заявки на пробный урок, назначенные вам.\n💬 Приходят сообщения ваших учеников. Ответьте через «Ответить» (Reply), и ответ попадёт в чат Lexora.\n🌐 Приходят и вопросы посетителей сайта, отвечайте на них так же.\n\nКоманды: /help помощь, /status статус подключения, /menu кнопки.',
     helpO: '❓ Что умеет бот Lexora\n\n🆕 Сюда приходят все новые заявки на пробный урок.\n🌐 Вопросы посетителей без назначенного преподавателя приходят вам, отвечайте через «Ответить» (Reply).\n💬 Сообщения ваших учеников тоже приходят сюда.\n📊 Каждый день в 21:00 бот присылает отчёт о том, что сделал за день.\n\nКоманды: /report отчёт за сегодня, /help помощь, /status статус подключения, /menu кнопки.',
     helpG: '❓ Что умеет бот Lexora\n\nБот доставляет в Telegram уведомления Lexora: сообщения преподавателя, ссылки на уроки, проверенные записи.\n\nЧтобы подключить: откройте Lexora и нажмите «Подключить Telegram». Если вы оставили заявку на пробный урок, перейдите в бота по кнопке в заявке.\n\nКоманды: /help помощь, /status статус подключения, /menu кнопки.',
@@ -99,7 +99,7 @@ const T = {
     lead: '🆕 Trial request: {name} · {contact}\n{lang}{fmt}{msg}', assigned: '📌 A trial request was assigned to you: {name} · {contact}\n{lang}',
     live: '🔴 {name} has started the lesson.{label}', checked: '✅ Your entry was checked: “{title}”.', revise: '✏️ Your teacher asks you to rewrite “{title}”.',
     btnHelp: '❓ Help', btnStatus: '📊 Status', btnMenu: '📋 Menu',
-    helpS: '❓ What the Lexora bot does\n\n💬 Messages from your teacher arrive here. Answer with “Reply” and your answer goes into the Lexora chat.\n🔴 When a lesson starts you get the Google Meet link: press “Join the lesson”.\n✅ You are told when an entry is checked or sent back for rewriting.\n\nYou do not need to type anything, notifications come by themselves. Commands: /help help, /status connection status, /menu buttons.',
+    helpS: '❓ What the Lexora bot does\n\n💬 Messages from your teacher arrive here. Answer with “Reply” and your answer goes into the Lexora chat.\n🔴 When a lesson starts you get the Google Meet link: press “Join the lesson”.\n✅ You are told when an entry is checked or sent back for rewriting.\n⏰ We remind you 30 and 5 minutes before a lesson, and about homework and payment deadlines.\n\nYou do not need to type anything, notifications come by themselves. Commands: /help help, /status connection status, /menu buttons.',
     helpT: '❓ What the Lexora bot does\n\n🆕 Trial requests assigned to you arrive here.\n💬 Your students’ messages arrive here. Answer with “Reply” and it goes into the Lexora chat.\n🌐 Questions from site visitors arrive here too, answer them the same way.\n\nCommands: /help help, /status connection status, /menu buttons.',
     helpO: '❓ What the Lexora bot does\n\n🆕 Every new trial request arrives here.\n🌐 Visitor questions with no teacher assigned come to you, answer with “Reply”.\n💬 Messages from your own students arrive here too.\n📊 Every day at 21:00 the bot sends a report of what it did today.\n\nCommands: /report today’s report, /help help, /status connection status, /menu buttons.',
     helpG: '❓ What the Lexora bot does\n\nThe bot brings Lexora notifications to Telegram: teacher messages, lesson links, checked entries.\n\nTo connect: open Lexora and press “Connect Telegram”. If you sent a trial request, use the button in that request to open the bot.\n\nCommands: /help help, /status connection status, /menu buttons.',
@@ -485,17 +485,17 @@ const R = {
   uz: { title: '📊 Lexora boti · {day}', sent: '✉️ Yuborilgan xabarlar: {n}', failed: '❌ Yetkazilmadi: {n}', blocked: '🚫 Botni bloklaganlar: {n}', last: 'Oxirgi xato: {e}',
     none: 'Bugun hodisa bo‘lmadi.', events: 'Bugungi hodisalar:',
     ev: { dm: '💬 Chat xabarlari', guest: '🌐 Sayt mehmonlari savollari', lead: '🆕 Sinov darsi so‘rovlari', assigned: '📌 Ustozga biriktirilgan so‘rovlar', app: '👩‍🏫 O‘qituvchilik arizalari',
-      live: '🔴 Dars havolasi olgan talabalar', review: '✅ Tekshirilgan yozuvlar', clubVideo: '🎙 Speaking club video', clubMsg: '💬 Speaking club xabarlari', notice: '📣 Ustoz e’lonlari', news: '📰 Gazeta sonlari', reply: '↩️ Telegramdan chatga javoblar', linked: '🔗 Yangi ulanishlar' },
+      live: '🔴 Dars havolasi olgan talabalar', review: '✅ Tekshirilgan yozuvlar', clubVideo: '🎙 Speaking club video', clubMsg: '💬 Speaking club xabarlari', notice: '📣 Ustoz e’lonlari', remind: '⏰ Dars eslatmalari', hwDue: '📚 Vazifa muddati eslatmalari', payDue: '💳 To‘lov eslatmalari', hwDone: '📥 Bajarilgan vazifalar', claim: '💳 To‘lov xabarlari (tekshirish kerak)', news: '📰 Gazeta sonlari', reply: '↩️ Telegramdan chatga javoblar', linked: '🔗 Yangi ulanishlar' },
     linked: '👥 Telegram ulangan: {n} (talaba {s}, ustoz {t})', unlinked: '⚠️ Telegram ulamagan talabalar: {n}{names}' },
   ru: { title: '📊 Бот Lexora · {day}', sent: '✉️ Отправлено сообщений: {n}', failed: '❌ Не доставлено: {n}', blocked: '🚫 Заблокировали бота: {n}', last: 'Последняя ошибка: {e}',
     none: 'Сегодня событий не было.', events: 'События за сегодня:',
     ev: { dm: '💬 Сообщения в чате', guest: '🌐 Вопросы посетителей сайта', lead: '🆕 Заявки на пробный урок', assigned: '📌 Заявки, назначенные преподавателю', app: '👩‍🏫 Заявки преподавателей',
-      live: '🔴 Ученики, получившие ссылку на урок', review: '✅ Проверенные записи', clubVideo: '🎙 Speaking club (видео)', clubMsg: '💬 Speaking club (сообщения)', notice: '📣 Объявления преподавателей', news: '📰 Выпуски газеты', reply: '↩️ Ответы из Telegram в чат', linked: '🔗 Новые подключения' },
+      live: '🔴 Ученики, получившие ссылку на урок', review: '✅ Проверенные записи', clubVideo: '🎙 Speaking club (видео)', clubMsg: '💬 Speaking club (сообщения)', notice: '📣 Объявления преподавателей', remind: '⏰ Напоминания об уроках', hwDue: '📚 Напоминания о сроках ДЗ', payDue: '💳 Напоминания об оплате', hwDone: '📥 Выполненные ДЗ', claim: '💳 Сообщения об оплате (проверить)', news: '📰 Выпуски газеты', reply: '↩️ Ответы из Telegram в чат', linked: '🔗 Новые подключения' },
     linked: '👥 Подключено к Telegram: {n} (учеников {s}, преподавателей {t})', unlinked: '⚠️ Ученики без Telegram: {n}{names}' },
   en: { title: '📊 Lexora bot · {day}', sent: '✉️ Messages sent: {n}', failed: '❌ Not delivered: {n}', blocked: '🚫 Blocked the bot: {n}', last: 'Last error: {e}',
     none: 'No events today.', events: 'Today’s events:',
     ev: { dm: '💬 Chat messages', guest: '🌐 Site visitor questions', lead: '🆕 Trial requests', assigned: '📌 Requests assigned to a teacher', app: '👩‍🏫 Teacher applications',
-      live: '🔴 Students who got a lesson link', review: '✅ Entries checked', clubVideo: '🎙 Speaking club video', clubMsg: '💬 Speaking club messages', notice: '📣 Teacher announcements', news: '📰 Newspaper issues', reply: '↩️ Replies from Telegram into chat', linked: '🔗 New connections' },
+      live: '🔴 Students who got a lesson link', review: '✅ Entries checked', clubVideo: '🎙 Speaking club video', clubMsg: '💬 Speaking club messages', notice: '📣 Teacher announcements', remind: '⏰ Lesson reminders', hwDue: '📚 Homework due reminders', payDue: '💳 Payment reminders', hwDone: '📥 Homework finished', claim: '💳 Payment reports (to check)', news: '📰 Newspaper issues', reply: '↩️ Replies from Telegram into chat', linked: '🔗 New connections' },
     linked: '👥 Connected to Telegram: {n} (students {s}, teachers {t})', unlinked: '⚠️ Students not on Telegram: {n}{names}' },
 };
 async function reportText(lang, day) {
@@ -522,5 +522,118 @@ async function sendReport(chatId) {
 }
 exports.dailyReport = onSchedule({ schedule: 'every day 21:00', timeZone: 'Asia/Tashkent', timeoutSeconds: 120 }, async () => { await sendReport(); });
 
+/* ---------------- reminders and extra notices ---------------- */
+// lessons/{uid}.links[slotId] = {url, date:'YYYY-MM-DD', from:'HH:MM', to} (Tashkent time, written by the owner)
+// hwFor/{uid} = {items:{[hid]:{title, due:'YYYY-MM-DD', tid}}, done:{[hid]:{at}}}
+// balances/{uid} = {month:'YYYY-MM', fee, left, status} (kept up to date by the site)
+// payClaims/{uid} = {name, items:[{id, amount, month, method, ref, at}]}
+// tgRemind/{key}: server-only marks, so each reminder is sent once
+const RM = {
+  uz: { soon: '⏰ Darsingiz bugun {time} da boshlanadi ({m} daqiqadan keyin).', now: '🔔 Dars {time} da boshlanadi, bir necha daqiqa qoldi. Tayyormisiz?',
+    soonT: '⏰ Bugun {time} da darsingiz bor: {names}.', hwTomorrow: '📚 Ertaga uyga vazifa topshiriladi: “{title}”.', hwToday: '📚 Bugun uyga vazifa muddati tugaydi: “{title}”.',
+    payStart: '💳 {month} oyi uchun to‘lov: {left}. To‘lovni oy davomida 4 qismda qilishingiz mumkin (taxminan {part} dan).', payLeft: '💳 Eslatma: {month} oyi uchun yana {left} to‘lash qoldi.',
+    payEnd: '💳 Oy tugashiga oz qoldi: {month} oyi uchun {left} to‘lanmagan.', pay: '💳 To‘lash', hw: '📚 Vazifani ochish',
+    hwDone: '📥 {name} uyga vazifani bajardi: “{title}”.', claim: '💳 {name} to‘lov qilganini bildirdi: {sum}{method}{ref}\nTekshirib, Lexorada tasdiqlang.', som: 'so‘m' },
+  ru: { soon: '⏰ Ваш урок сегодня в {time} (через {m} мин).', now: '🔔 Урок начинается в {time}, осталось несколько минут. Готовы?',
+    soonT: '⏰ Сегодня в {time} у вас урок: {names}.', hwTomorrow: '📚 Завтра сдаётся домашнее задание: «{title}».', hwToday: '📚 Сегодня последний день для домашнего задания: «{title}».',
+    payStart: '💳 Оплата за {month}: {left}. Можно платить частями в течение месяца, 4 части (примерно по {part}).', payLeft: '💳 Напоминание: за {month} осталось оплатить {left}.',
+    payEnd: '💳 Месяц скоро закончится: за {month} не оплачено {left}.', pay: '💳 Оплатить', hw: '📚 Открыть задание',
+    hwDone: '📥 {name} выполнил(а) домашнее задание: «{title}».', claim: '💳 {name} сообщил(а) об оплате: {sum}{method}{ref}\nПроверьте и подтвердите в Lexora.', som: 'сум' },
+  en: { soon: '⏰ Your lesson starts today at {time} (in {m} minutes).', now: '🔔 Your lesson starts at {time}, only a few minutes left. Ready?',
+    soonT: '⏰ You have a lesson today at {time}: {names}.', hwTomorrow: '📚 Homework is due tomorrow: “{title}”.', hwToday: '📚 Homework is due today: “{title}”.',
+    payStart: '💳 Payment for {month}: {left}. You can pay in 4 parts during the month (about {part} each).', payLeft: '💳 Reminder: {left} is still left to pay for {month}.',
+    payEnd: '💳 The month is almost over: {left} for {month} is still unpaid.', pay: '💳 Pay', hw: '📚 Open homework',
+    hwDone: '📥 {name} finished the homework: “{title}”.', claim: '💳 {name} says they paid: {sum}{method}{ref}\nPlease check and confirm it in Lexora.', som: 'so‘m' },
+};
+const MONTHS = { uz: ['yanvar', 'fevral', 'mart', 'aprel', 'may', 'iyun', 'iyul', 'avgust', 'sentabr', 'oktabr', 'noyabr', 'dekabr'],
+  ru: ['январь', 'февраль', 'март', 'апрель', 'май', 'июнь', 'июль', 'август', 'сентябрь', 'октябрь', 'ноябрь', 'декабрь'],
+  en: ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'] };
+const rm = (lang, k, v = {}) => String(RM[L(lang)][k]).replace(/\{(\w+)\}/g, (_, n) => (v[n] == null ? '' : String(v[n])));
+const money = (lang, n) => String(Math.round(+n || 0)).replace(/\B(?=(\d{3})+(?!\d))/g, ' ') + ' ' + RM[L(lang)].som;
+const monthName = (lang, ym) => { const m = +String(ym).slice(5, 7); return m ? MONTHS[L(lang)][m - 1] : ym; };
+const slotMs = x => Date.parse(`${x.date}T${/^\d{2}:\d{2}$/.test(x.from || '') ? x.from : '09:00'}:00+05:00`);
+// sends at most once per key: the mark is written first, like the newspaper, so a retry never sends twice
+async function once(key) {
+  const mark = db.doc('tgRemind/' + key.replace(/[^\w-]/g, '_').slice(0, 300));
+  if ((await mark.get()).exists) return false;
+  await mark.set({ at: Date.now() });
+  return true;
+}
+
+// every 5 minutes: 30 minutes and 5 minutes before each booked lesson, with the Meet link
+exports.lessonSoon = onSchedule({ schedule: 'every 5 minutes', timeZone: 'Asia/Tashkent', timeoutSeconds: 120 }, async () => { await lessonSoonRun(Date.now()); });
+async function lessonSoonRun(now) {
+  const q = await db.collection('lessons').get(), forOwner = {};
+  for (const d of q.docs) {
+    const uid = d.id, links = (d.data() || {}).links || {};
+    for (const [sid, x] of Object.entries(links)) {
+      if (!x || !/^\d{4}-\d{2}-\d{2}$/.test(x.date || '')) continue;
+      const mins = (slotMs(x) - now) / 60e3; if (!(mins > 0 && mins <= 35)) continue;
+      const time = x.from || '', extra = lang => (okUrl(x.url) ? btn(t(lang, 'join'), x.url) : btn(t(lang, 'open'), SITE()));
+      if (mins > 12) {
+        if (await once(`ls_${uid}_${sid}_30`)) { await bump('ev_remind'); await sendUid(uid, lang => ({ text: rm(lang, 'soon', { time, m: Math.round(mins / 5) * 5 || 5 }), extra: extra(lang) })); }
+        (forOwner[sid] = forOwner[sid] || { x, uids: [] }).uids.push(uid);
+      } else if (await once(`ls_${uid}_${sid}_5`)) { await bump('ev_remind'); await sendUid(uid, lang => ({ text: rm(lang, 'now', { time }), extra: extra(lang) })); }
+    }
+  }
+  // the owner books these lessons: one reminder per lesson with the students' names
+  for (const [sid, { x, uids }] of Object.entries(forOwner)) {
+    if (!(await once(`ls_owner_${sid}`))) continue;
+    const names = [];
+    for (const u of uids) { const j = await db.doc('journals/' + u).get(); names.push(clip((j.exists && j.data().name) || 'Student', 40)); }
+    await sendOwner(lang => ({ text: rm(lang, 'soonT', { time: x.from || '', names: names.join(', ') }), extra: okUrl(x.url) ? btn(t(lang, 'join'), x.url) : btn(t(lang, 'open'), SITE()) }));
+  }
+}
+
+// every day at 10:00: homework due tomorrow / today, and the monthly fee (it can be paid in 4 parts)
+const PAY_DAYS = { 2: 'payStart', 9: 'payLeft', 16: 'payLeft', 23: 'payEnd' };
+exports.dailyNudges = onSchedule({ schedule: 'every day 10:00', timeZone: 'Asia/Tashkent', timeoutSeconds: 300 }, async () => { await dailyNudgesRun(Date.now()); });
+async function dailyNudgesRun(now) {
+  const today = dayKey(now), tomorrow = dayKey(now + 864e5), ym = today.slice(0, 7), dom = +today.slice(8, 10);
+  for (const d of (await db.collection('hwFor').get()).docs) {
+    const h = d.data() || {}, done = h.done || {};
+    for (const [hid, x] of Object.entries(h.items || {})) {
+      if (!x || done[hid] || (x.due !== today && x.due !== tomorrow)) continue;
+      const k = x.due === today ? 'hwToday' : 'hwTomorrow';
+      if (!(await once(`hw_${d.id}_${hid}_${x.due}_${k}`))) continue;
+      await bump('ev_hwDue');
+      await sendUid(d.id, lang => ({ text: rm(lang, k, { title: clip(x.title, 200) }), extra: btn(RM[L(lang)].hw, SITE() + '#homework') }));
+    }
+  }
+  const k = PAY_DAYS[dom];
+  if (k) for (const d of (await db.collection('balances').get()).docs) {
+    const b = d.data() || {}, left = +b.left || 0;
+    if (b.month !== ym || left <= 0) continue;          // only fresh balances (the site updates them) and only if money is owed
+    if (!(await once(`pay_${d.id}_${ym}_${dom}`))) continue;
+    await bump('ev_payDue');
+    const part = Math.min(left, Math.ceil((+b.fee || left) / 4 / 1000) * 1000);
+    await sendUid(d.id, lang => ({ text: rm(lang, k, { month: monthName(lang, ym), left: money(lang, left), part: money(lang, part) }), extra: btn(RM[L(lang)].pay, SITE() + '#pay') }));
+  }
+}
+
+// a student ticks homework as done: tell the teacher who gave it
+exports.onHwDone = onDocumentUpdated('hwFor/{uid}', async ev => {
+  const a = (ev.data.before.data() || {}).done || {}, b = ev.data.after.data() || {}, done = b.done || {};
+  const fresh = Object.keys(done).filter(hid => done[hid] && !a[hid] && b.items && b.items[hid]);
+  if (!fresh.length) return;
+  const j = await db.doc('journals/' + ev.params.uid).get(), name = clip((j.exists && j.data().name) || 'Student', 60);
+  for (const hid of fresh) {
+    await bump('ev_hwDone');
+    await sendTeacher(b.items[hid].tid || 'main', lang => ({ text: rm(lang, 'hwDone', { name, title: clip(b.items[hid].title, 200) }), extra: btn(t(lang, 'open'), SITE() + '#homework') }), null, ev.params.uid);
+  }
+});
+
+// a student reports a payment ("I paid"): the owner checks it and confirms in the ledger
+exports.onPayClaim = onDocumentWritten('payClaims/{uid}', async ev => {
+  const a = (ev.data.before && ev.data.before.data()) || {}, b = (ev.data.after && ev.data.after.data()) || null;
+  if (!b) return;
+  const had = new Set((a.items || []).map(x => x && x.id));
+  for (const c of (b.items || []).filter(x => x && x.id && !had.has(x.id))) {
+    await bump('ev_claim');
+    await sendOwner(lang => ({ text: rm(lang, 'claim', { name: clip(b.name || 'Student', 60), sum: money(lang, c.amount),
+      method: c.method ? ' · ' + clip(c.method, 30) : '', ref: c.ref ? '\n' + clip(c.ref, 120) : '' }), extra: btn(t(lang, 'open'), SITE() + '#ledger') }));
+  }
+});
+
 // for tests
-exports._t = { t, leadText, joinUrl, hookSecret, setupKey, newsText, reportText, dayKey };
+exports._t = { t, leadText, joinUrl, hookSecret, setupKey, newsText, reportText, dayKey, lessonSoonRun, dailyNudgesRun, money };

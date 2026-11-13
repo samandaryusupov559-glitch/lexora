@@ -2000,7 +2000,8 @@ class FireCol{
 
 /* ---------------- boot + sign-in ---------------- */
 // a Telegram button can open one page right after sign-in: #club (the speaking club), #services (what the student bought)
-const OPEN_VIEWS = ['club','services'];
+// pages a link can open (#club, #homework…: the Telegram bot's buttons use them)
+const OPEN_VIEWS = ['club','services','homework','pay','ledger'];
 function readOpen(){ const v=location.hash.slice(1); if(!OPEN_VIEWS.includes(v)) return; LS.set('open-view', v); history.replaceState(null, '', location.pathname+location.search); }
 function startView(def, ok=OPEN_VIEWS){ const v=LS.get('open-view',''); LS.del('open-view'); return {name: ok.includes(v) ? v : def}; }
 // an invite link from the centre: #join=<teacher id>.<request id> — the person signs up straight to that teacher
@@ -2109,7 +2110,7 @@ function checkNewEntries(){
   S.seenWaiting = now;
 }
 function startTeacher(){
-  S.mode='teacher'; S.role='owner'; S.view=startView('inbox',['club']); S.loaded={};
+  S.mode='teacher'; S.role='owner'; S.view=startView('inbox',['club','homework','ledger']); S.loaded={};
   const onErr = e => { if(e && e.code!=='revoked') toast(tr('live.paused')); };
   S.unsubs.push(S.db.collection('journals').onSnapshot(s=>{ const p={}; s.docs.forEach(d=>{ if(d.exists) p[d.id]=d.data(); }); S.profiles=p; S.loaded.p=true; checkNewEntries(); refresh(); }, onErr));
   S.unsubs.push(S.db.collection('feedback').onSnapshot(s=>{ const f={}; s.docs.forEach(d=>{ if(d.exists) f[d.id]=d.data(); }); S.feedback=f; S.loaded.f=true; checkNewEntries(); refresh(); }, onErr));
@@ -2119,7 +2120,7 @@ function startTeacher(){
   refresh(); renderMain();
 }
 function startStudent(){
-  S.mode='student'; S.role='student'; S.view=startView('home'); S.loaded={};
+  S.mode='student'; S.role='student'; S.view=startView('home',['club','services','homework','pay']); S.loaded={};
   const u=S.uid, onErr = e => { if(e && e.code!=='revoked') toast(tr('live.paused')); };
   S.unsubs.push(S.db.doc(`balances/${u}`).onSnapshot(s=>{ S.myBalance = s.exists? s.data(): null; refreshStudent(); }, ()=>{ S.myBalance=null; refreshStudent(); }));
   S.unsubs.push(S.db.doc(`journals/${u}`).onSnapshot(s=>{ S.myProfile = s.exists? s.data(): null; if(S.myProfile===null && S.view.name!=='setup') S.view={name:'setup'}; else if(S.myProfile && S.view.name==='setup') S.view={name:'home'}; refreshStudent(); }, onErr));
@@ -5469,7 +5470,7 @@ async function staffTidFor(user){
   try{ const s=await S.db.doc('staff/'+user.email.toLowerCase()).get(); return s.exists ? (s.data().tid||null) : null; }catch(e){ return null; }
 }
 function startStaff(tid){
-  S.mode='teacher'; S.role='staff'; S.staffTid=tid; S.view=startView('inbox',['club']); S.loaded={}; S.profiles={}; S.feedback={};
+  S.mode='teacher'; S.role='staff'; S.staffTid=tid; S.view=startView('inbox',['club','homework']); S.loaded={}; S.profiles={}; S.feedback={};
   S.plans={}; S.svc={services:[],slots:[]}; S.mail={url:'',secret:'',on:{}}; S.contacts={}; S.bookings={}; S.bstat={}; S.claims={}; S.cstat={};
   const onErr = e => { if(e && e.code!=='revoked') toast(tr('live.paused')); };
   const fbUn={}, seen=new Set();

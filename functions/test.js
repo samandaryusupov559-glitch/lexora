@@ -190,5 +190,46 @@ const ev = (params, after, before) => ({ params, data: before === undefined ? { 
   ok('the 21:00 report goes to the owner', sent.some(x => x.chat_id === 77 && /Lexora boti/.test(x.text)));
   store.delete('tg/own'); store.delete('tgChats/77'); store.delete('journals/s9');
 
+  console.log('Reminders');
+  store.set('tg/own', { chatId: 77, role: 'owner', tid: 'main', owner: true });
+  // a lesson today at 18:00 Tashkent (13:00 UTC); s1 (uz, chat 11) and s2 (ru, chat 44) are in it
+  const lday = '2030-03-04', at18 = Date.parse(lday + 'T13:00:00Z'), meet = 'https://meet.google.com/abc-defg-hij';
+  store.set('lessons/s1', { links: { sl1: { url: meet, date: lday, from: '18:00', to: '19:20' } } });
+  store.set('lessons/s2', { links: { sl1: { url: meet, date: lday, from: '18:00', to: '19:20' } } });
+  sent.length = 0; await bot._t.lessonSoonRun(at18 - 60 * 60e3);
+  ok('nothing an hour before the lesson', sent.length === 0);
+  sent.length = 0; await bot._t.lessonSoonRun(at18 - 30 * 60e3);
+  const join = x => x.reply_markup && x.reply_markup.inline_keyboard[0][0].url === meet;
+  ok('30 minutes before: each student gets the Meet link in their language', sent.some(x => x.chat_id === 11 && /18:00/.test(x.text) && /30 daqiqadan/.test(x.text) && join(x)) && sent.some(x => x.chat_id === 44 && /через 30 мин/.test(x.text) && join(x)));
+  ok('the owner gets one reminder with the students’ names', sent.filter(x => x.chat_id === 77).length === 1 && /Aziza, Bobur/.test(sent.find(x => x.chat_id === 77).text));
+  sent.length = 0; await bot._t.lessonSoonRun(at18 - 25 * 60e3);
+  ok('the 30-minute reminder is sent only once', sent.length === 0);
+  sent.length = 0; await bot._t.lessonSoonRun(at18 - 5 * 60e3);
+  ok('5 minutes before: a second, short reminder', sent.length === 2 && sent.every(join) && sent.some(x => x.chat_id === 11 && /bir necha daqiqa/.test(x.text)));
+  sent.length = 0; await bot._t.lessonSoonRun(at18 + 60e3);
+  ok('nothing after the lesson started', sent.length === 0);
+
+  // 10:00 Tashkent on the 9th: homework due today / tomorrow, and the fee that is still owed
+  const ten = Date.parse('2030-03-09T05:00:00Z');
+  store.set('hwFor/s1', { items: { h1: { title: 'Past simple', due: '2030-03-10', tid: 't-dil' }, h2: { title: 'Articles', due: '2030-03-09', tid: 't-dil' }, h3: { title: 'Old', due: '2030-03-01' }, h4: { title: 'Done', due: '2030-03-09' } }, done: { h4: { at: 1 } } });
+  store.set('balances/s1', { month: '2030-03', fee: 700000, left: 350000, status: 'partial' });
+  store.set('balances/s2', { month: '2030-03', fee: 350000, left: 0, status: 'paid' });
+  store.set('balances/s9', { month: '2030-02', fee: 350000, left: 350000, status: 'unpaid' });
+  sent.length = 0; await bot._t.dailyNudgesRun(ten);
+  ok('homework due tomorrow and today are reminded, done or old ones are not', sent.some(x => x.chat_id === 11 && /Ertaga/.test(x.text) && /Past simple/.test(x.text)) && sent.some(x => x.chat_id === 11 && /Bugun/.test(x.text) && /Articles/.test(x.text)) && !sent.some(x => /Old|Done/.test(x.text)));
+  ok('only a student who still owes this month gets the payment reminder', sent.filter(x => /to‘lash qoldi/.test(x.text)).length === 1 && sent.some(x => x.chat_id === 11 && /mart oyi uchun yana 350 000 so‘m/.test(x.text)) && !sent.some(x => x.chat_id === 44));
+  sent.length = 0; await bot._t.dailyNudgesRun(ten);
+  ok('daily reminders are not repeated', sent.length === 0);
+  sent.length = 0; await bot._t.dailyNudgesRun(Date.parse('2030-03-10T05:00:00Z'));
+  ok('no payment reminder on other days', !sent.some(x => /💳/.test(x.text)));
+
+  console.log('Homework done and payment reports');
+  sent.length = 0; await bot.onHwDone.run(ev({ uid: 's1' }, { ...store.get('hwFor/s1'), done: { h4: { at: 1 }, h1: { at: 2 } } }, store.get('hwFor/s1')));
+  ok('the teacher who gave the homework hears it is done', sent.length === 1 && sent[0].chat_id === 22 && /Aziza/.test(sent[0].text) && /Past simple/.test(sent[0].text));
+  const claimBefore = { name: 'Aziza', items: [{ id: 'c1', amount: 100000 }] };
+  sent.length = 0; await bot.onPayClaim.run(ev({ uid: 's1' }, { name: 'Aziza', items: [...claimBefore.items, { id: 'c2', amount: 175000, method: 'click', ref: 'last digits 4821' }] }, claimBefore));
+  ok('the owner is told about a new payment report, once', sent.length === 1 && sent[0].chat_id === 77 && /175 000 so‘m/.test(sent[0].text) && /click/.test(sent[0].text));
+  store.delete('tg/own');
+
   console.log(`\n${pass} passed, ${fail} failed`); process.exit(fail ? 1 : 0);
 })().catch(e => { console.error(e); process.exit(1); });
