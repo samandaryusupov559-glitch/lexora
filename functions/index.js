@@ -529,7 +529,9 @@ async function flagContact(name, text, kind, id) {
 function jaas() {
   let key = (process.env.JAAS_KEY || '').trim();
   if (key && !key.includes('BEGIN')) { try { key = Buffer.from(key, 'base64').toString('utf8'); } catch (e) { key = ''; } }
-  return { app: (process.env.JAAS_APP_ID || '').trim(), kid: (process.env.JAAS_KID || '').trim(), key: key.replace(/\\n/g, '\n') };
+  const app = (process.env.JAAS_APP_ID || '').trim(); let kid = (process.env.JAAS_KID || '').trim();
+  if (app && kid && !kid.includes('/')) kid = app + '/' + kid;   // the console shows the key ID alone; the pass needs "AppID/KeyID"
+  return { app, kid, key: key.replace(/\\n/g, '\n') };
 }
 const callOn = () => { const j = jaas(); return !!(j.app && j.kid && j.key); };
 const b64u = x => Buffer.from(typeof x === 'string' ? x : JSON.stringify(x)).toString('base64url');
