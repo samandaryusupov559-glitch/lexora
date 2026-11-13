@@ -453,6 +453,22 @@ html:has(dialog.dlg[open]){overflow:hidden}
 .dlg-head h2{font-family:var(--f-display);font-weight:400;font-size:27px;line-height:1.1;margin-top:3px;overflow-wrap:anywhere}
 .dlg-body{padding:16px 20px;display:flex;flex-direction:column;gap:14px;overflow:auto;min-height:0;flex:1 1 auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
 .dlg-foot{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;padding:12px 20px 16px;border-top:1px solid var(--line);background:var(--sheet-2)}
+/* side menu: scrolls on its own, and folds away Notion-style so the page gets the whole width */
+@media (min-width:861px){
+  .layout{transition:grid-template-columns .28s var(--ease),column-gap .28s var(--ease)}
+  .nav{max-height:calc(100dvh - env(safe-area-inset-top,0px) - 104px);overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;scrollbar-width:thin;padding:2px 6px 8px 0;transition:opacity .2s ease,transform .28s var(--ease),visibility .28s}
+  html.nav-collapsed .layout:not(.solo){grid-template-columns:0px minmax(0,1fr);column-gap:0}
+  html.nav-collapsed .layout:not(.solo) .nav{opacity:0;visibility:hidden;transform:translateX(-24px);pointer-events:none;min-width:0;padding:0}
+  html.nav-collapsed .wrap,html.nav-collapsed .top-in{max-width:1640px}
+}
+.nav .nav-collapse{align-self:flex-start;display:inline-flex;align-items:center;gap:8px;padding:6px 10px;margin:0 0 6px;font-size:13.5px;font-weight:600;color:var(--ink-3,var(--ink-2));border-radius:8px}
+.nav .nav-collapse::before{content:none}
+.nav .nav-collapse svg{width:18px;height:18px}
+.nav-open{display:none;align-items:center;justify-content:center;width:36px;height:36px;padding:0;border:1px solid var(--line);border-radius:10px;background:var(--sheet);color:var(--ink-2);cursor:pointer;flex:none}
+.nav-open:hover{background:var(--sheet-2);color:var(--ink)}
+.nav-open svg{width:19px;height:19px}
+@media (min-width:861px){html.nav-collapsed .nav-open{display:inline-flex}}
+@media (max-width:860px){.nav .nav-collapse{display:none}}
 /* student pay card */
 .paycard{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:14px;align-items:center;width:100%;text-align:left;padding:14px 18px;margin-top:18px;border-radius:16px;border:1px solid var(--line);background:var(--sheet);box-shadow:0 12px 26px -24px var(--shadow);position:relative;overflow:hidden;transition:transform .25s var(--ease)}
 .paycard:hover{transform:translateY(-2px)}
@@ -2191,11 +2207,18 @@ function renderTop(){
   }
   if(S.mode==='teacher' && (S.user||S.demo)) right = liveTopBtn() + right;
   const langs = `<div class="seg lang" role="group" aria-label="${tr('lang.label')}"><span class="lang-ic" aria-hidden="true">${I.globe}</span>${LANGS.map(l=>`<button data-act="lang" data-l="${l.k}" aria-pressed="${l.k===LANG}" title="${l.full}" lang="${l.k}">${l.n}</button>`).join('')}</div>`;
-  $('#top').innerHTML = `<div class="brand">${brandMark()}<span class="sub">${S.mode==='guest'?tr('c.sub'):S.view.name==='login'?tr('sub.login'):S.role==='staff'?tr('c.subStaff'):S.mode==='teacher'?tr('sub.teacher'):tr('sub.student')}</span></div>${S.mode==='guest'&&S.view.name==='landing'?`<nav class="lx-nav" aria-label="${tr('lx.navLabel')}">${lxLinks()}</nav>`:''}${installBtn()}${langs}${right}`;
+  $('#top').innerHTML = `${(S.view.name==='login'||S.view.name==='verify'||S.mode==='guest')?'':navOpenBtn()}<div class="brand">${brandMark()}<span class="sub">${S.mode==='guest'?tr('c.sub'):S.view.name==='login'?tr('sub.login'):S.role==='staff'?tr('c.subStaff'):S.mode==='teacher'?tr('sub.teacher'):tr('sub.student')}</span></div>${S.mode==='guest'&&S.view.name==='landing'?`<nav class="lx-nav" aria-label="${tr('lx.navLabel')}">${lxLinks()}</nav>`:''}${installBtn()}${langs}${right}`;
 }
 const PM_VIEWS = new Set(['news','newsEdit','study','set','setEdit']);
 function navBtn(name,label,icon,count,dim){ const cur = S.view.name===name || (name==='students' && S.view.name==='student') || (name==='inbox' && S.view.name==='review') || (name==='home' && S.view.name==='entry') || (name==='market' && PM_VIEWS.has(S.view.name) && S.mode==='teacher') || (name==='services' && (PM_VIEWS.has(S.view.name)||S.view.name==='services'));
   return `<button data-act="go" data-v="${name}" ${cur?'aria-current="page"':''}>${I[icon]}<span>${label}</span>${count?`<span class="cnt ${dim?'dim':''}">${count}</span>`:''}</button>`; }
+const NAV_ICO = (d)=>`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${d}"/></svg>`;
+const navCollapseBtn = () => `<button type="button" class="nav-collapse" data-nav-toggle title="${esc(tr('nav.hide'))} (Ctrl + \\)" aria-label="${esc(tr('nav.hide'))}">${NAV_ICO('m11 17-5-5 5-5M18 17l-5-5 5-5')}<span>${tr('nav.hide')}</span></button>`;
+const navOpenBtn = () => `<button type="button" class="nav-open" data-nav-toggle title="${esc(tr('nav.show'))} (Ctrl + \\)" aria-label="${esc(tr('nav.show'))}">${NAV_ICO('M4 6h16M4 12h16M4 18h16')}</button>`;
+function setNavCollapsed(v){ document.documentElement.classList.toggle('nav-collapsed', !!v); LS.set('nav-collapsed', !!v); }
+document.documentElement.classList.toggle('nav-collapsed', LS.get('nav-collapsed', false)===true);
+document.addEventListener('click', e=>{ if(e.target.closest('[data-nav-toggle]')) setNavCollapsed(!document.documentElement.classList.contains('nav-collapsed')); });
+document.addEventListener('keydown', e=>{ if((e.ctrlKey||e.metaKey) && e.key==='\\' && !$('#nav')?.hidden){ e.preventDefault(); setNavCollapsed(!document.documentElement.classList.contains('nav-collapsed')); } });
 function renderNav(){
   const n=$('#nav');
   const solo = S.view.name==='login' || S.view.name==='verify' || S.mode==='guest'; n.hidden=solo; $('.layout').classList.toggle('solo',solo); $('.layout').classList.toggle('wide', S.mode==='guest');
@@ -2203,19 +2226,19 @@ function renderNav(){
   if(S.role==='staff'){
     const waiting = allEntries().filter(e=>e.status==='submitted').length;
     document.title = (waiting?`(${waiting}) `:'')+'Lexora · '+tr('title.teacher');
-    n.innerHTML = navBtn('inbox',tr('nav.inbox'),'inbox',waiting) + navBtn('chat',tr('dm.nav'),'chat',chatUnreadT()) + navBtn('students',tr('nav.students'),'people',Object.keys(S.profiles).length,true) + navBtn('me',tr('c.meH'),'team') + navBtn('groups',tr('c.grpH'),'people') + navBtn('homework',tr('hw.nav'),'hw') + navBtn('exams',tr('ex.nav'),'cards',S.role==='owner'?exOrderRows().length:0) + navBtn('club',tr('c.clubNav'),'bulb',clubVideoOn()?'●':0) + navBtn('library',tr('c.libNav'),'book') + navBtn('centre',tr('c.centreH'),'spark',Object.values(S.leads||{}).filter(l=>!l.st).length+pendingTorders()) + navBtn('bank',tr('nav.bank'),'bank') + `<div class="nav-foot">${tr('c.navFootStaff')}</div>`;
+    n.innerHTML = navCollapseBtn() + navBtn('inbox',tr('nav.inbox'),'inbox',waiting) + navBtn('chat',tr('dm.nav'),'chat',chatUnreadT()) + navBtn('students',tr('nav.students'),'people',Object.keys(S.profiles).length,true) + navBtn('me',tr('c.meH'),'team') + navBtn('groups',tr('c.grpH'),'people') + navBtn('homework',tr('hw.nav'),'hw') + navBtn('exams',tr('ex.nav'),'cards',S.role==='owner'?exOrderRows().length:0) + navBtn('club',tr('c.clubNav'),'bulb',clubVideoOn()?'●':0) + navBtn('library',tr('c.libNav'),'book') + navBtn('centre',tr('c.centreH'),'spark',Object.values(S.leads||{}).filter(l=>!l.st).length+pendingTorders()) + navBtn('bank',tr('nav.bank'),'bank') + `<div class="nav-foot">${tr('c.navFootStaff')}</div>`;
     return;
   }
   if(S.mode==='teacher'){
     const waiting = allEntries().filter(e=>e.status==='submitted').length;
     document.title = (waiting?`(${waiting}) `:'')+'Lexora · '+tr('title.teacher');
-    n.innerHTML = navBtn('inbox',tr('nav.inbox'),'inbox',waiting) + navBtn('chat',tr('dm.nav'),'chat',chatUnreadT()) + navBtn('students',tr('nav.students'),'people',myStudentIds().length,true) + navBtn('team',tr('c.teamH'),'team',newLeads()+pendingStaffReq()+pendingApps()+pendingEnrolls()+pendingTorders()) + (S.team?.[MAIN_TID]?navBtn('me',tr('c.meH'),'pen'):'') + navBtn('groups',tr('c.grpH'),'people') + navBtn('homework',tr('hw.nav'),'hw') + navBtn('exams',tr('ex.nav'),'cards',S.role==='owner'?exOrderRows().length:0) + navBtn('club',tr('c.clubNav'),'bulb',clubVideoOn()?'●':0) + navBtn('library',tr('c.libNav'),'book') + navBtn('ledger',tr('nav.ledger'),'coin',pendingClaims()||lgOwing(),!pendingClaims()) + navBtn('bookings',tr('nav.book'),'spark',pendingRequests()) + navBtn('market',tr('nav.shop'),'bag',pendingOrders()+pendingPasses()) + navBtn('rating',tr('rt.h'),'trophy') + navBtn('board',tr('nav.board'),'flag') + navBtn('insights',tr('nav.insights'),'chart') + navBtn('prompt',tr('nav.prompt'),'bulb') + navBtn('bank',tr('nav.bank'),'bank') +
+    n.innerHTML = navCollapseBtn() + navBtn('inbox',tr('nav.inbox'),'inbox',waiting) + navBtn('chat',tr('dm.nav'),'chat',chatUnreadT()) + navBtn('students',tr('nav.students'),'people',myStudentIds().length,true) + navBtn('team',tr('c.teamH'),'team',newLeads()+pendingStaffReq()+pendingApps()+pendingEnrolls()+pendingTorders()) + (S.team?.[MAIN_TID]?navBtn('me',tr('c.meH'),'pen'):'') + navBtn('groups',tr('c.grpH'),'people') + navBtn('homework',tr('hw.nav'),'hw') + navBtn('exams',tr('ex.nav'),'cards',S.role==='owner'?exOrderRows().length:0) + navBtn('club',tr('c.clubNav'),'bulb',clubVideoOn()?'●':0) + navBtn('library',tr('c.libNav'),'book') + navBtn('ledger',tr('nav.ledger'),'coin',pendingClaims()||lgOwing(),!pendingClaims()) + navBtn('bookings',tr('nav.book'),'spark',pendingRequests()) + navBtn('market',tr('nav.shop'),'bag',pendingOrders()+pendingPasses()) + navBtn('rating',tr('rt.h'),'trophy') + navBtn('board',tr('nav.board'),'flag') + navBtn('insights',tr('nav.insights'),'chart') + navBtn('prompt',tr('nav.prompt'),'bulb') + navBtn('bank',tr('nav.bank'),'bank') +
       `<div class="nav-foot">${tr('nav.foot')}</div>`;
   } else {
     const unseen = studentEntries().filter(e=>e.isNew).length;
     document.title = (unseen?`(${unseen}) `:'')+'Lexora · '+tr('title.student');
     const owe = S.myBalance && S.myBalance.left>0;
-    n.innerHTML = navBtn('home',tr('nav.home'),'home',unseen) + navBtn('chat',tr('dm.nav'),'chat',chatUnreadS()) + navBtn('write',tr('nav.write'),'pen') + navBtn('homework',tr('hw.nav'),'hw',hwOpenCount()) + navBtn('exams',tr('ex.nav'),'cards') + navBtn('mistakes',tr('nav.mistakes'),'flag') + navBtn('words',tr('nav.words'),'book',(S.myFeedback?.vocab||[]).length,true) + navBtn('learn',tr('nav.learn'),'bulb',(S.board?.posts||[]).length,true) + navBtn('teachers',tr('c.navTeachers'),'team',Object.values(S.myLiveFor||{}).some(isLive)?'●':(promoOn(S.promo)?'%':0)) + navBtn('club',tr('c.clubNav'),'bulb',clubVideoOn()?'●':0) + navBtn('library',tr('c.libNav'),'book') + navBtn('book',tr('nav.book'),'spark') + (S.rating?.on!==false && (S.rating?.list||[]).length ? navBtn('rating',tr('rt.h'),'trophy') : '') + navBtn('services',tr('nav.services'),'cards',myServiceCount(),true) + navBtn('market',tr('nav.shop'),'bag') + (S.myBalance? navBtn('pay',tr('nav.pay'),'coin',owe?'!':0,false) : '');
+    n.innerHTML = navCollapseBtn() + navBtn('home',tr('nav.home'),'home',unseen) + navBtn('chat',tr('dm.nav'),'chat',chatUnreadS()) + navBtn('write',tr('nav.write'),'pen') + navBtn('homework',tr('hw.nav'),'hw',hwOpenCount()) + navBtn('exams',tr('ex.nav'),'cards') + navBtn('mistakes',tr('nav.mistakes'),'flag') + navBtn('words',tr('nav.words'),'book',(S.myFeedback?.vocab||[]).length,true) + navBtn('learn',tr('nav.learn'),'bulb',(S.board?.posts||[]).length,true) + navBtn('teachers',tr('c.navTeachers'),'team',Object.values(S.myLiveFor||{}).some(isLive)?'●':(promoOn(S.promo)?'%':0)) + navBtn('club',tr('c.clubNav'),'bulb',clubVideoOn()?'●':0) + navBtn('library',tr('c.libNav'),'book') + navBtn('book',tr('nav.book'),'spark') + (S.rating?.on!==false && (S.rating?.list||[]).length ? navBtn('rating',tr('rt.h'),'trophy') : '') + navBtn('services',tr('nav.services'),'cards',myServiceCount(),true) + navBtn('market',tr('nav.shop'),'bag') + (S.myBalance? navBtn('pay',tr('nav.pay'),'coin',owe?'!':0,false) : '');
   }
 }
 
