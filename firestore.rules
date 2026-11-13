@@ -45,14 +45,25 @@ service cloud.firestore {
 
     // A student's journal: profile document + entries.
     // The student picks a teacher when they start; only the owner can move them to another teacher.
+    function profileTextOk(d) {
+      return (!('photo' in d) || (d.photo is string && d.photo.size() <= 150000))
+        && (!('about' in d) || (d.about is string && d.about.size() <= 600))
+        && (!('goal' in d) || (d.goal is string && d.goal.size() <= 200))
+        && (!('city' in d) || (d.city is string && d.city.size() <= 60))
+        && (!('interests' in d) || (d.interests is string && d.interests.size() <= 200));
+    }
     match /journals/{uid} {
       allow read: if isMe(uid) || isTeacher() || (isStaff() && resource.data.teacher == staffTid());
       // a new journal always names its teacher, so nobody lands with the owner by default
-      allow create: if isTeacher() || (isMe(uid) && request.resource.data.get('teacher', '') is string && request.resource.data.get('teacher', '').size() > 0);
+      allow create: if isTeacher() || (isMe(uid) && request.resource.data.get('teacher', '') is string && request.resource.data.get('teacher', '').size() > 0
+        && request.resource.data.get('trial', true) == true && profileTextOk(request.resource.data));
       // the student leaves, or their teacher removes them: they start again by choosing a teacher
       allow delete: if isMe(uid) || isTeacher() || teachesJournal(uid);
+      // a student edits their own profile text and photo but never the trial flag; a staff teacher may only accept a trial student
       allow update: if isTeacher()
-        || (isMe(uid) && request.resource.data.get('teacher', 'main') == resource.data.get('teacher', 'main'));
+        || (isMe(uid) && request.resource.data.get('teacher', 'main') == resource.data.get('teacher', 'main')
+            && request.resource.data.get('trial', false) == resource.data.get('trial', false) && profileTextOk(request.resource.data))
+        || (teachesJournal(uid) && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['trial', 'acceptedAt']));
       match /entries/{eid} {
         allow read: if isMe(uid) || isTeacher() || teachesJournal(uid);
         allow write: if isMe(uid) || isTeacher();

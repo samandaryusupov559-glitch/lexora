@@ -138,6 +138,27 @@ main > *:nth-child(2){animation-delay:.05s} main > *:nth-child(3){animation-dela
 .nav button:hover{background:color-mix(in srgb,var(--sheet) 70%,transparent);transform:translateX(3px)}
 .nav button[aria-current="page"]{background:var(--sheet);color:var(--ink);border-color:var(--line);box-shadow:0 8px 18px -14px var(--shadow);transform:translateX(6px)}
 .nav button[aria-current="page"]::before{width:6px}
+.nav .nav-group{margin-top:6px}
+.nav .nav-gh{width:100%;justify-content:space-between;padding:8px 12px;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--faint,var(--ink-2));font-weight:600}
+.nav .nav-gh::before{display:none}
+.nav .nav-gh:hover{transform:none}
+.nav .nav-gh svg{width:16px;height:16px;margin-left:auto;transition:transform .2s}
+.nav .nav-group.open>.nav-gh svg{transform:rotate(180deg)}
+.nav .nav-gh .cnt{margin-left:6px}
+.nav .nav-gb{display:grid;grid-template-rows:0fr;transition:grid-template-rows .25s ease}
+.nav .nav-gb>div{overflow:hidden;min-height:0}
+.nav .nav-group.open>.nav-gb{grid-template-rows:1fr}
+.nav .nav-group:not(.open) .nav-gb button{visibility:hidden}
+.brand-btn{background:none;border:0;padding:0;cursor:pointer;color:inherit;font:inherit;text-align:left}
+.who-wrap{position:relative}
+button.who{background:none;border:1px solid transparent;border-radius:999px;padding:3px 10px 3px 4px;cursor:pointer;font:inherit;text-align:left}
+button.who:hover,button.who[aria-expanded="true"]{background:var(--sheet);border-color:var(--line)}
+.who-chev{flex:none;opacity:.6}
+.who-menu{position:absolute;right:0;top:calc(100% + 6px);min-width:190px;background:var(--sheet);border:1px solid var(--line);border-radius:12px;box-shadow:0 14px 30px -12px var(--shadow);padding:6px;z-index:60;display:flex;flex-direction:column}
+.who-menu[hidden]{display:none}
+.who-menu button{background:none;border:0;text-align:left;padding:10px 12px;border-radius:8px;cursor:pointer;font:inherit;color:var(--ink)}
+.who-menu button:hover{background:var(--paper,rgba(127,127,127,.12))}
+.sx-note{margin:14px 0}
 .nav .cnt{margin-left:auto;font-size:13.5px;min-width:22px;text-align:center;padding:1px 7px;border-radius:999px;background:var(--pen);color:var(--on-ink);font-variant-numeric:tabular-nums}
 .nav .cnt.dim{background:var(--sheet-3);color:var(--ink-2)}
 .nav svg{width:19px;height:19px;flex:none}
@@ -1860,10 +1881,16 @@ const ymText = ym => dloc(ymDate(ym),{month:'long',year:'numeric'});
 const ymLabel = ym => cap(ymText(ym));
 const ymShort = ym => dloc(ymDate(ym),{month:'short',year:'numeric'});
 function hue(str){ let h=0; for(const c of String(str)) h=(h*31+c.charCodeAt(0))%360; return h; }
-// a person's real photo when there is one (https or an uploaded data: image), otherwise their initials
-function avatarPh(name,id,photo){ if(!photo || !/^(https:\/\/|data:image\/)/.test(photo)) return avatar(name,id);
-  return `<span class="av ph"><img src="${esc(photo)}" alt="" loading="lazy" referrerpolicy="no-referrer"></span>`; }
-function avatar(name,id){ const n=(name||'?').trim(); const ini=(n.split(/\s+/).filter(w=>/^\p{L}/u.test(w)).map(w=>w[0]).slice(0,2).join('')||n[0]).toUpperCase(); return `<span class="av" style="background:hsl(${hue(id||n)} 32% 36%)">${esc(ini)}</span>`; }
+// the real photo of a person (a student's own photo, a teacher's profile photo), or '' for initials
+function photoOf(id){
+  if(!id) return '';
+  const ph = S.profiles?.[id]?.photo || (id===S.uid ? S.myProfile?.photo : '') || S.team?.[id]?.photo || '';
+  return /^(https:\/\/|data:image\/)/.test(ph) ? ph : '';
+}
+function avatar(name,id,photo){
+  const ph = photo!==undefined ? (/^(https:\/\/|data:image\/)/.test(photo||'') ? photo : '') : photoOf(id);
+  if(ph) return `<span class="av ph"><img src="${esc(ph)}" alt="" loading="lazy" referrerpolicy="no-referrer"></span>`;
+ const n=(name||'?').trim(); const ini=(n.split(/\s+/).filter(w=>/^\p{L}/u.test(w)).map(w=>w[0]).slice(0,2).join('')||n[0]).toUpperCase(); return `<span class="av" style="background:hsl(${hue(id||n)} 32% 36%)">${esc(ini)}</span>`; }
 const WORD_RE = /[\p{L}\p{N}][\p{L}\p{N}'’-]*/gu;
 function metrics(text){
   const words = (text.match(WORD_RE)||[]);
@@ -2193,7 +2220,7 @@ function checkNewEntries(){
   S.seenWaiting = now;
 }
 function startTeacher(){
-  S.mode='teacher'; S.role='owner'; S.view=startView('inbox',['club','homework','ledger']); S.loaded={};
+  S.mode='teacher'; S.role='owner'; S.view=startView('home',['club','homework','ledger','inbox','students']); S.loaded={};
   const onErr = e => { if(e && e.code!=='revoked') toast(tr('live.paused')); };
   S.unsubs.push(S.db.collection('journals').onSnapshot(s=>{ const p={}; s.docs.forEach(d=>{ if(d.exists) p[d.id]=d.data(); }); S.profiles=p; S.loaded.p=true; checkNewEntries(); refresh(); }, onErr));
   S.unsubs.push(S.db.collection('feedback').onSnapshot(s=>{ const f={}; s.docs.forEach(d=>{ if(d.exists) f[d.id]=d.data(); }); S.feedback=f; S.loaded.f=true; checkNewEntries(); refresh(); }, onErr));
@@ -2241,17 +2268,19 @@ function renderTop(){
     const mail = (S.me?.email||'').split('@')[0];
     const nm = S.mode==='student' ? (S.myProfile?.name || S.me?.name || mail || tr('student')) : S.role==='staff' ? (S.team?.[S.staffTid]?.name || S.me?.name || mail || tr('teacher')) : (S.team?.[MAIN_TID]?.name || S.me?.name || mail || tr('teacher'));
     const status = S.mode==='student' ? tr('student') : S.role==='staff' ? tr('teacher') : tr('c.owner')+' · '+tr('teacher');
-    const myPhoto = S.mode==='student' ? '' : (S.role==='staff' ? S.team?.[S.staffTid]?.photo : S.team?.[MAIN_TID]?.photo);
-    right = `<div class="who">${avatarPh(nm,S.uid,myPhoto)}<span><b style="color:var(--ink)">${esc(nm)}</b><br><span class="faint small">${esc(status)}</span></span></div><button class="btn sm ghost" data-act="sign-out">${tr('top.signOut')}</button>`;
+    const myPhoto = S.mode==='student' ? (S.myProfile?.photo||'') : (S.role==='staff' ? S.team?.[S.staffTid]?.photo : S.team?.[MAIN_TID]?.photo);
+    const meView = S.mode==='student' ? 'profile' : (S.role==='staff' || S.team?.[MAIN_TID] ? 'me' : '');
+    right = `<div class="who-wrap"><button type="button" class="who" data-who aria-haspopup="true" aria-expanded="false">${avatar(nm,S.uid,myPhoto||'')}<span><b style="color:var(--ink)">${esc(nm)}</b><br><span class="faint small">${esc(status)}</span></span><svg class="who-chev" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button><div class="who-menu" hidden>${meView?`<button type="button" data-act="go" data-v="${meView}">${tr('who.profile')}</button>`:''}<button type="button" data-act="sign-out">${tr('top.signOut')}</button></div></div>`;
   } else if(S.realDb){
     right = S.view.name==='landing' ? `<button class="btn sm ghost lx-signin" data-act="c-signin">${tr('c.signin')}</button><button class="btn sm primary lx-top-start" data-act="c-trial">${tr('lx.start')} ${LX_ARROW}</button>` : `<button class="btn sm ghost" data-act="c-landing">${I.back} ${tr('c.toCentre')}</button>`;
   }
   if(S.mode==='teacher' && (S.user||S.demo)) right = liveTopBtn() + right;
   const langs = `<div class="seg lang" role="group" aria-label="${tr('lang.label')}"><span class="lang-ic" aria-hidden="true">${I.globe}</span>${LANGS.map(l=>`<button data-act="lang" data-l="${l.k}" aria-pressed="${l.k===LANG}" title="${l.full}" lang="${l.k}">${l.n}</button>`).join('')}</div>`;
-  $('#top').innerHTML = `${(S.view.name==='login'||S.view.name==='verify'||S.mode==='guest')?'':navOpenBtn()}<div class="brand">${brandMark()}</div>${S.mode==='guest'&&S.view.name==='landing'?`<nav class="lx-nav" aria-label="${tr('lx.navLabel')}">${lxLinks()}</nav>`:''}${installBtn()}${S.mode==='guest'&&S.view.name==='landing'?'':themeSeg()}${langs}${right}`;
+  $('#top').innerHTML = `${(S.view.name==='login'||S.view.name==='verify'||S.mode==='guest')?'':navOpenBtn()}${(S.user||S.demo)&&S.mode!=='guest'&&S.view.name!=='login'&&S.view.name!=='verify'?`<button type="button" class="brand brand-btn" data-act="go" data-v="home" title="${tr('nav.home')}" aria-label="${tr('nav.home')}">${brandMark()}</button>`:`<div class="brand">${brandMark()}</div>`}${S.mode==='guest'&&S.view.name==='landing'?`<nav class="lx-nav" aria-label="${tr('lx.navLabel')}">${lxLinks()}</nav>`:''}${installBtn()}${S.mode==='guest'&&S.view.name==='landing'?'':themeSeg()}${langs}${right}`;
 }
 const PM_VIEWS = new Set(['news','newsEdit','study','set','setEdit']);
-function navBtn(name,label,icon,count,dim){ const cur = S.view.name===name || (name==='students' && S.view.name==='student') || (name==='homework' && S.mode==='teacher' && (S.view.name==='inbox'||S.view.name==='review')) || (name==='home' && S.view.name==='entry') || (name==='market' && PM_VIEWS.has(S.view.name) && S.mode==='teacher') || (name==='services' && (PM_VIEWS.has(S.view.name)||S.view.name==='services'));
+function navCur(name){ return S.view.name===name || (name==='students' && S.view.name==='student') || (name==='homework' && S.mode==='teacher' && (S.view.name==='inbox'||S.view.name==='review')) || (name==='home' && S.view.name==='entry') || (name==='market' && PM_VIEWS.has(S.view.name) && S.mode==='teacher') || (name==='services' && (PM_VIEWS.has(S.view.name)||S.view.name==='services')); }
+function navBtn(name,label,icon,count,dim){ const cur = navCur(name);
   return `<button data-act="go" data-v="${name}" ${cur?'aria-current="page"':''}>${I[icon]}<span>${label}</span>${count?`<span class="cnt ${dim?'dim':''}">${count}</span>`:''}</button>`; }
 /* light / dark / auto (follows the device) */
 const THEMES = {
@@ -2277,6 +2306,24 @@ function setNavCollapsed(v){ document.documentElement.classList.toggle('nav-coll
 document.documentElement.classList.toggle('nav-collapsed', LS.get('nav-collapsed', false)===true);
 document.addEventListener('click', e=>{ if(e.target.closest('[data-nav-toggle]')) setNavCollapsed(!document.documentElement.classList.contains('nav-collapsed')); });
 document.addEventListener('keydown', e=>{ if((e.ctrlKey||e.metaKey) && e.key==='\\' && !$('#nav')?.hidden){ e.preventDefault(); setNavCollapsed(!document.documentElement.classList.contains('nav-collapsed')); } });
+const NI = (name,label,icon,count,dim) => ({name, count, dim, html:navBtn(name,label,icon,count,dim)});
+const STUDENTS_NAV = () => { const trial=myTrialIds().length, n = myStudentIds().length; return NI('students',tr('nav.students'),'people', trial||n, !trial); };
+function navGroup(key,label,items){
+  items=items.filter(Boolean);
+  const open = items.some(i=>navCur(i.name)) || LS.get('nav-groups',{})[key]===true;
+  const total = items.reduce((a,i)=>a+(typeof i.count==='number' && !i.dim ? i.count : 0),0);
+  const dot = items.some(i=>typeof i.count==='string' && i.count);
+  return `<div class="nav-group${open?' open':''}"><button type="button" class="nav-gh" data-nav-group="${key}" aria-expanded="${open}"><span>${esc(label)}</span>${total?`<span class="cnt">${total}</span>`:dot?'<span class="cnt">●</span>':''}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button><div class="nav-gb"><div>${items.map(i=>i.html).join('')}</div></div></div>`;
+}
+const navMenu = (main, groups) => main.filter(Boolean).map(i=>i.html).join('') + groups.map(([k,l,it])=>navGroup(k,l,it)).join('');
+document.addEventListener('click', e=>{
+  const gh=e.target.closest('[data-nav-group]');
+  if(gh){ const g=gh.closest('.nav-group'), open=!g.classList.contains('open'); g.classList.toggle('open',open); gh.setAttribute('aria-expanded',String(open)); const st=LS.get('nav-groups',{}); st[gh.dataset.navGroup]=open; LS.set('nav-groups',st); return; }
+  const menu=document.querySelector('.who-menu'), w=e.target.closest('[data-who]');
+  if(w && menu){ const open=menu.hidden; menu.hidden=!open; w.setAttribute('aria-expanded',String(open)); return; }
+  if(menu && !menu.hidden){ menu.hidden=true; document.querySelector('[data-who]')?.setAttribute('aria-expanded','false'); }
+});
+document.addEventListener('keydown', e=>{ if(e.key==='Escape'){ const m=document.querySelector('.who-menu'); if(m && !m.hidden){ m.hidden=true; const w=document.querySelector('[data-who]'); w?.setAttribute('aria-expanded','false'); w?.focus(); } } });
 function renderNav(){
   const n=$('#nav');
   const solo = S.view.name==='login' || S.view.name==='verify' || S.mode==='guest'; n.hidden=solo; $('.layout').classList.toggle('solo',solo); $('.layout').classList.toggle('wide', S.mode==='guest');
@@ -2284,26 +2331,42 @@ function renderNav(){
   if(S.role==='staff'){
     const waiting = allEntries().filter(e=>e.status==='submitted').length;
     document.title = (waiting?`(${waiting}) `:'')+'Lexora · '+tr('title.teacher');
-    n.innerHTML = navCollapseBtn() + navBtn('chat',tr('dm.nav'),'chat',chatUnreadT()) + navBtn('students',tr('nav.students'),'people',Object.keys(S.profiles).length,true) + navBtn('me',tr('c.meH'),'team') + navBtn('groups',tr('c.grpH'),'people') + navBtn('homework',tr('hw.nav'),'hw',waiting) + navBtn('exams',tr('ex.nav'),'cards',S.role==='owner'?exOrderRows().length:0) + navBtn('club',tr('c.clubNav'),'bulb',clubVideoOn()?'●':0) + navBtn('library',tr('c.libNav'),'book') + navBtn('centre',tr('c.centreH'),'spark',Object.values(S.leads||{}).filter(l=>!l.st).length+pendingTorders()) + navBtn('bank',tr('nav.bank'),'bank') + `<div class="nav-foot">${tr('c.navFootStaff')}</div>`;
+    n.innerHTML = navCollapseBtn() + navMenu([NI('home',tr('nav.home'),'home'), NI('chat',tr('dm.nav'),'chat',chatUnreadT()), STUDENTS_NAV(), NI('me',tr('c.meH'),'team'), NI('groups',tr('c.grpH'),'people'), NI('homework',tr('hw.nav'),'hw',waiting)],
+      [['lessons',tr('nav.gLessons'),[NI('exams',tr('ex.nav'),'cards'), NI('club',tr('c.clubNav'),'bulb',clubVideoOn()?'●':0), NI('library',tr('c.libNav'),'book'), NI('bank',tr('nav.bank'),'bank')]],
+       ['centre',tr('nav.gCentre'),[NI('centre',tr('c.centreH'),'spark',Object.values(S.leads||{}).filter(l=>!l.st).length+pendingTorders())]]]) + `<div class="nav-foot">${tr('c.navFootStaff')}</div>`;
     return;
   }
   if(S.mode==='teacher'){
     const waiting = allEntries().filter(e=>e.status==='submitted').length;
     document.title = (waiting?`(${waiting}) `:'')+'Lexora · '+tr('title.teacher');
-    n.innerHTML = navCollapseBtn() + navBtn('chat',tr('dm.nav'),'chat',chatUnreadT()) + navBtn('students',tr('nav.students'),'people',myStudentIds().length,true) + navBtn('team',tr('c.teamH'),'team',newLeads()+pendingStaffReq()+pendingApps()+pendingEnrolls()+pendingTorders()) + (S.team?.[MAIN_TID]?navBtn('me',tr('c.meH'),'pen'):'') + navBtn('groups',tr('c.grpH'),'people') + navBtn('homework',tr('hw.nav'),'hw',waiting) + navBtn('exams',tr('ex.nav'),'cards',S.role==='owner'?exOrderRows().length:0) + navBtn('club',tr('c.clubNav'),'bulb',clubVideoOn()?'●':0) + navBtn('library',tr('c.libNav'),'book') + navBtn('ledger',tr('nav.ledger'),'coin',pendingClaims()||lgOwing(),!pendingClaims()) + navBtn('bookings',tr('nav.book'),'spark',pendingRequests()) + navBtn('market',tr('nav.shop'),'bag',pendingOrders()+pendingPasses()) + navBtn('rating',tr('rt.h'),'trophy') + navBtn('board',tr('nav.board'),'flag') + navBtn('insights',tr('nav.insights'),'chart') + navBtn('prompt',tr('nav.prompt'),'bulb') + navBtn('bank',tr('nav.bank'),'bank') +
+    n.innerHTML = navCollapseBtn() + navMenu([NI('home',tr('nav.home'),'home'), NI('chat',tr('dm.nav'),'chat',chatUnreadT()), STUDENTS_NAV(), NI('groups',tr('c.grpH'),'people'), NI('homework',tr('hw.nav'),'hw',waiting)],
+      [['lessons',tr('nav.gLessons'),[NI('exams',tr('ex.nav'),'cards',S.role==='owner'?exOrderRows().length:0), NI('club',tr('c.clubNav'),'bulb',clubVideoOn()?'●':0), NI('library',tr('c.libNav'),'book'), NI('bank',tr('nav.bank'),'bank'), NI('prompt',tr('nav.prompt'),'bulb')]],
+       ['centre',tr('nav.gCentre'),[NI('team',tr('c.teamH'),'team',newLeads()+pendingStaffReq()+pendingApps()+pendingEnrolls()+pendingTorders()), (S.team?.[MAIN_TID]?NI('me',tr('c.meH'),'pen'):null), NI('ledger',tr('nav.ledger'),'coin',pendingClaims()||lgOwing(),!pendingClaims()), NI('bookings',tr('nav.book'),'spark',pendingRequests()), NI('market',tr('nav.shop'),'bag',pendingOrders()+pendingPasses()), NI('rating',tr('rt.h'),'trophy'), NI('board',tr('nav.board'),'flag'), NI('insights',tr('nav.insights'),'chart')]]]) +
       `<div class="nav-foot">${tr('nav.foot')}</div>`;
   } else {
     const unseen = studentEntries().filter(e=>e.isNew).length;
     document.title = (unseen?`(${unseen}) `:'')+'Lexora · '+tr('title.student');
     const owe = S.myBalance && S.myBalance.left>0;
-    n.innerHTML = navCollapseBtn() + navBtn('home',tr('nav.home'),'home',unseen) + navBtn('chat',tr('dm.nav'),'chat',chatUnreadS()) + navBtn('write',tr('nav.write'),'pen') + navBtn('homework',tr('hw.nav'),'hw',hwOpenCount()) + navBtn('exams',tr('ex.nav'),'cards') + navBtn('mistakes',tr('nav.mistakes'),'flag') + navBtn('words',tr('nav.words'),'book',(S.myFeedback?.vocab||[]).length,true) + navBtn('learn',tr('nav.learn'),'bulb',(S.board?.posts||[]).length,true) + navBtn('teachers',tr('c.navTeachers'),'team',Object.values(S.myLiveFor||{}).some(isLive)?'●':(promoOn(S.promo)?'%':0)) + navBtn('club',tr('c.clubNav'),'bulb',clubVideoOn()?'●':0) + navBtn('library',tr('c.libNav'),'book') + navBtn('book',tr('nav.book'),'spark') + (S.rating?.on!==false && (S.rating?.list||[]).length ? navBtn('rating',tr('rt.h'),'trophy') : '') + navBtn('services',tr('nav.services'),'cards',myServiceCount(),true) + navBtn('market',tr('nav.shop'),'bag') + (S.myBalance? navBtn('pay',tr('nav.pay'),'coin',owe?'!':0,false) : '');
+    n.innerHTML = navCollapseBtn() + navMenu([NI('home',tr('nav.home'),'home',unseen), NI('chat',tr('dm.nav'),'chat',chatUnreadS()), NI('write',tr('nav.write'),'pen'), NI('homework',tr('hw.nav'),'hw',hwOpenCount()), NI('exams',tr('ex.nav'),'cards')],
+      [['learn',tr('nav.gLearn'),[NI('mistakes',tr('nav.mistakes'),'flag'), NI('words',tr('nav.words'),'book',(S.myFeedback?.vocab||[]).length,true), NI('learn',tr('nav.learn'),'bulb',(S.board?.posts||[]).length,true), NI('club',tr('c.clubNav'),'bulb',clubVideoOn()?'●':0), NI('library',tr('c.libNav'),'book')]],
+       ['services',tr('nav.gServices'),[NI('teachers',tr('c.navTeachers'),'team',Object.values(S.myLiveFor||{}).some(isLive)?'●':(promoOn(S.promo)?'%':0)), NI('book',tr('nav.book'),'spark'), (S.rating?.on!==false && (S.rating?.list||[]).length ? NI('rating',tr('rt.h'),'trophy') : null), NI('services',tr('nav.services'),'cards',myServiceCount(),true), NI('market',tr('nav.shop'),'bag'), (S.myBalance? NI('pay',tr('nav.pay'),'coin',owe?'!':0,false) : null)]]]);
   }
 }
 
 /* ---------------- teacher data ---------------- */
 // the owner's inbox and students list show their own students unless "All teachers" is on
 const seesStudent = p => S.role!=='owner' || S.allT || tidOf(p)===MAIN_TID;
-const myStudentIds = () => Object.keys(S.profiles).filter(sid=>seesStudent(S.profiles[sid]));
+// a student who just signed up is on a trial: they count as the teacher's student after the first payment,
+// or when the teacher accepts them (older students have no trial flag and stay students)
+const isTrial = p => !!p && p.trial===true;
+const myStudentIds = () => Object.keys(S.profiles).filter(sid=>seesStudent(S.profiles[sid]) && !isTrial(S.profiles[sid]));
+const myTrialIds = () => Object.keys(S.profiles).filter(sid=>seesStudent(S.profiles[sid]) && isTrial(S.profiles[sid]));
+async function acceptStudent(sid){ await S.db.doc('journals/'+sid).update({trial:false, acceptedAt:Date.now()}); }
+// the first recorded payment makes a trial student a real student
+async function activateByLedger(ledgerId){
+  const jid=S.lg.students.find(x=>x.id===ledgerId)?.journalId;
+  if(jid && isTrial(S.profiles[jid])){ try{ await acceptStudent(jid); }catch(e){} }
+}
 const hasOtherTeachers = () => S.role==='owner' && Object.values(S.profiles).some(p=>tidOf(p)!==MAIN_TID);
 const allTToggle = () => hasOtherTeachers() ? `<div class="seg" role="group"><button data-act="c-allt" data-on="0" aria-pressed="${!S.allT}">${tr('c.mine')}</button><button data-act="c-allt" data-on="1" aria-pressed="${!!S.allT}">${tr('c.allT')}</button></div>` : '';
 function allEntries(){
@@ -2368,8 +2431,8 @@ function renderMain0(){
   if(S.mode==='teacher' && !(S.loaded.p && S.loaded.f)){ m.innerHTML=`<div class="loading">${tr('load.teacher')}</div>`; return; }
   if(S.mode==='student' && S.myProfile===undefined){ m.innerHTML=`<div class="loading">${tr('load.student')}</div>`; return; }
   const fn = {inbox:vInbox, students:vStudents, student:vStudent, insights:vInsights, prompt:vPrompt, bank:vBank, review:vReview, ledger:vLedger, board:vBoard, bookings:vBookings, market:vMarket, learn:vLearn, book:vBook, rating:()=>S.mode==='teacher'?vRatingT():vRatingS(),
-              home:vHome, write:vWrite, entry:vEntry, mistakes:vMistakes, words:vWords, setup:vSetup, pay:vPay,
-              news:vNews, newsEdit:vNewsEdit, call:vCall, study:vStudy, services:vServices, set:vSet, setEdit:vSetEdit, team:vTeam, me:vMe, centre:vCentre, teachers:vStuTeachers, groups:vGroups, homework:vHomework, exams:vExams, exam:vExam, club:vClub, library:vLibrary, chat:vChat}[v];
+              home:()=>S.mode==='student'?vHome():vTeacherHome(), write:vWrite, entry:vEntry, mistakes:vMistakes, words:vWords, setup:vSetup, pay:vPay,
+              news:vNews, newsEdit:vNewsEdit, call:vCall, study:vStudy, services:vServices, set:vSet, setEdit:vSetEdit, team:vTeam, me:vMe, centre:vCentre, teachers:vStuTeachers, profile:vProfile, groups:vGroups, homework:vHomework, exams:vExams, exam:vExam, club:vClub, library:vLibrary, chat:vChat}[v];
   if(tgNeeded()){ m.innerHTML=vTgGate(); return; }
   if(S.role==='staff' && S.team?.[S.staffTid] && !S.team[S.staffTid].agreedAt){ m.innerHTML=vAgree(); return; }   // a teacher accepts the agreement once   // everyone (students, teachers, the owner) connects Telegram first
   m.innerHTML = fn ? fn() : '';
@@ -2400,6 +2463,17 @@ function entryCard(e, teacher=true){
   </button>`;
 }
 // the teacher's Homework page has two tabs: the homework they give, and the entries students sent in to be marked
+function vTeacherHome(){
+  const me = S.team?.[S.role==='staff'?S.staffTid:MAIN_TID];
+  const first = ((me?.name||'').split(' ')[0])||'';
+  const waiting = allEntries().filter(e=>e.status==='submitted').sort((a,b)=>(a.submittedAt||0)-(b.submittedAt||0));
+  const trials = myTrialIds().length;
+  return `<div class="page-head"><div><h1>${first?tr('th.hi',{name:esc(first)}):tr('nav.home')}</h1></div>
+      <span class="row" style="gap:8px;flex-wrap:wrap"><button class="btn" data-act="go" data-v="students">${tr('nav.students')}</button><button class="btn pen" data-act="hw-edit">+ ${tr('hw.add')}</button></span></div>
+    ${typeof teacherDash==='function'?teacherDash():''}
+    ${trials?`<div class="notice info sx-note row" style="justify-content:space-between;gap:12px;flex-wrap:wrap"><span>${tr('th.trialN',{n:trials})}</span><button class="btn sm pen" data-act="go" data-v="students">${tr('sx.open')}</button></div>`:''}
+    ${waiting.length?`<div class="section"><div class="row" style="justify-content:space-between;align-items:center;gap:10px"><h2 style="margin:0">${tr('th.waitH')}</h2><button class="btn ghost sm" data-act="go" data-v="inbox">${tr('th.all')}</button></div><div class="list" style="margin-top:12px">${waiting.slice(0,4).map(e=>entryCard(e)).join('')}</div></div>`:''}`;
+}
 function hwTabs(cur){
   const w=allEntries().filter(e=>e.status==='submitted').length;
   return `<div class="seg hw-tabs" role="group" aria-label="${esc(tr('hw.nav'))}"><button type="button" data-act="go" data-v="homework" aria-pressed="${cur==='homework'}">${tr('hw.nav')}</button><button type="button" data-act="go" data-v="inbox" aria-pressed="${cur==='inbox'}">${tr('nav.inbox')}${w?`<span class="cnt">${w}</span>`:''}</button></div>`;
@@ -2434,9 +2508,13 @@ function studentStats(sid){
 function topErr(errs){ const e=Object.entries(errs).sort((a,b)=>b[1]-a[1])[0]; return e? TYPE[e[0]] : null; }
 function vStudents(){
   const ids = myStudentIds().sort((a,b)=>(S.profiles[a].name||'').localeCompare(S.profiles[b].name||''));
-  if(!ids.length) return `<div class="page-head"><div><h1>${tr('stu.h')}</h1></div></div><div class="empty"><h3>${tr('stu.emptyH')}</h3><p>${tr('stu.emptyP')}</p></div>`;
+  const trials = myTrialIds().sort((a,b)=>(S.profiles[b].joinedAt||0)-(S.profiles[a].joinedAt||0));
+  const trialBox = trials.length ? `<div class="section sx-trial"><h2>${tr('sx.trialH')} <span class="cnt-s num">${trials.length}</span></h2><p class="muted small" style="margin:-6px 0 12px">${tr('sx.trialP')}</p>
+    <div class="list">${trials.map(sid=>{ const p=S.profiles[sid]; return `<div class="req">${avatar(p.name,sid)}<div style="min-width:0"><b>${esc(p.name||tr('stu.unnamed'))}</b> <span class="pill bk-wait">${tr('sx.trial')}</span><div class="small faint">${esc(p.level||'–')}${p.joinedAt?' · '+fmtDate(new Date(p.joinedAt).toISOString().slice(0,10)):''}</div></div>
+      <span class="req-act row" style="gap:6px"><button class="btn sm ghost" data-act="open-student" data-sid="${esc(sid)}">${tr('sx.open')}</button><button class="btn sm pen" data-act="trial-accept" data-sid="${esc(sid)}">${tr('sx.accept')}</button></span></div>`; }).join('')}</div></div>` : '';
+  if(!ids.length) return `<div class="page-head"><div><h1>${tr('stu.h')}</h1></div></div>${trialBox}${trials.length?'':`<div class="empty"><h3>${tr('stu.emptyH')}</h3><p>${tr('stu.emptyP')}</p></div>`}`;
   return `<div class="page-head"><div><h1>${tr('stu.h')}</h1><p>${tr('stu.count',{n:ids.length})}</p></div>${allTToggle()}
-    <input class="inp" id="stu-q" placeholder="${tr('stu.search')}" style="max-width:240px" value="${esc(S.view.q||'')}" aria-label="${tr('stu.search')}"></div>
+    <input class="inp" id="stu-q" placeholder="${tr('stu.search')}" style="max-width:240px" value="${esc(S.view.q||'')}" aria-label="${tr('stu.search')}"></div>${trialBox}
     <div class="scards" id="scards">${ids.map(sid=>{ const p=S.profiles[sid], st=studentStats(sid), te=topErr(st.errs);
       return `<button class="scard" data-act="open-student" data-sid="${esc(sid)}" data-name="${esc((p.name||'').toLowerCase())}">
         <span class="top-r">${avatar(p.name,sid)}<span style="min-width:0"><span class="nm">${esc(p.name||tr('stu.unnamed'))}</span><br><span class="small faint">${st.last?tr('stu.last',{d:fmtDate(st.last)}):tr('stu.none')}</span></span><span class="lvl" style="margin-left:auto">${esc(p.level||'–')}</span></span>${S.allT&&tidOf(p)!==MAIN_TID?`<span class="small muted">${I.team} ${esc(tName(tidOf(p)))}</span>`:''}
@@ -2472,7 +2550,8 @@ function vStudent(){
   const lgs = S.lg.students.find(x=>x.journalId===sid), lgL = lgs ? lgCalc(lgs, curYM()) : null;
   return `<button class="btn ghost sm" data-act="go" data-v="students">${I.back} ${tr('nav.students')}</button>
     <div class="page-head" style="margin-top:10px"><div class="row">${avatar(p.name,sid)}<div><h1>${esc(p.name)}</h1><p>${tr('stu.meta',{l:esc(p.level||'–'), d:p.joinedAt? dloc(new Date(p.joinedAt),{day:'numeric',month:'long'}):'–'})}</p></div></div>
-    <span class="row" style="gap:6px;flex-wrap:wrap"><button class="btn sm pen" data-act="c-dm-new" data-uid="${esc(sid)}">${I.chat} ${tr('dm.write')}</button><button class="btn sm" data-act="cr-st" data-uid="${esc(sid)}">★ ${S.stCrit?.[sid]?.[myTid()]?tr('cr.stAgain',{v:critAvg({x:S.stCrit[sid][myTid()]}).toFixed(1)}):tr('cr.stBtn')}</button>${lgs?`<button class="btn sm" data-act="lg-open" data-id="${esc(lgs.id)}">${I.coin} <span class="pill lg-${lgL.status}">${tr('lg.st.'+lgL.status)}</span>${lgL.left>0?`<span class="num">${tr('lg.left')} ${money(lgL.left)}</span>`:''}</button>`:''}</span></div>
+    <span class="row" style="gap:6px;flex-wrap:wrap">${isTrial(p)?`<span class="pill bk-wait">${tr('sx.trial')}</span><button class="btn sm primary" data-act="trial-accept" data-sid="${esc(sid)}">${tr('sx.accept')}</button>`:''}<button class="btn sm pen" data-act="c-dm-new" data-uid="${esc(sid)}">${I.chat} ${tr('dm.write')}</button><button class="btn sm" data-act="cr-st" data-uid="${esc(sid)}">★ ${S.stCrit?.[sid]?.[myTid()]?tr('cr.stAgain',{v:critAvg({x:S.stCrit[sid][myTid()]}).toFixed(1)}):tr('cr.stBtn')}</button>${lgs?`<button class="btn sm" data-act="lg-open" data-id="${esc(lgs.id)}">${I.coin} <span class="pill lg-${lgL.status}">${tr('lg.st.'+lgL.status)}</span>${lgL.left>0?`<span class="num">${tr('lg.left')} ${money(lgL.left)}</span>`:''}</button>`:''}</span></div>
+    ${(p.about||p.goal||p.city||p.interests)?`<section class="card sp-view"><h3>${tr('sp.view')}</h3><dl>${[['sp.city',p.city],['sp.goal',p.goal],['sp.interests',p.interests]].filter(x=>x[1]).map(([k,v])=>`<div><dt>${tr(k)}</dt><dd>${esc(v)}</dd></div>`).join('')}</dl>${p.about?`<p class="sp-about">${esc(p.about)}</p>`:''}</section>`:''}
     <div class="stats"><div class="stat"><b>${st.entries}</b><span>${tr('k.entries')}</span></div><div class="stat"><b>${st.words.toLocaleString()}</b><span>${tr('k.words')}</span></div><div class="stat"><b>${fmtBand(st.latest)}</b><span>${tr('k.latest')}</span></div><div class="stat"><b>${st.waiting}</b><span>${tr('k.waiting')}</span></div></div>
     <div class="grid2 section"><div class="card"><h3>${tr('stu.trend')}</h3>${bandChart(st.pts)}</div><div class="card"><h3>${tr('stu.recur')}</h3>${errorBars(st.errs)}</div></div>
     ${S.role==='staff'?'':teacherPick(sid)}${S.role==='staff'?'':planEditor(sid)}
@@ -2788,7 +2867,7 @@ function openLgPay(id, month, fromStudent){
     if(!/^\d{4}-\d{2}$/.test(mon)){ err.textContent=tr('lg.monthErr'); return; }
     const data={studentId:id, amount, month:mon, date:$('#lp-date').value||todayStr(), method:$('#lp-method').value, note:$('#lp-note').value.trim(), createdAt:new Date().toISOString()};
     const btn=$('#lp-save'); btn.disabled=true;
-    try{ await S.db.doc('ledger/main/payments/'+newId()).set(data); toast(tr('lg.paySaved',{sum:som(amount)})); if(fromStudent) openLgStudent(id); else closeDlg(); }
+    try{ await S.db.doc('ledger/main/payments/'+newId()).set(data); activateByLedger(id); toast(tr('lg.paySaved',{sum:som(amount)})); if(fromStudent) openLgStudent(id); else closeDlg(); }
     catch(e2){ err.textContent=lgErrText(e2); btn.disabled=false; }
   });
 }
@@ -2999,7 +3078,7 @@ function openClaimConfirm(uid, id){
     const btn=$('#pc-save'); btn.disabled=true;
     try{
       // fixed id: confirming twice can never add the money twice
-      await S.db.doc('ledger/main/payments/'+claimPayId(uid,id)).set({studentId:st.id, amount, month, date:todayStr(), method:$('#pc-method').value, note:c.ref?tr('pf.ref2',{ref:c.ref}):'', claim:id, createdAt:new Date().toISOString()});
+      await S.db.doc('ledger/main/payments/'+claimPayId(uid,id)).set({studentId:st.id, amount, month, date:todayStr(), method:$('#pc-method').value, note:c.ref?tr('pf.ref2',{ref:c.ref}):'', claim:id, createdAt:new Date().toISOString()}); activateByLedger(st.id);
       await setClaimStatus(uid, id, 'ok'); closeDlg(); toast(tr('pf.confirmed',{sum:som(amount)}));
       notify('pay',[uid],()=>({subject:tr('em.payOk',{sum:som(amount)}), kicker:tr('em.payK'), lines:[tr('lg.forM',{m:ymText(month)}), tr('em.payOkL')]}));
     }catch(e2){ err.textContent=lgErrText(e2); btn.disabled=false; }
@@ -5527,7 +5606,7 @@ function wirePricing(){
 
 /* ---------- levels: computed on the owner's page (only it sees every student) and published to the profile ---------- */
 function teacherStats(tid){
-  const sids=Object.keys(S.profiles).filter(sid=>tidOf(S.profiles[sid])===tid), monthAgo=Date.now()-30*864e5;
+  const sids=Object.keys(S.profiles).filter(sid=>tidOf(S.profiles[sid])===tid && !isTrial(S.profiles[sid])), monthAgo=Date.now()-30*864e5;
   let reviews=0, gainSum=0, gains=0, bands=[], active=0;
   for(const sid of sids){
     const p=S.profiles[sid]||{}, fb=S.feedback[sid]||{};
@@ -5612,7 +5691,7 @@ async function staffTidFor(user){
   try{ const s=await S.db.doc('staff/'+user.email.toLowerCase()).get(); return s.exists ? (s.data().tid||null) : null; }catch(e){ return null; }
 }
 function startStaff(tid){
-  S.mode='teacher'; S.role='staff'; S.staffTid=tid; S.view=startView('inbox',['club','homework']); S.loaded={}; S.profiles={}; S.feedback={};
+  S.mode='teacher'; S.role='staff'; S.staffTid=tid; S.view=startView('home',['club','homework','inbox','students']); S.loaded={}; S.profiles={}; S.feedback={};
   S.plans={}; S.svc={services:[],slots:[]}; S.mail={url:'',secret:'',on:{}}; S.contacts={}; S.bookings={}; S.bstat={}; S.claims={}; S.cstat={};
   const onErr = e => { if(e && e.code!=='revoked') toast(tr('live.paused')); };
   const fbUn={}, seen=new Set();
@@ -7571,6 +7650,47 @@ function vSetup(){
       ${S.canWrite===false?`<div class="notice">${tr('su.viewOnly')}</div>`:''}
     </div></div>`;
 }
+// a square, face-first crop of an uploaded photo, small enough to live inside the profile document
+function shrinkSquare(file, size=320){
+  return new Promise((ok,bad)=>{ const img=new Image(), u=URL.createObjectURL(file);
+    img.onload=()=>{ URL.revokeObjectURL(u);
+      if(img.width<150 || img.height<150){ bad(new Error('small')); return; }
+      const side=Math.min(img.width,img.height), sx=(img.width-side)/2, sy=Math.max(0,(img.height-side)*0.2);
+      const c=document.createElement('canvas'); c.width=size; c.height=size; c.getContext('2d').drawImage(img,sx,sy,side,side,0,0,size,size);
+      let d; for(const q of [0.82,0.72,0.62,0.5]){ d=c.toDataURL('image/jpeg',q); if(d.length<45000) break; }
+      d.length<45000 ? ok(d) : bad(new Error('big')); };
+    img.onerror=()=>{ URL.revokeObjectURL(u); bad(new Error('img')); }; img.src=u; });
+}
+const SP_FIELDS = {name:80, city:60, goal:200, interests:200, about:600};
+function spDraft(){ const p=S.myProfile||{}; return {...Object.fromEntries(Object.keys(SP_FIELDS).map(k=>[k,p[k]||''])), ...(S.spDraft||{})}; }
+function vProfile(){
+  const p=S.myProfile||{}, d=spDraft();
+  const f=(k,label,ph,tag='input')=> tag==='textarea'
+    ? `<label class="field"><span>${label}</span><textarea class="inp" id="sp-${k}" rows="5" maxlength="${SP_FIELDS[k]}" placeholder="${esc(ph||'')}">${esc(d[k])}</textarea></label>`
+    : `<label class="field"><span>${label}</span><input class="inp" id="sp-${k}" maxlength="${SP_FIELDS[k]}" placeholder="${esc(ph||'')}" value="${esc(d[k])}"></label>`;
+  return `<div class="page-head"><div><h1>${tr('sp.h')}</h1><p>${tr('sp.p')}</p></div></div>
+    <section class="card sp-card">
+      <div class="sp-top"><span class="sp-ph">${avatar(p.name||'?',S.uid,p.photo||'')}</span>
+        <div class="stack" style="gap:8px;align-items:flex-start"><label class="btn sm" style="cursor:pointer">${I.up} ${tr('sp.photo')}<input type="file" accept="image/*" id="sp-file" hidden></label>
+          ${p.photo?`<button type="button" class="btn ghost sm" data-act="sp-rmphoto">${tr('sp.rmPhoto')}</button>`:''}<span class="small faint">${tr('sp.photoHint')}</span></div></div>
+      <div class="stack" style="margin-top:20px;gap:14px">${f('name',tr('sp.name'))}
+        <div class="grid2" style="gap:12px">${f('city',tr('sp.city'))}${f('goal',tr('sp.goal'),tr('sp.goalPh'))}</div>
+        ${f('interests',tr('sp.interests'))}${f('about',tr('sp.about'),tr('sp.aboutPh'),'textarea')}
+        <p class="lg-err" id="sp-err" role="alert"></p><button type="button" class="btn primary" data-act="sp-save" style="align-self:flex-start">${tr('sp.save')}</button></div>
+    </section>`;
+}
+after.profile = () => {
+  Object.keys(SP_FIELDS).forEach(k=>$('#sp-'+k)?.addEventListener('input', e=>{ S.spDraft={...(S.spDraft||{}), [k]:e.target.value}; }));
+  $('#sp-file')?.addEventListener('change', async e=>{ const file=e.target.files[0]; if(!file) return;
+    try{ const url=await shrinkSquare(file); await S.db.doc('journals/'+S.uid).update({photo:url}); toast(tr('sp.saved')); }
+    catch(err){ if(err?.message==='small'||err?.message==='big'||err?.message==='img') toast(tr(err.message==='small'?'sp.photoSmall':'sp.photoFail')); else dbErr(err,'journal'); } });
+};
+async function saveProfile(){
+  const d=spDraft(), name=(d.name||'').trim(), err=$('#sp-err'); if(err) err.textContent='';
+  if(!name){ if(err) err.textContent=tr('sp.needName'); return; }
+  const data={}; for(const [k,max] of Object.entries(SP_FIELDS)) data[k]=String(d[k]||'').trim().slice(0,max); data.name=name;
+  try{ await S.db.doc('journals/'+S.uid).update(data); S.spDraft=null; toast(tr('sp.saved')); }catch(e){ dbErr(e,'journal'); }
+}
 function vHome(){
   const ents=studentEntries(); const p=S.myProfile||{};
   const words=ents.reduce((a,e)=>a+(e.words||0),0);
@@ -7579,7 +7699,7 @@ function vHome(){
   const wroteToday = ents.some(e=>e.date===todayStr());
   const fresh = ents.filter(e=>e.isNew);
   const months={}; ents.forEach(e=>{ const k=cap(dloc(parseDate(e.date),{month:'long',year:'numeric'})); (months[k]=months[k]||[]).push(e); });
-  return `${S.canWrite===false?`<div class="notice">${tr('home.viewOnly')}</div>`:''}
+  return (S.myProfile?.trial?`<div class="notice info sx-note">${tr('sx.note')}</div>`:'')+`${S.canWrite===false?`<div class="notice">${tr('home.viewOnly')}</div>`:''}
   ${liveBanner()}${homeDash()}
   <div class="hero section">
     <div class="today">${I.nib}<div class="label" style="color:inherit;opacity:.7">${dloc(new Date(),{weekday:'long'})}</div>
@@ -7738,6 +7858,9 @@ document.addEventListener('click', async ev => {
     case 'leave-demo': leaveDemo(); break;
     case 'open-review': openReview(b.dataset.sid,b.dataset.eid); break;
     case 'open-student': go('student',{sid:b.dataset.sid}); break;
+    case 'trial-accept': { try{ await acceptStudent(b.dataset.sid); toast(tr('sx.accepted')); }catch(e){ dbErr(e,'journal'); } break; }
+    case 'sp-save': saveProfile(); break;
+    case 'sp-rmphoto': { try{ await S.db.doc('journals/'+S.uid).update({photo:''}); }catch(e){ dbErr(e,'journal'); } break; }
     case 'open-entry': go('entry',{eid:b.dataset.eid}); break;
     case 'rv-view': R.view=b.dataset.v; closePop(); renderReviewTools(); renderPaper(); break;
     case 'ai': aiSuggest(); break;
@@ -7770,7 +7893,7 @@ document.addEventListener('click', async ev => {
     case 'bank-add': { const v=$('#bank-new').value.trim(); if(!v) break; S.prefs=S.prefs||{bank:DEFAULT_BANK.slice()}; S.prefs.bank.unshift(v); await savePrefs(); renderMain(); break; }
     case 'bank-del': S.prefs=S.prefs||{bank:DEFAULT_BANK.slice()}; S.prefs.bank.splice(+b.dataset.i,1); await savePrefs(); renderMain(); break;
     // student
-    case 'setup-save': { const name=$('#setup-name').value.trim(); if(!name){ toast(tr('su.typeName')); break; } const prof={name,level:$('#setup-level').value,joinedAt:Date.now(),updatedAt:Date.now(),index:{}}; const tch=$('#setup-teacher')?.value; if($('#setup-teacher') && !tch){ toast(tr('su.needT')); break; } prof.teacher=tch||MAIN_TID; const jl=LS.get('join-lead',''); if(jl && prof.teacher===LS.get('want-teacher','')) prof.lead=jl; b.disabled=true; try{ await S.db.doc(`journals/${S.uid}`).set(prof); LS.del('join-lead'); LS.del('want-teacher'); }catch(e){ b.disabled=false; dbErr(e,'journal'); } break; }
+    case 'setup-save': { const name=$('#setup-name').value.trim(); if(!name){ toast(tr('su.typeName')); break; } const prof={name,level:$('#setup-level').value,joinedAt:Date.now(),updatedAt:Date.now(),index:{},trial:true}; const tch=$('#setup-teacher')?.value; if($('#setup-teacher') && !tch){ toast(tr('su.needT')); break; } prof.teacher=tch||MAIN_TID; const jl=LS.get('join-lead',''); if(jl && prof.teacher===LS.get('want-teacher','')) prof.lead=jl; b.disabled=true; try{ await S.db.doc(`journals/${S.uid}`).set(prof); LS.del('join-lead'); LS.del('want-teacher'); }catch(e){ b.disabled=false; dbErr(e,'journal'); } break; }
     case 'new-entry': startEdit({prompt:!!b.dataset.prompt}); break;
     case 'mood': S.edit.mood = S.edit.mood===b.dataset.k? null : b.dataset.k; document.querySelectorAll('.mood').forEach(m=>m.setAttribute('aria-pressed', m.dataset.k===S.edit.mood)); if(!S.edit.eid&&!S.edit.revisionOf) LS.set(draftKey(),S.edit); break;
     case 'submit-entry': submitEntry(); break;
@@ -8030,7 +8153,7 @@ document.addEventListener('click', async ev => {
     case 'c-live': openStart(); break;
     case 'c-agr-ok': { if(!$('#agr-c')?.checked){ $('#agr-err').textContent=tr('agr.need'); break; } b.disabled=true;
       try{ const at=Date.now(); await S.db.doc('teachers/'+S.staffTid).update({agreedAt:at}); S.team[S.staffTid]={...S.team[S.staffTid], agreedAt:at}; renderMain(); }catch(e){ b.disabled=false; $('#agr-err').textContent=lgErrText(e); } break; }
-    case 'c-call-leave': callStop(); go(S.mode==='student'?'home':'inbox'); break;
+    case 'c-call-leave': callStop(); go('home'); break;
     case 'c-live-end': b.disabled=true; try{ await endLive(); }catch(e){ b.disabled=false; dbErr(e,'svc'); } break;
     case 'c-grp': openGroup(b.dataset.id||null); break;
     case 'c-grp-del': { if(!b.dataset.armed){ b.dataset.armed='1'; b.textContent=tr('del.sure'); break; } const list=myGroups().filter(g=>g.id!==b.dataset.id);
