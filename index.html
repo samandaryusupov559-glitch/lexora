@@ -1384,6 +1384,20 @@ h1,h2,h3,.lp-stats b,.today .d,.tkv.big b,.rank-me b,.pm-until b,.stat b{font-va
 .brand .mark svg rect{fill:var(--pen)}
 .brand .mark svg circle{fill:var(--coral);stroke:var(--ink)}
 .brand .logo{color:var(--pen)}
+/* sign-in card */
+.auth{max-width:460px;margin:28px auto 0;padding:34px 32px 26px;background:var(--sheet);border:1px solid var(--line);border-radius:24px;box-shadow:0 30px 60px -38px var(--shadow)}
+.auth-k{display:inline-block;padding:5px 12px;border-radius:999px;background:var(--pen-soft);color:var(--pen);font-size:13px;font-weight:700;letter-spacing:.02em}
+.auth .login-h{font-size:clamp(34px,6vw,46px);font-weight:600;letter-spacing:-.02em;line-height:1.05;margin-top:16px}
+.auth .login-h em{color:var(--pen);font-style:normal}
+.auth-p{margin-top:12px;color:var(--ink-2);font-size:16px;line-height:1.55}
+.auth-form{margin-top:24px;gap:14px}
+.auth-form .btn.primary{width:100%;justify-content:center;background:var(--pen);border-color:var(--pen);color:var(--on-coral);padding-block:13px;box-shadow:0 12px 24px -14px var(--pen)}
+.auth-form .btn.primary:hover{filter:brightness(1.08)}
+.auth-form .row .btn.ghost.sm{padding:6px 8px;font-size:13.5px}
+.auth-alt{margin-top:20px;padding-top:18px;border-top:1px solid var(--line);display:flex;justify-content:center}
+.auth-alt .btn{background:transparent;border:1px solid var(--line);color:var(--ink);font-weight:700}
+.auth-alt .btn:hover{border-color:var(--pen);color:var(--pen)}
+@media (max-width:560px){.auth{margin-top:14px;padding:26px 20px 20px;border-radius:20px}}
 /* the newspaper keeps its serif masthead */
 .nwp,.pm-art-news{--f-display:"Playfair Display", Georgia, serif}
 ::selection{background:var(--lime);color:#222944}
@@ -5366,14 +5380,12 @@ function vLogin(){
   else if(st==='confirm') form = `${emailF(tr('lo.again'))}<button class="btn primary" data-act="confirm-link">${tr('lo.finish')}</button>`;
   else if(st==='sent') form = `<div class="notice info" style="margin:0">${tr('lo.sentTo',{email:em})}</div>
       <button class="btn ghost sm" style="align-self:flex-start" data-act="login-step" data-s="signin">${tr('back')}</button>`;
-  return `<article class="paper" style="max-width:600px;margin:24px auto 0">
-    <span class="label">${tr('lo.kicker')}</span>
+  return `<article class="auth">
+    <span class="auth-k">${tr('lo.kicker')}</span>
     <h1 class="login-h">${tr('lo.h')}</h1>
-    <p class="muted" style="margin-top:14px;font-size:16px;max-width:44ch">${tr('lo.p')}</p>
-    <div class="stack" style="margin-top:24px">${form}</div>
-    <div class="row" style="margin-top:22px;justify-content:space-between;border-top:1px dashed var(--line);padding-top:14px">
-      ${st==='teacher'?'<span></span>':`<button class="btn ghost sm" data-act="login-step" data-s="teacher">${tr('lo.teacher')}</button>`}
-</div>
+    <p class="auth-p">${tr('lo.p')}</p>
+    <div class="stack auth-form">${form}</div>
+    ${st==='teacher'?'':`<div class="auth-alt"><button class="btn sm" data-act="login-step" data-s="teacher">${tr('lo.teacher')}</button></div>`}
   </article>`;
 }
 
@@ -7953,7 +7965,7 @@ document.addEventListener('keydown', ev=>{
     if(ev.key==='Enter' && ev.target.closest('#pop') && ev.target.tagName==='INPUT'){ ev.preventDefault(); popSave(); return; }
     if(ev.altKey && /^[1-9]$/.test(ev.key)){ ev.preventDefault(); const t=TYPES[+ev.key-1]; S.pop.a.type=t.k; document.querySelectorAll('#pop .types .tchip').forEach(c=>c.setAttribute('aria-pressed',c.dataset.k===t.k)); const w=$('#pf-fix-wrap'); if(w) w.hidden=t.k==='good'; }
   } else if(ev.key==='Escape') closePop();
-  if(ev.key==='Enter' && (ev.target.id==='login-email'||ev.target.id==='login-pass')){ $('#main .paper .btn.primary')?.click(); }
+  if(ev.key==='Enter' && (ev.target.id==='login-email'||ev.target.id==='login-pass')){ ($('#main .auth .btn.primary')||$('#main .paper .btn.primary'))?.click(); }
   if(ev.key==='Enter' && ev.target.id==='bank-new'){ $('[data-act="bank-add"]').click(); }
   if(ev.key==='Enter' && ev.target.id==='plan-new'){ $('[data-act="plan-add"]')?.click(); }
   if(ev.key==='Enter' && ev.target.id==='qz-in'){ ev.preventDefault(); $('[data-act="qz-type"]')?.click(); }
