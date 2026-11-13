@@ -6705,6 +6705,17 @@ async function hwFanOut(h, before){
   const now=new Set(hwUids(h)), old=new Set(before?hwUids(before):[]);
   for(const uid of now) await S.db.doc('hwFor/'+uid).set({items:{[h.id]:hwSummary(h)}}, {merge:true});
   for(const uid of old) if(!now.has(uid)) await hwDrop(uid, h.id);
+  hwNotify(h, before, now, old);
+}
+// Telegram: students added to this homework get "new homework"; students who already had it hear only if the title, note or due date changed
+function hwNotify(h, before, now, old){
+  const fresh=[...now].filter(u=>!old.has(u));
+  const changed = !!before && (before.title!==h.title || (before.note||'')!==(h.note||'') || (before.due||'')!==(h.due||''));
+  const same = changed ? [...now].filter(u=>old.has(u)) : [];
+  const mk = upd => () => ({subject:tr(upd?'hw.emUpd':'hw.emNew',{t:h.title}), kicker:tr('hw.emK'),
+    lines:[h.due?tr('hw.due',{d:dloc(parseDate(h.due),{day:'numeric',month:'long'})}):'', (h.note||'').slice(0,500), (h.files||[]).length?'📎 '+h.files.map(f=>f.name).join(', ').slice(0,200):''], btn:tr('hw.emBtn')});
+  if(fresh.length) notify('hw', fresh, mk(false)).catch(()=>{});
+  if(same.length) notify('hw', same, mk(true)).catch(()=>{});
 }
 async function hwDrop(uid, hid){
   const ref=S.db.doc('hwFor/'+uid), s=await ref.get(); if(!s.exists) return;
