@@ -578,7 +578,7 @@ exports.callToken = onRequest({ cors: CALL_ORIGINS, invoker: 'public' }, async (
   const m = String(req.get('Authorization') || '').match(/^Bearer (.+)$/); let uid;
   try { uid = (await admin.auth().verifyIdToken(m ? m[1] : '')).uid; } catch (e) { res.status(401).json({ ok: false, error: 'auth' }); return; }
   try { const r = await callRun(uid, String((req.body || {}).room || ''), !!(req.body || {}).ping); res.status(r.code).json(r.body); }
-  catch (e) { logger.error('callToken', e); res.status(500).json({ ok: false, error: 'server' }); }
+  catch (e) { logger.error('callToken', e); res.status(500).json({ ok: false, error: 'server', why: String((e && e.message) || e).slice(0, 160) }); }
 });
 
 /* attendance: who has stopped having lessons, and whose lesson time dropped (for the owner's report) */

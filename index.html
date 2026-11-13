@@ -6507,16 +6507,16 @@ function vCall(){
 async function callApi(room, ping){
   const tok=await S.user.getIdToken();
   const r=await fetch(`https://europe-west1-${S.fbProject}.cloudfunctions.net/callToken`, {method:'POST', headers:{'content-type':'application/json', authorization:'Bearer '+tok}, body:JSON.stringify({room, ping:!!ping})});
-  try{ return await r.json(); }catch(e){ return {ok:false, error:'server'}; }
+  try{ return await r.json(); }catch(e){ return {ok:false, error:'server', why:'HTTP '+r.status}; }
 }
 let jitsiJs=null;
 const loadJitsi = app => jitsiJs ||= new Promise((ok,bad)=>{ const s=document.createElement('script'); s.src=`https://8x8.vc/${encodeURIComponent(app)}/external_api.js`; s.onload=ok; s.onerror=()=>{ jitsiJs=null; s.remove(); bad(new Error('script')); }; document.head.appendChild(s); });
 async function callStart(room){
   if(S.callRoom===room) return; callStop(); S.callRoom=room;
-  const fail = k => { if(S.callRoom!==room) return; S.callRoom=null; const b=$('#call-box'); if(b) b.innerHTML=`<div class="empty"><h3>${tr('call.errH')}</h3><p>${tr('call.e.'+k)!=='call.e.'+k?tr('call.e.'+k):tr('call.e.server')}</p></div>`; };
+  const fail = (k, why) => { if(S.callRoom!==room) return; S.callRoom=null; const b=$('#call-box'); if(b) b.innerHTML=`<div class="empty"><h3>${tr('call.errH')}</h3><p>${tr('call.e.'+k)!=='call.e.'+k?tr('call.e.'+k):tr('call.e.server')}</p>${why?`<p class="faint small">${esc(why)}</p>`:''}</div>`; };
   if(S.demo || !S.user) return fail('demo');
   let r; try{ r=await callApi(room); }catch(e){ return fail('net'); }
-  if(!r.ok) return fail(r.error||'server');
+  if(!r.ok) return fail(r.error||'server', r.why);
   try{ await loadJitsi(r.room.split('/')[0]); }catch(e){ return fail('net'); }
   const box=$('#call-box'); if(S.callRoom!==room || !box || !window.JitsiMeetExternalAPI) return;
   $('#call-title').textContent = r.label || 'Lexora'; box.innerHTML='';
