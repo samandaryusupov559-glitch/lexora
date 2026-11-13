@@ -531,7 +531,14 @@ function jaas() {
   if (key && !key.includes('BEGIN')) { try { key = Buffer.from(key, 'base64').toString('utf8'); } catch (e) { key = ''; } }
   const app = (process.env.JAAS_APP_ID || '').trim(); let kid = (process.env.JAAS_KID || '').trim();
   if (app && kid && !kid.includes('/')) kid = app + '/' + kid;   // the console shows the key ID alone; the pass needs "AppID/KeyID"
-  return { app, kid, key: key.replace(/\\n/g, '\n') };
+  return { app, kid, key: fixPem(key.replace(/\\n/g, '\n')) };
+}
+// a pasted key often loses its line breaks (one long line, or spaces between the lines): rebuild the standard PEM layout
+function fixPem(k) {
+  const m = String(k).match(/-----BEGIN ([A-Z ]+)-----([\s\S]*?)-----END \1-----/);
+  if (!m) return k;
+  const body = m[2].replace(/[^A-Za-z0-9+/=]/g, '');
+  return body ? `-----BEGIN ${m[1]}-----\n${body.match(/.{1,64}/g).join('\n')}\n-----END ${m[1]}-----\n` : k;
 }
 const callOn = () => { const j = jaas(); return !!(j.app && j.kid && j.key); };
 const b64u = x => Buffer.from(typeof x === 'string' ? x : JSON.stringify(x)).toString('base64url');
