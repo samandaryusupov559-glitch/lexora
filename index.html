@@ -934,6 +934,22 @@ td.nwc.off{color:var(--ink-3);font-size:18px}
 .tprog{height:7px;border-radius:99px;background:var(--sheet-3);overflow:hidden;margin-top:8px;max-width:220px}.tprog.lg{max-width:none;height:9px}
 .tprog i{display:block;height:100%;border-radius:inherit;background:var(--grad-pen,var(--pen))}
 .tprof .tach{margin:8px 0 0 18px;display:flex;flex-direction:column;gap:4px}
+/* teacher gallery: extra photos + videos */
+.tm-strip{display:flex;gap:8px;overflow-x:auto;padding:8px 0 4px;scroll-snap-type:x proximity}
+.tm-th{flex:none;width:112px;aspect-ratio:4/5;padding:0;border:0;border-radius:14px;overflow:hidden;background:var(--sheet-2);cursor:zoom-in;scroll-snap-align:start}
+.tm-th img{width:100%;height:100%;object-fit:cover;display:block}
+.tm-vids{display:flex;flex-direction:column;gap:10px;margin-top:10px}
+.tm-vid{position:relative;aspect-ratio:16/9;border-radius:14px;overflow:hidden;background:#000}
+.tm-vid iframe,.tm-vid video{position:absolute;inset:0;width:100%;height:100%;border:0}
+.tm-link{display:inline-flex;gap:6px;align-items:center;padding:10px 14px;border:1px solid var(--line);border-radius:12px;font-weight:600;text-decoration:none;color:var(--ink)}
+.tm-edit{display:flex;flex-wrap:wrap;gap:8px;margin:6px 0}
+.tm-edit-i{position:relative;width:76px;aspect-ratio:4/5;border-radius:12px;overflow:hidden;background:var(--sheet-2)}
+.tm-edit-i img{width:100%;height:100%;object-fit:cover;display:block}
+.tm-x{position:absolute;top:4px;right:4px;width:22px;height:22px;border-radius:50%;border:0;background:rgba(0,0,0,.65);color:#fff;font-size:15px;line-height:1;cursor:pointer;display:grid;place-items:center;padding:0}
+.tm-vlist{display:flex;flex-direction:column;gap:6px;margin:6px 0}
+.tm-edit-v{position:relative;display:flex;align-items:center;padding:8px 36px 8px 12px;border:1px solid var(--line);border-radius:10px;min-width:0}
+.tm-edit-v .tm-x{top:50%;transform:translateY(-50%)}
+.tm-vu{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .lp-steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;margin-top:14px}
 .lp-step{padding:18px}.lp-step h3{margin:8px 0 4px}
 .lp-n{display:grid;place-items:center;width:34px;height:34px;border-radius:50%;background:var(--pen);color:var(--on-ink);font-weight:800}
@@ -5844,11 +5860,13 @@ function openTeacherProfile(tid){
       <div class="tkv big"><span><b class="num">${+st.students||0}</b>${tr('c.kStudents')}</span><span><b class="num">${st.gain>0?'+'+st.gain:'–'}</b>${tr('c.kGain')}</span><span><b class="num">${st.band!=null?fmtBand(st.band):'–'}</b>${tr('c.kBand')}</span>${S.role==='owner'?`<span><b class="num">${+t.years||'–'}</b>${tr('c.kYears')}</span>`:''}${t.lessonLen?`<span><b class="num">${lenText(t.lessonLen)}</b>${tr('c.kLen')}</span>`:''}</div>
       ${t.bio?`<div><span class="label">${tr('c.bio')}</span><p style="margin-top:6px;white-space:pre-line">${esc(t.bio)}</p></div>`:''}
       ${(t.achievements||[]).length?`<div><span class="label">${tr('c.ach')}</span><ul class="tach">${t.achievements.map(a=>`<li>${esc(a)}</li>`).join('')}</ul></div>`:''}
+      <div id="tprof-media" data-tid="${esc(tid)}"></div>
       ${tPriceList(t)}
       ${tsvcList(t, tid)}
       <p class="small faint">${tr('c.lvNote',{level:L.name})}</p>
     </div>
     <div class="dlg-foot"><button type="button" class="btn ghost" data-act="dlg-close">${tr('close')}</button>${S.mode==='guest'?`<button type="button" class="btn" data-act="c-gchat" data-tid="${esc(tid)}">${tr('dm.guestBtn')}</button><button type="button" class="btn pen" data-act="c-trial" data-tid="${esc(tid)}">${tr('c.trialWith',{name:esc((t.name||'').split(' ')[0])})}</button>`:''}</div></div>`, {type:'tprof', id:tid});
+  loadTeacherMedia(tid).then(m=>{ const el=document.querySelector('#tprof-media'); if(el && el.dataset.tid===tid) el.innerHTML=mediaHtml(m); }).catch(()=>{});
 }
 // what a visitor will pay: the chosen teacher's price, or the range of the teachers of that language
 function trialQuote(lang, tid, fmt){
@@ -5913,6 +5931,12 @@ function teacherFields(t, opt){
     <label class="field"><span>${tr('c.fLen')}</span><select class="inp" id="tf-len"><option value="">–</option>${[...new Set([...LESSON_LENS, ...(t.lessonLen?[+t.lessonLen]:[])])].sort((a,b)=>a-b).map(m=>`<option value="${m}" ${+t.lessonLen===m?'selected':''}>${lenText(m)}</option>`).join('')}</select></label>
     <label class="field"><span>${tr('c.fBio')}</span><textarea class="inp" id="tf-bio" rows="4" maxlength="1500" placeholder="${tr('c.fBioPh')}">${esc(t.bio||'')}</textarea></label>
     <label class="field"><span>${tr('c.fAch')}</span><textarea class="inp" id="tf-ach" rows="4" maxlength="1500" placeholder="${tr('c.fAchPh')}">${esc((t.achievements||[]).join('\n'))}</textarea></label>
+    <div class="field" id="tf-media" data-tid="${esc(opt.tid||'')}"><span>${tr('c.fGallery')}</span><span class="small faint">${tr('c.fGalleryHint',{a:TM_MAX_PH,b:TM_MAX_VID})}</span>
+      <div class="tm-edit" id="tm-ph"></div>
+      <label class="btn sm" style="align-self:flex-start;cursor:pointer">${I.up} ${tr('c.addPhotos')}<input type="file" accept="image/*" multiple id="tm-file" hidden></label>
+      <div class="tm-vlist" id="tm-vl"></div>
+      <span class="row" style="gap:6px"><input class="inp" id="tm-vurl" placeholder="${tr('c.fVideoPh')}" maxlength="300"><button type="button" class="btn sm" id="tm-vadd">${tr('c.addVideo')}</button></span>
+      <p class="lg-err" id="tm-err" role="alert"></p></div>
     <label class="field"><span>${tr('c.fMeet')} <span class="faint">${tr('c.fMeetHint')}</span></span><span class="row" style="gap:6px"><input class="inp" id="tf-meet" placeholder="https://meet.google.com/abc-defg-hij" value="${esc(opt.meet||'')}"><a class="btn sm" href="https://meet.google.com/new" target="_blank" rel="noopener">${tr('c.newMeet')}</a></span></label>
     ${opt.owner?`<label class="field"><span>${tr('c.fEmail')} <span class="faint">${tr('optional')}</span></span><input class="inp" id="tf-email" type="email" placeholder="teacher@gmail.com" value="${esc(opt.email||'')}" ${opt.tid===MAIN_TID?'disabled':''}><span class="small faint">${opt.tid===MAIN_TID?tr('c.fEmailOwner'):tr('c.fEmailHint')}</span></label>
       <label class="small row" style="gap:8px;cursor:pointer"><input type="checkbox" id="tf-visible" ${t.visible!==false?'checked':''}> ${tr('c.fVisible')}</label>`:''}
@@ -5920,6 +5944,7 @@ function teacherFields(t, opt){
 }
 function wireTeacherFields(){
   const f=$('#tf-file'); if(!f) return;
+  initTeacherMedia();
   const show = src => { const ph=document.querySelector('.tform .tph'); if(ph){ const img=document.createElement('img'); img.className='tph lg'; img.src=src; img.alt=''; ph.replaceWith(img); } };
   f.addEventListener('change', async ()=>{ const file=f.files[0]; if(!file) return;
     try{ const url=await shrinkPhoto(file); $('#tf-photo').value=url; $('#tf-photo-url').value=''; show(url); }catch(e){ toast(tr(e?.message==='small'?'c.photoSmall':'c.photoFail')); } });
@@ -5936,6 +5961,76 @@ function shrinkPhoto(file){
       let d; for(const q of [0.85,0.75,0.65,0.55]){ d=c.toDataURL('image/jpeg',q); if(d.length<280000) break; }
       d.length<280000 ? ok(d) : bad(new Error('big')); };
     img.onerror=()=>{ URL.revokeObjectURL(u); bad(new Error('img')); }; img.src=u; });
+}
+/* ---------- teacher gallery: more photos + video links ----------
+   teacherMedia/{tid} = {photos:[jpeg data-URL…], videos:[{url}]}. It lives in its own document so the landing page,
+   which loads every teacher card, doesn't download the gallery; it is read when a profile is opened. */
+const TM_MAX_PH = 6, TM_MAX_VID = 6, TM_PH_MAX = 120000;
+const tmKey = tid => (S.demo?'d:':'')+tid;
+const tmPhotoOk = p => typeof p==='string' && /^(data:image\/(jpeg|png|webp);base64,|https:\/\/)/.test(p) && p.length<=TM_PH_MAX+2000;
+// youtube → embedded player, .mp4/.webm → <video>, anything else (Instagram, Telegram, TikTok…) → a link
+function videoInfo(raw){
+  let u; try{ u=new URL(String(raw||'').trim()); }catch(e){ return null; }
+  if(u.protocol!=='https:' || u.href.length>300) return null;
+  const h=u.hostname.replace(/^(www|m)\./,''); let id='';
+  if(h==='youtu.be') id=u.pathname.slice(1).split('/')[0];
+  else if(h==='youtube.com' || h==='youtube-nocookie.com'){
+    if(u.pathname==='/watch') id=u.searchParams.get('v')||'';
+    else { const m=u.pathname.match(/^\/(?:shorts|embed|live)\/([\w-]{11})/); if(m) id=m[1]; } }
+  if(/^[\w-]{11}$/.test(id)) return {kind:'yt', id, url:u.href};
+  if(/\.(mp4|webm|mov)$/i.test(u.pathname)) return {kind:'file', url:u.href};
+  return {kind:'link', url:u.href, host:h};
+}
+function videoHtml(v){
+  const i=videoInfo(v?.url); if(!i) return '';
+  if(i.kind==='yt') return `<div class="tm-vid"><iframe src="https://www.youtube-nocookie.com/embed/${i.id}" title="Video" loading="lazy" allow="encrypted-media; picture-in-picture; fullscreen" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe></div>`;
+  if(i.kind==='file') return `<div class="tm-vid"><video src="${esc(i.url)}" controls preload="metadata" playsinline></video></div>`;
+  return `<a class="tm-link" href="${esc(i.url)}" target="_blank" rel="noopener noreferrer">▶ ${tr('c.watchVideo')} · ${esc(i.host)}</a>`;
+}
+const mediaHtml = m => { const ph=m?.photos||[], vd=m?.videos||[]; if(!ph.length && !vd.length) return '';
+  return `<div><span class="label">${tr('c.galleryH')}</span>${ph.length?`<div class="tm-strip">${ph.map(x=>`<button type="button" class="tm-th" data-act="c-zoom" aria-label="${esc(tr('c.galleryH'))}"><img src="${esc(x)}" alt="" loading="lazy"></button>`).join('')}</div>`:''}${vd.length?`<div class="tm-vids">${vd.map(videoHtml).join('')}</div>`:''}</div>`; };
+async function loadTeacherMedia(tid, force){
+  const c=(S.tmedia ||= {}), k=tmKey(tid); if(!force && c[k]) return c[k];
+  const snap=await S.db.doc('teacherMedia/'+tid).get(), d=snap.exists ? snap.data() : {};
+  return c[k]={photos:(d.photos||[]).filter(tmPhotoOk).slice(0,TM_MAX_PH), videos:(d.videos||[]).filter(v=>videoInfo(v?.url)).slice(0,TM_MAX_VID).map(v=>({url:videoInfo(v.url).url}))};
+}
+// like shrinkPhoto, but keeps the whole picture (no crop) and is smaller, so a few of them fit in one document
+function shrinkGalleryPhoto(file){
+  return new Promise((ok,bad)=>{ const img=new Image(), u=URL.createObjectURL(file);
+    img.onload=()=>{ URL.revokeObjectURL(u);
+      if(img.width<300 || img.height<300){ bad(new Error('small')); return; }
+      const k=Math.min(1, 900/Math.max(img.width,img.height)); let d='';
+      for(const sc of [1,0.8,0.65,0.5]){ const W=Math.round(img.width*k*sc), H=Math.round(img.height*k*sc), c=document.createElement('canvas'); c.width=W; c.height=H; c.getContext('2d').drawImage(img,0,0,W,H);
+        for(const q of [0.8,0.7,0.6,0.5]){ d=c.toDataURL('image/jpeg',q); if(d.length<TM_PH_MAX) break; } if(d.length<TM_PH_MAX) break; }
+      d.length<TM_PH_MAX ? ok(d) : bad(new Error('big')); };
+    img.onerror=()=>{ URL.revokeObjectURL(u); bad(new Error('img')); }; img.src=u; });
+}
+let TM=null;   // the gallery being edited in the open profile form
+function initTeacherMedia(){
+  const box=document.querySelector('#tf-media'); if(!box) return;
+  const st=TM={tid:box.dataset.tid, photos:[], videos:[], ready:false, dirty:false}, err=m=>{ $('#tm-err').textContent=m||''; };
+  const draw=()=>{
+    $('#tm-ph').innerHTML=st.photos.map((p,i)=>`<span class="tm-edit-i"><img src="${esc(p)}" alt=""><button type="button" class="tm-x" data-k="p" data-i="${i}" aria-label="${esc(tr('delete'))}">×</button></span>`).join('');
+    $('#tm-vl').innerHTML=st.videos.map((v,i)=>`<span class="tm-edit-v"><span class="small tm-vu">${esc(v.url)}</span><button type="button" class="tm-x" data-k="v" data-i="${i}" aria-label="${esc(tr('delete'))}">×</button></span>`).join(''); };
+  box.addEventListener('click', e=>{ const x=e.target.closest('.tm-x'); if(!x || !st.ready) return;
+    (x.dataset.k==='p'?st.photos:st.videos).splice(+x.dataset.i,1); st.dirty=true; err(''); draw(); });
+  $('#tm-file').addEventListener('change', async ev=>{ const files=[...ev.target.files]; ev.target.value=''; if(!st.ready) return; err('');
+    for(const file of files){ if(st.photos.length>=TM_MAX_PH){ err(tr('c.galleryMax',{a:TM_MAX_PH,b:TM_MAX_VID})); break; }
+      try{ st.photos.push(await shrinkGalleryPhoto(file)); st.dirty=true; draw(); }catch(e2){ err(tr(e2?.message==='small'?'c.photoSmall':'c.photoFail')); } } });
+  const addVideo=()=>{ if(!st.ready) return; const i=videoInfo($('#tm-vurl').value);
+    if(!i){ err(tr('c.badVideo')); return; } if(st.videos.length>=TM_MAX_VID){ err(tr('c.galleryMax',{a:TM_MAX_PH,b:TM_MAX_VID})); return; }
+    if(!st.videos.some(v=>v.url===i.url)) st.videos.push({url:i.url}); st.dirty=true; $('#tm-vurl').value=''; err(''); draw(); };
+  $('#tm-vadd').addEventListener('click', addVideo);
+  $('#tm-vurl').addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); addVideo(); } });
+  draw();
+  loadTeacherMedia(st.tid, true).then(m=>{ if(TM!==st) return; st.photos=[...m.photos]; st.videos=m.videos.map(v=>({...v})); st.ready=true; draw(); })
+    .catch(()=>{ if(TM===st) err(tr('c.mediaFail')); });
+}
+// saved together with the profile; does nothing if the gallery wasn't changed (or couldn't be loaded)
+async function saveTeacherMedia(id){
+  const st=TM; if(!st || st.tid!==id || !st.ready || !st.dirty) return;
+  const d={photos:st.photos.slice(0,TM_MAX_PH), videos:st.videos.slice(0,TM_MAX_VID)};
+  await S.db.doc('teacherMedia/'+id).set(d); (S.tmedia ||= {})[tmKey(id)]=d; st.dirty=false;
 }
 function readTeacherFields(){
   const name=$('#tf-name').value.trim(); if(!name) return {err:tr('c.needName')};
@@ -5966,6 +6061,7 @@ function openTeacherEdit(tid){
       const base=isNew?{visible:true, order:Date.now(), stats:{students:0,active:0,reviews:0,gain:0,band:null,score:expPts(r.d.years)}}:clone(S.team[id]);
       await S.db.doc('teachers/'+id).set({...base, ...r.d, visible: $('#tf-visible')? $('#tf-visible').checked : true});
       await S.db.doc('teacherPriv/'+id).set({meet:r.meet});
+      await saveTeacherMedia(id);
       if(id!==MAIN_TID){ const old=S.staffMap?.[id];
         if(old && old!==email) await S.db.doc('staff/'+old).delete();
         if(email && old!==email) await S.db.doc('staff/'+email).set({tid:id, name:r.d.name}); }
@@ -5977,7 +6073,7 @@ async function removeTeacher(tid){
   const db=S.db;
   for(const [sid,p] of Object.entries(S.profiles)) if(tidOf(p)===tid) await db.doc('journals/'+sid).update({teacher:MAIN_TID});
   const em=S.staffMap?.[tid]; if(em) await db.doc('staff/'+em).delete();
-  for(const c of ['teacherPriv','staffReq']) await db.doc(c+'/'+tid).delete();
+  for(const c of ['teacherPriv','staffReq','teacherMedia']) await db.doc(c+'/'+tid).delete();
   await db.doc('teachers/'+tid).delete();
 }
 
@@ -6058,7 +6154,7 @@ function vMe(){
 }
 after.me = () => { wireTeacherFields(); after.me2(); const f=$('#me-form'); if(!f) return; f.addEventListener('submit', async e=>{
   e.preventDefault(); const r=readTeacherFields(); if(r.err){ $('#tf-err').textContent=r.err; return; }
-  const tid=myTid(); try{ await S.db.doc('teachers/'+tid).update(r.d); await S.db.doc('teacherPriv/'+tid).set({meet:r.meet}); toast(tr('c.saved')); }catch(err){ $('#tf-err').textContent=lgErrText(err); } }); };
+  const tid=myTid(); try{ await S.db.doc('teachers/'+tid).update(r.d); await S.db.doc('teacherPriv/'+tid).set({meet:r.meet}); await saveTeacherMedia(tid); toast(tr('c.saved')); }catch(err){ $('#tf-err').textContent=lgErrText(err); } }); };
 function vCentre(){
   const offers=S.offers?.items||[], mine=(S.mySreq?.items||[]).slice().sort((a,b)=>b.at-a.at), st=S.mySreq?.st||{};
   const leads=Object.entries(S.leads||{}).map(([id,l])=>({id,...l})).sort((a,b)=>b.at-a.at);

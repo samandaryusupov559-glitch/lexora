@@ -259,6 +259,18 @@ service cloud.firestore {
              .hasOnly(['name', 'photo', 'headline', 'langs', 'levels', 'years', 'bio', 'achievements', 'lessonLen', 'services', 'lastSeen', 'prices', 'agreedAt'])
         && request.resource.data.get('prices', {}) is map && request.resource.data.get('prices', {}).size() <= 20;
     }
+    // A teacher's gallery (extra photos + video links), kept apart from the profile so the landing page stays light.
+    // Guests read the gallery of visible teachers; the owner writes any, a staff teacher only their own.
+    match /teacherMedia/{tid} {
+      allow read: if signedIn()
+        || (exists(/databases/$(database)/documents/teachers/$(tid))
+            && get(/databases/$(database)/documents/teachers/$(tid)).data.get('visible', false) == true);
+      allow write: if isTeacher()
+        || (isStaff() && staffTid() == tid
+            && request.resource.data.keys().hasOnly(['photos', 'videos'])
+            && request.resource.data.get('photos', []) is list && request.resource.data.get('photos', []).size() <= 6
+            && request.resource.data.get('videos', []) is list && request.resource.data.get('videos', []).size() <= 6);
+    }
     // A teacher's own Google Meet link: the owner, that teacher and that teacher's students.
     match /teacherPriv/{tid} {
       allow read: if isTeacher() || (isStaff() && staffTid() == tid)
