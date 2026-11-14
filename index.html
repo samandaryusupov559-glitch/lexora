@@ -904,6 +904,9 @@ td.nwc.off{color:var(--ink-3);font-size:18px}
 .lx .tcard{--tpad:22px}
 .tprof-ph{display:block;width:100%;max-width:340px;margin:0 auto 16px;padding:0;border:0;border-radius:20px;overflow:hidden;aspect-ratio:4/5;background:var(--sheet-2);cursor:zoom-in}
 .tprof-ph img{width:100%;height:100%;object-fit:cover;object-position:center top;display:block}
+/* the profile window scrolls; its blocks keep their size (the photo used to squash into a thin bar on phones) */
+.dlg-body.tprof>*{flex-shrink:0}
+.dlg-body.tprof{-webkit-overflow-scrolling:touch;touch-action:pan-y}
 .ph-zoom{border:0;padding:0;background:transparent;max-width:none;max-height:none;cursor:zoom-out;overflow:visible}
 .ph-zoom::backdrop{background:rgba(10,14,25,.88)}
 /* in-site video call */
