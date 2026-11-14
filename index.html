@@ -5850,7 +5850,7 @@ document.addEventListener('keydown', ev => {
   ev.preventDefault(); const next=$('#lx-tab-'+(t.dataset.a==='s'?'t':'s')); next?.click(); next?.focus();
 });
 function openTeacherProfile(tid){
-  const t=S.team[tid]; if(!t) return; const st=t.stats||{}, L=tLevel(st.score);
+  const t=S.team[tid]; if(!t) return; const st=t.stats||{};
   showDlg(`<div>${dlgHead(tr('c.profileK'), esc(t.name||''))}
     <div class="dlg-body tprof">
       ${t.photo?`<button type="button" class="tprof-ph" data-act="c-zoom" aria-label="${esc(t.name||'')}"><img src="${esc(t.photo)}" alt="${esc(t.name||'')}"></button>`:''}
@@ -5863,7 +5863,6 @@ function openTeacherProfile(tid){
       <div id="tprof-media" data-tid="${esc(tid)}"></div>
       ${tPriceList(t)}
       ${tsvcList(t, tid)}
-      <p class="small faint">${tr('c.lvNote',{level:L.name})}</p>
     </div>
     <div class="dlg-foot"><button type="button" class="btn ghost" data-act="dlg-close">${tr('close')}</button>${S.mode==='guest'?`<button type="button" class="btn" data-act="c-gchat" data-tid="${esc(tid)}">${tr('dm.guestBtn')}</button><button type="button" class="btn pen" data-act="c-trial" data-tid="${esc(tid)}">${tr('c.trialWith',{name:esc((t.name||'').split(' ')[0])})}</button>`:''}</div></div>`, {type:'tprof', id:tid});
   loadTeacherMedia(tid).then(m=>{ const el=document.querySelector('#tprof-media'); if(el && el.dataset.tid===tid) el.innerHTML=mediaHtml(m); }).catch(()=>{});
