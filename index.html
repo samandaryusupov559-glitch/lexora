@@ -4064,17 +4064,17 @@ async function nwMailStop(){
 /* ---------- word sets: the teacher's own lesson words → one standard practice page ----------
    The page is self-contained HTML (flashcards, quiz, test, two games). Inside Lexora it runs in a sandboxed
    frame and reports scores back with postMessage; the same page can be downloaded and used offline. */
-// one word per line. "word = English meaning | example | translation", or the way teachers write it in class:
+// one word per line. "word = English meaning | example | Uzbek | Russian", or the way teachers write it in class:
 // "word – translation" (a dash means the right side is the translation, never the meaning)
 const parseWordLines = t => String(t||'').split('\n').map(l=>l.trim().replace(/^[-•*]\s+/,'')).filter(Boolean).map(l=>{
-  const [a,ex='',uz=''] = l.split(/\s+\|\s+/).map(x=>x.trim());
+  const [a,ex='',uz='',ru=''] = l.split(/\s*\|\s*/).map(x=>x.trim());
   let m=(a||'').match(/^(.+?)\s*=\s*(.+)$/);
-  if(m) return {w:m[1].trim().slice(0,80), m:m[2].trim().slice(0,200), ex:ex.slice(0,240), uz:uz.slice(0,120)};
+  if(m) return {w:m[1].trim().slice(0,80), m:m[2].trim().slice(0,200), ex:ex.slice(0,240), uz:uz.slice(0,120), ru:ru.slice(0,120)};
   m=(a||'').match(/^(.+?)\s*(?:—|–|\s-\s)\s*(.+)$/);
-  if(m) return {w:m[1].trim().slice(0,80), m:'', ex:ex.slice(0,240), uz:(uz||m[2].trim()).slice(0,120)};
-  return {w:(a||'').slice(0,80), m:'', ex:ex.slice(0,240), uz:uz.slice(0,120)};
+  if(m) return {w:m[1].trim().slice(0,80), m:'', ex:ex.slice(0,240), uz:(uz||m[2].trim()).slice(0,120), ru:ru.slice(0,120)};
+  return {w:(a||'').slice(0,80), m:'', ex:ex.slice(0,240), uz:uz.slice(0,120), ru:ru.slice(0,120)};
 }).filter(x=>x.w).slice(0,120);
-const wordLinesText = ws => (ws||[]).map(x=>[x.m?`${x.w} = ${x.m}`:x.w, ...(x.ex||x.uz?[x.ex||'']:[]), ...(x.uz?[x.uz]:[])].join(' | ')).join('\n');
+const wordLinesText = ws => (ws||[]).map(x=>[x.m?`${x.w} = ${x.m}`:x.w, ...(x.ex||x.uz||x.ru?[x.ex||'']:[]), ...(x.uz||x.ru?[x.uz||'']:[]), ...(x.ru?[x.ru]:[])].join(' | ')).join('\n');
 const wNorm = s => String(s||'').toLowerCase().replace(/[’‘`ʻʼ]/g,"'").replace(/\s+/g,' ').trim();
 const jsonFrom = raw => { const t=String(raw||''), i0=t.indexOf('{'), i1=t.lastIndexOf('}'); if(i0<0||i1<i0) return null; try{ return JSON.parse(t.slice(i0,i1+1)); }catch(_){ return null; } };
 // a spelling fix is accepted, a different word never is
@@ -4086,7 +4086,7 @@ const closeSpelling = (a,b) => editDist(a,b) <= Math.max(2, Math.round(wNorm(b).
 // ("bear – tug'moq" is the verb, not the animal) and corrects anything that is wrong
 function wordsPrompt(items, level){
   const first=(items[0]?.w||'word').replace(/"/g,'');
-  const line = x => '- '+x.w+(x.uz?` — my translation: ${x.uz}`:'')+(x.m?` — my meaning: ${x.m}`:'')+(x.ex?` — my example: ${x.ex}`:'');
+  const line = x => '- '+x.w+(x.uz?` — my translation: ${x.uz}`:'')+(x.ru?` — my Russian: ${x.ru}`:'')+(x.m?` — my meaning: ${x.m}`:'')+(x.ex?` — my example: ${x.ex}`:'');
   return `I am an English teacher. During today's lesson I collected words my student (level ${level}) did not know. Here is my list${items.some(x=>x.uz||x.m)?', with the translation or meaning I gave in class':''}:
 
 ${items.map(line).join('\n')}
@@ -4098,11 +4098,12 @@ For each word write:
 - "m": a short, simple English meaning that a ${level} learner understands. If I gave a translation or a meaning, use THE SAME meaning I taught (for example, "bear — tug'moq" is the verb, not the animal). If I gave nothing, use the most common meaning.
 - "ex": one natural example sentence at ${level} level that contains "w" exactly as written. If I gave an example, correct it if needed.
 - "uz": the correct Uzbek translation (Latin script, one to three words) for that meaning. If my translation is correct, copy it (you may fix its spelling). If it is wrong, misspelled or not the right word, write the correct one.
+- "ru": the correct Russian translation (one to three words) for that same meaning. If I gave one and it is right, copy it; if it is wrong, write the correct one.
 - "fix": "" if everything I wrote was right. Otherwise one short sentence for me, the teacher, saying what was wrong and what is correct, e.g. "Spelling: eigthty → eighty" or "Translation: a pub is not 'qovoqxona', it is 'pab' (bar)".
 Check spelling, translations and meanings carefully. My student will see only the corrected version.
 
 Return ONLY valid JSON, with no text before or after it, in exactly this shape:
-{"words":[{"was":"${first}","w":"${first}","m":"meaning","ex":"Example sentence.","uz":"tarjima","fix":""}]}`;
+{"words":[{"was":"${first}","w":"${first}","m":"meaning","ex":"Example sentence.","uz":"tarjima","ru":"перевод","fix":""}]}`;
 }
 // take the AI's answer, but keep only the teacher's own words (spelling fixes allowed); every change is reported
 function wordsFromAi(raw, mine){
@@ -4112,11 +4113,11 @@ function wordsFromAi(raw, mine){
   const words=mine.map((o,i)=>{
     let x=by.get(wNorm(o.w)); if(!x && arr.length===mine.length && arr[i] && closeSpelling(arr[i].was||arr[i].w||'', o.w)) x=arr[i]; x=x||{};
     const aw=str(x.w,80); let w=o.w; if(aw && wNorm(aw)!==wNorm(o.w) && closeSpelling(aw,o.w)) w=aw;
-    const uz=str(x.uz,120)||o.uz, m=str(x.m,200)||o.m, ex=str(x.ex,240)||o.ex;
+    const uz=str(x.uz,120)||o.uz, ru=str(x.ru,120)||o.ru||'', m=str(x.m,200)||o.m, ex=str(x.ex,240)||o.ex;
     let fix=str(x.fix,300);
     if(!fix){ const p=[]; if(w!==o.w) p.push(`${o.w} → ${w}`); if(o.uz && wNorm(uz)!==wNorm(o.uz)) p.push(`${o.uz} → ${uz}`); fix=p.join('; '); }
     if(fix) fixes.push({was:o.w, w, fix});
-    return {w, m, ex, uz};
+    return {w, m, ex, uz, ru};
   });
   return {words, fixes};
 }
@@ -4132,14 +4133,14 @@ ${String(notes).trim()}
 Turn these notes into practice material for my student. Rules:
 1. VOCABULARY: take ONLY the words and phrases I taught in the notes (lines like "word – translation", and new words I clearly explained). Never add words that are not in my notes. Keep my order. Skip whole sentences, task instructions and headings. Write each item in its dictionary form, with the correct spelling.
 2. MEANING: if I gave a translation, it shows which meaning I taught (e.g. "bear – tug'moq" is the verb, not the animal). Use that meaning, but correct my translation if it is wrong.
-3. GRAMMAR: find every grammar point I taught (rules, patterns, "how to say…" explanations). For each one write a short, clear explanation a ${level} learner understands, in simple English, and the same explanation in Uzbek (Latin script). Use only correct examples.
-4. CORRECT MY MISTAKES: check everything — spelling, translations, meanings, grammar rules and examples. My student must see ONLY correct English and correct Uzbek; never copy a mistake. List every mistake you corrected in "fixes" so I can see it.
+3. GRAMMAR: find every grammar point I taught (rules, patterns, "how to say…" explanations). For each one write a short, clear explanation a ${level} learner understands, in simple English, the same explanation in Uzbek (Latin script) and the same explanation in Russian. Use only correct examples.
+4. CORRECT MY MISTAKES: check everything — spelling, translations, meanings, grammar rules and examples. My student must see ONLY correct English, correct Uzbek and correct Russian; never copy a mistake. List every mistake you corrected in "fixes" so I can see it.
 5. EXERCISES: for every grammar point write 6–10 multiple-choice questions ("qs", 3 options, "a" is the index of the right option), 4–8 fill-the-gap sentences ("gaps", the gap is ___), and 3–6 short correct sentences for a word-order game ("order"). Use the lesson vocabulary where you can. Level: ${level}. Every question has exactly one correct answer.
 
 Return ONLY valid JSON, with no text before or after it, in exactly this shape:
 {"title":"Short lesson title",
-"words":[{"was":"the item as I wrote it","w":"correct word or phrase","m":"simple English meaning","ex":"Example sentence that contains w.","uz":"correct Uzbek translation"}],
-"grammar":[{"t":"Grammar point","rule":"Simple explanation in English.","uz":"Shu tushuntirish o'zbek tilida.","ex":["Correct example."],
+"words":[{"was":"the item as I wrote it","w":"correct word or phrase","m":"simple English meaning","ex":"Example sentence that contains w.","uz":"correct Uzbek translation","ru":"correct Russian translation"}],
+"grammar":[{"t":"Grammar point","rule":"Simple explanation in English.","uz":"Shu tushuntirish o'zbek tilida.","ru":"То же объяснение на русском языке.","ex":["Correct example."],
   "qs":[{"q":"Question?","o":["option 1","option 2","option 3"],"a":0,"why":"Short reason."}],
   "gaps":[{"s":"I ___ born in 2004.","a":"was"}],
   "order":["I was born in 2004."]}],
@@ -4151,7 +4152,7 @@ function cleanGrammar(g){
     return str(q.q,300) && o.length>=2 && new Set(o.map(wNorm)).size===o.length && a>=0 && a<o.length ? {q:str(q.q,300), o, a, why:str(q.why,240)} : null; }).filter(Boolean).slice(0,15);
   const gaps=(Array.isArray(g.gaps)?g.gaps:[]).map(x=>x && typeof x==='object' ? {s:str(x.s,240), a:str(x.a,80)} : null).filter(x=>x && /_{2,}/.test(x.s) && x.a).slice(0,12);
   const order=(Array.isArray(g.order)?g.order:[]).map(x=>str(typeof x==='string'?x:x?.s,200)).filter(s=>{ const n=s.split(/\s+/).length; return n>=3 && n<=14; }).slice(0,8);
-  return {t, rule:str(g.rule,1200), uz:str(g.uz,1200), ex:(Array.isArray(g.ex)?g.ex:[]).map(x=>str(x,240)).filter(Boolean).slice(0,10), qs, gaps, order};
+  return {t, rule:str(g.rule,1200), uz:str(g.uz,1200), ru:str(g.ru,1200), ex:(Array.isArray(g.ex)?g.ex:[]).map(x=>str(x,240)).filter(Boolean).slice(0,10), qs, gaps, order};
 }
 // words the AI made up (not in the teacher's notes) are dropped
 function lessonFromAi(raw, notes){
@@ -4163,7 +4164,7 @@ function lessonFromAi(raw, notes){
     const w=str(x.w,80), was=str(x.was,80)||w; if(!w) return null;
     if(!inNotes(was) && !inNotes(w)){ dropped++; return null; }
     if(seen.has(wNorm(w))) return null; seen.add(wNorm(w));
-    return {w, m:str(x.m,200), ex:str(x.ex,240), uz:str(x.uz,120)};
+    return {w, m:str(x.m,200), ex:str(x.ex,240), uz:str(x.uz,120), ru:str(x.ru,120)};
   }).filter(Boolean).slice(0,120);
   const grammar=(Array.isArray(j.grammar)?j.grammar:[]).map(cleanGrammar).filter(Boolean).slice(0,8);
   const fixes=(Array.isArray(j.fixes)?j.fixes:[]).map(f=>f && typeof f==='object' ? {was:str(f.was,200), w:str(f.now,200), fix:str(f.why,300)} : null).filter(f=>f && (f.was||f.w)).slice(0,60);
@@ -4210,7 +4211,7 @@ ol.rev{text-align:left;padding-left:22px}ol.rev li{margin:7px 0}.g{color:var(--o
 .tile.sel{border-color:var(--blue);background:var(--blue-soft)}.tile.done{visibility:hidden}.tile.bad{animation:sh .3s}@keyframes sh{25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
 .ans{min-height:52px;border:2px dashed var(--line);border-radius:13px;padding:8px;display:flex;flex-wrap:wrap;gap:6px;margin:10px 0}
 .lt{width:42px;height:46px;border-radius:10px;border:1px solid var(--line);background:var(--paper);font:800 20px/1 inherit;font-family:inherit;color:var(--ink);cursor:pointer;text-transform:lowercase}.lt.sp{width:26px}
-.list{display:grid;gap:8px}.list div{padding:10px 13px;border:1px solid var(--line);border-radius:12px;background:var(--paper)}.list b{font-size:17px}.list .uz{color:var(--pen)}
+.list{display:grid;gap:8px}.list div{padding:10px 13px;border:1px solid var(--line);border-radius:12px;background:var(--paper)}.list b{font-size:17px}.list .uz{color:var(--pen)}.f2 .ru,.list .ru{color:var(--blue);font-weight:700}.gr .rux{color:var(--ink-2);padding-left:0}
 .foot{text-align:center;color:var(--ink-3);font-size:12.5px;margin-top:18px}
 .gr{margin-bottom:12px}.gr h2{margin:0 0 8px;font-size:21px}.gr p{margin:0 0 10px}.gr .uzx{color:var(--ink-2);padding-left:0}
 .grx{list-style:none;padding:0;margin:8px 0 0;display:grid;gap:6px}.grx li{display:flex;gap:8px;align-items:center;padding:8px 11px;background:var(--paper);border:1px solid var(--line);border-radius:11px}
@@ -4242,13 +4243,13 @@ function result(act,s,n,rev,again){ const p=n?Math.round(s/n*100):0; send(act,s,
   shell(\`<div class="card res"><div class="ring" style="--p:\${p}"><b>\${p}%</b></div><h2 style="margin:0 0 4px">\${p>=90?'Excellent!':p>=70?'Good job!':p>=50?'Not bad, keep going!':'Keep practising!'}</h2><p class="mut">\${s} of \${n} right</p>
     <div class="row c"><button class="btn p" id="again">Try again</button></div>\${rev?'<ol class="rev">'+rev+'</ol>':''}</div>\`); $('#again').onclick=again; }
 /* list */
-function learn(){ shell(\`<div class="list">\${W.map((x,i)=>\`<div><div class="row" style="justify-content:space-between"><b>\${E(x.w)}</b><button class="btn" data-say="\${i}" style="padding:6px 10px">🔊</button></div><div>\${E(x.m)}\${x.uz?' · <span class="uz">'+E(x.uz)+'</span>':''}</div>\${x.ex?'<div class="mut"><i>'+E(x.ex)+'</i></div>':''}</div>\`).join('')}</div>\`);
+function learn(){ shell(\`<div class="list">\${W.map((x,i)=>\`<div><div class="row" style="justify-content:space-between"><b>\${E(x.w)}</b><button class="btn" data-say="\${i}" style="padding:6px 10px">🔊</button></div><div>\${E(x.m)}\${x.uz?' · <span class="uz">'+E(x.uz)+'</span>':''}\${x.ru?' · <span class="ru">'+E(x.ru)+'</span>':''}</div>\${x.ex?'<div class="mut"><i>'+E(x.ex)+'</i></div>':''}</div>\`).join('')}</div>\`);
   app.querySelectorAll('[data-say]').forEach(b=>b.onclick=()=>{const x=W[+b.dataset.say];say(x.w+(x.ex?'. '+x.ex:''));}); }
 /* flashcards: cards you miss come back */
 function cards(){ if(!st.q){ st={q:sh(W.map((x,i)=>i)),ok:0,again:0,fl:false}; }
   if(!st.q.length){ shell(\`<div class="card res"><h2>🎉 You went through every card!</h2><p class="mut">Knew: \${st.ok} · Again: \${st.again}</p><button class="btn p" id="again">Start again</button></div>\`); $('#again').onclick=()=>{st={};cards();}; return; }
   const x=W[st.q[0]], done=W.length-new Set(st.q).size;
-  shell(\`<div class="bar"><i style="width:\${done/W.length*100}%"></i></div><button class="fc \${st.fl?'on':''}" id="fc"><span class="fi"><span class="ff f1"><b>\${E(x.w)}</b><small>tap to turn</small></span><span class="ff f2"><b>\${E(x.m)}</b>\${x.uz?'<span class="uz">'+E(x.uz)+'</span>':''}\${x.ex?'<em>“'+E(x.ex)+'”</em>':''}</span></span></button>
+  shell(\`<div class="bar"><i style="width:\${done/W.length*100}%"></i></div><button class="fc \${st.fl?'on':''}" id="fc"><span class="fi"><span class="ff f1"><b>\${E(x.w)}</b><small>tap to turn</small></span><span class="ff f2"><b>\${E(x.m)}</b>\${x.uz?'<span class="uz">'+E(x.uz)+'</span>':''}\${x.ru?'<span class="ru">'+E(x.ru)+'</span>':''}\${x.ex?'<em>“'+E(x.ex)+'”</em>':''}</span></span></button>
     <div class="row c">\${st.fl?'<button class="btn" id="no">↺ Again</button><button class="btn r" id="yes">✓ I knew it</button>':'<button class="btn p" id="flip">Show the answer</button>'}<button class="btn" id="say">🔊</button></div>\`);
   const flip=()=>{st.fl=!st.fl;cards();}; $('#fc').onclick=flip; if($('#flip'))$('#flip').onclick=flip; $('#say').onclick=()=>say(x.w);
   if($('#yes')) $('#yes').onclick=()=>{st.q.shift();st.ok++;st.fl=false;cards();};
@@ -4298,7 +4299,7 @@ function spell(){ if(!st.q){ st={q:sh(W).slice(0,15), i:0, ok:0, pick:[], wrong:
   if(P.i>=n) return result('spell',P.ok,n,'',()=>{st={};spell();});
   const x=P.q[P.i], letters=P.letters||(P.letters=sh([...x.w].map((c,j)=>({c,j}))));
   const built=P.pick.map(j=>letters[j].c).join('');
-  shell(\`<p class="mut">Word \${P.i+1} of \${n}</p><div class="bar"><i style="width:\${P.i/n*100}%"></i></div><div class="card"><p class="q">\${E(x.m)}</p>\${x.uz?'<p class="mut" style="margin-top:-8px">'+E(x.uz)+'</p>':''}
+  shell(\`<p class="mut">Word \${P.i+1} of \${n}</p><div class="bar"><i style="width:\${P.i/n*100}%"></i></div><div class="card"><p class="q">\${E(x.m)}</p>\${x.uz||x.ru?'<p class="mut" style="margin-top:-8px">'+[x.uz,x.ru].filter(Boolean).map(E).join(' · ')+'</p>':''}
     <div class="ans">\${P.pick.map((j,k)=>\`<button class="lt \${letters[j].c===' '?'sp':''}" data-u="\${k}">\${E(letters[j].c)}</button>\`).join('')}</div>
     <div class="row">\${letters.map((l,j)=>P.pick.includes(j)?'':\`<button class="lt \${l.c===' '?'sp':''}" data-j="\${j}">\${E(l.c===' '?'␣':l.c)}</button>\`).join('')}</div>
     \${P.wrong?'<div class="fb no">Not quite. It is <b>'+E(x.w)+'</b>.</div>':''}
@@ -4313,7 +4314,7 @@ function spell(){ if(!st.q){ st={q:sh(W).slice(0,15), i:0, ok:0, pick:[], wrong:
   if($('#hint')) $('#hint').onclick=()=>{ P.hinted=true; const k=P.pick.length; if(k>=x.w.length) return; const j=letters.findIndex((l,jj)=>!P.pick.includes(jj)&&l.c.toLowerCase()===x.w[k].toLowerCase()); if(j>=0)P.pick.push(j); spell(); }; }
 /* grammar: the rules from the lesson */
 function gapHTML(s){ return E(s).split(/_{2,}/).join('<span class="gap">____</span>'); }
-function grammar(){ shell(G.map((g,i)=>\`<div class="card gr"><h2>\${E(g.t)}</h2>\${g.rule?'<p>'+E(g.rule)+'</p>':''}\${g.uz?'<p class="uzx">'+E(g.uz)+'</p>':''}
+function grammar(){ shell(G.map((g,i)=>\`<div class="card gr"><h2>\${E(g.t)}</h2>\${g.rule?'<p>'+E(g.rule)+'</p>':''}\${g.uz?'<p class="uzx">'+E(g.uz)+'</p>':''}\${g.ru?'<p class="rux">'+E(g.ru)+'</p>':''}
     \${g.ex.length?'<ul class="grx">'+g.ex.map((x,j)=>'<li><button class="btn" data-gx="'+i+'.'+j+'" style="padding:6px 10px">🔊</button><span>'+E(x)+'</span></li>').join('')+'</ul>':''}</div>\`).join(''));
   app.querySelectorAll('[data-gx]').forEach(b=>b.onclick=()=>{ const [i,j]=b.dataset.gx.split('.'); say(G[+i].ex[+j]); }); }
 /* grammar quiz: choices and gaps, one at a time */
