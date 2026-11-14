@@ -23,6 +23,7 @@ const { onDocumentCreated, onDocumentWritten, onDocumentUpdated } = require('fir
 const { onSchedule } = require('firebase-functions/v2/scheduler');
 const { logger } = require('firebase-functions');
 const admin = require('firebase-admin');
+const { RtcTokenBuilder, RtcRole } = require('agora-token');
 
 admin.initializeApp();
 const db = admin.firestore();
@@ -194,7 +195,7 @@ exports.telegram = onRequest({ cors: false, invoker: 'public' }, async (req, res
       const hook = await api('setWebhook', { url, secret_token: hookSecret(), allowed_updates: ['message', 'callback_query'], drop_pending_updates: false });
       if (hook.ok) await setupMenu();
       if (me.ok) await db.doc('site/bot').set({ username: me.result.username, on: !!hook.ok, at: Date.now() });
-      await db.doc('site/call').set({ on: callOn(), app: callOn() ? jaas().app : '', at: Date.now() });
+      await db.doc('site/call').set({ on: callOn(), provider: agoraOn() ? 'agora' : 'jaas', app: callOn() && !agoraOn() ? jaas().app : '', at: Date.now() });
       res.status(hook.ok ? 200 : 500).json({ ok: !!hook.ok, bot: me.ok ? me.result.username : null, url });
       return;
     }
@@ -521,7 +522,7 @@ async function flagContact(name, text, kind, id) {
   await sendOwner(lang => ({ text: FLAG[L(lang)].replace('{name}', clip(name || '?', 60)).replace('{text}', clip(text, 300)), extra: btn(t(lang, 'open'), SITE() + '#chat') }));
 }
 
-/* ---------------- in-site video call (Jitsi as a Service, 8x8.vc) ---------------- */
+/* ---------------- in-site video call (Agora, or Jitsi as a Service / 8x8.vc as the fallback) ---------------- */
 // calls/{room} = {tid, uids, label, at, until, by}: written by the teacher when a lesson starts (rules: own tid only).
 // callToken gives each allowed person a personal pass (a signed JWT for that room and name, valid until the lesson ends, 3 hours at most) and logs who was there:
 //   callLog/{room}.people[uid] = {name, mod, first, last, mins};  callMins/{day}_{uid} = {uid, day, tid, mod, mins}
@@ -545,7 +546,15 @@ function keyShape() {
   const raw = String(jaas().key || ''), m = raw.match(/-----BEGIN ([A-Z ]+)-----/);
   return 'key: ' + (raw ? (m ? m[1] : 'no BEGIN line') + ', ' + raw.length + ' chars' : 'empty');
 }
-const callOn = () => { const j = jaas(); return !!(j.app && j.kid && j.key); };
+const jaasOn = () => { const j = jaas(); return !!(j.app && j.kid && j.key); };
+/* Agora (agora.io) is the preferred call provider when its two settings are present; otherwise the call runs on JaaS.
+   Settings (GitHub secrets → functions/.env): AGORA_APP_ID, AGORA_APP_CERT (both 32 hex characters; the certificate stays on the server). */
+const agoraCfg = () => ({ app: (process.env.AGORA_APP_ID || '').trim(), cert: (process.env.AGORA_APP_CERT || '').trim() });
+const agoraOn = () => { const a = agoraCfg(); return /^[0-9a-f]{32}$/i.test(a.app) && /^[0-9a-f]{32}$/i.test(a.cert); };
+const callOn = () => agoraOn() || jaasOn();
+// Agora wants a number for every person in a channel: a stable 31-bit one made from the Firebase uid
+const agoraUid = uid => (crypto.createHash('sha256').update(String(uid)).digest().readUInt32BE(0) & 0x7fffffff) || 1;
+const rosterOf = log => Object.fromEntries(Object.entries((log && log.people) || {}).map(([u, p]) => [agoraUid(u), clip((p && p.name) || '', 60)]));
 const b64u = x => Buffer.from(typeof x === 'string' ? x : JSON.stringify(x)).toString('base64url');
 function jaasJwt(room, user, mod, now = Date.now(), until = now + 3 * 3600e3) {
   const j = jaas(), sec = Math.floor(now / 1000), end = Math.floor(Math.min(until, now + 3 * 3600e3) / 1000);
@@ -574,14 +583,20 @@ async function callRun(uid, room, ping, now = Date.now()) {
   const logRef = db.doc('callLog/' + room), log = ((await logRef.get()).data() || {}), me = (log.people || {})[uid];
   if (ping) {
     // one minute counted at most once a minute, only for someone who already joined
-    if (!me || now - (me.last || 0) < 50e3) return { code: 200, body: { ok: true } };
+    if (!me || now - (me.last || 0) < 50e3) return { code: 200, body: { ok: true, roster: rosterOf(log) } };
     const day = dayKey(now);
     await logRef.set({ people: { ...(log.people || {}), [uid]: { ...me, last: now, mins: (me.mins || 0) + 1 } } }, { merge: true });
     await db.doc(`callMins/${day}_${uid}`).set({ uid, day, tid: acc.tid, mod: acc.mod, mins: admin.firestore.FieldValue.increment(1) }, { merge: true });
-    return { code: 200, body: { ok: true } };
+    return { code: 200, body: { ok: true, roster: rosterOf({ people: { ...(log.people || {}), [uid]: { ...me, last: now } } }) } };
   }
   if (!me) await bump('ev_call');
   await logRef.set({ tid: call.tid, label: call.label || '', at: call.at || now, people: { ...(log.people || {}), [uid]: { name: acc.name, mod: acc.mod, first: (me && me.first) || now, last: now, mins: (me && me.mins) || 0 } } }, { merge: true });
+  if (agoraOn()) {
+    const a = agoraCfg(), sec = Math.floor(now / 1000), ttl = Math.max(Math.floor(Math.min(call.until, now + 3 * 3600e3) / 1000) - sec, 15 * 60), myUid = agoraUid(uid);
+    const people = { ...(log.people || {}), [uid]: { name: acc.name } };
+    return { code: 200, body: { ok: true, provider: 'agora', appId: a.app, channel: room, uid: myUid, token: RtcTokenBuilder.buildTokenWithUid(a.app, a.cert, room, myUid, RtcRole.PUBLISHER, ttl, ttl),
+      roster: rosterOf({ people }), name: acc.name, mod: acc.mod, label: call.label || '' } };
+  }
   const j = jaas();
   return { code: 200, body: { ok: true, domain: '8x8.vc', room: j.app + '/' + room, jwt: jaasJwt(room, { id: uid, name: acc.name }, acc.mod, now, call.until), name: acc.name, mod: acc.mod, label: call.label || '' } };
 }
@@ -767,4 +782,4 @@ exports.onPayClaim = onDocumentWritten('payClaims/{uid}', async ev => {
 });
 
 // for tests
-exports._t = { t, leadText, joinUrl, hookSecret, setupKey, newsText, reportText, dayKey, lessonSoonRun, dailyNudgesRun, money, hasContact, hideContact, jaasJwt, callRun, attendance };
+exports._t = { t, leadText, joinUrl, hookSecret, setupKey, newsText, reportText, dayKey, lessonSoonRun, dailyNudgesRun, money, hasContact, hideContact, jaasJwt, callRun, callOn, agoraUid, attendance };

@@ -265,6 +265,22 @@ const ev = (params, after, before) => ({ params, data: before === undefined ? { 
   delete process.env.JAAS_APP_ID;
   ok('without keys the in-site call is off', (await bot._t.callRun('s1', 'lx-r1', false, t0)).code === 503);
 
+  console.log('In-site video call on Agora');
+  process.env.AGORA_APP_ID = '970ca35de60c44645bbae8a215061b33'; process.env.AGORA_APP_CERT = '5cfd2fd1755d40ecb72977518be15d3b';
+  cr = await bot._t.callRun('s1', 'lx-r1', false, t0 + 60e3);
+  ok('with Agora keys an invited student gets an Agora token for that room', cr.code === 200 && cr.body.provider === 'agora' && cr.body.appId === process.env.AGORA_APP_ID && cr.body.channel === 'lx-r1'
+    && Number.isInteger(cr.body.uid) && cr.body.uid > 0 && /^007/.test(cr.body.token) && !('jwt' in cr.body) && !JSON.stringify(cr.body).includes(process.env.AGORA_APP_CERT));
+  ok('the same person always gets the same Agora number', (await bot._t.callRun('s1', 'lx-r1', false, t0 + 61e3)).body.uid === cr.body.uid && cr.body.uid === bot._t.agoraUid('s1'));
+  cr = await bot._t.callRun('dil', 'lx-r1', false, t0 + 62e3);
+  ok('the teacher joins as a moderator and sees the student’s name in the roster', cr.code === 200 && cr.body.mod === true && cr.body.roster[bot._t.agoraUid('s1')] === 'Aziza' && cr.body.roster[cr.body.uid] === cr.body.name);
+  ok('anyone else is still refused on Agora', (await bot._t.callRun('s2', 'lx-r1', false, t0 + 60e3)).code === 403);
+  ok('an ended lesson can’t be entered on Agora', (await bot._t.callRun('s1', 'lx-r1', false, t0 + 4 * 3600e3)).code === 410);
+  const pg = await bot._t.callRun('s1', 'lx-r1', true, t0 + 3 * 60e3);
+  ok('a minute ping returns the roster', pg.code === 200 && pg.body.roster[bot._t.agoraUid('dil')]);
+  ok('only one of the two Agora settings is not enough', (() => { const c = process.env.AGORA_APP_CERT; delete process.env.AGORA_APP_CERT; const off = !bot._t.callOn(); process.env.AGORA_APP_CERT = c; return off; })());
+  delete process.env.AGORA_APP_ID; delete process.env.AGORA_APP_CERT;
+  ok('without any keys the call is off again', (await bot._t.callRun('s1', 'lx-r1', false, t0)).code === 503);
+
   console.log('Attendance');
   const now9 = Date.parse('2030-05-30T08:00:00Z'), dk = ms => bot._t.dayKey(ms);
   store.set('callMins/' + dk(now9 - 20 * 864e5) + '_s1', { uid: 's1', day: dk(now9 - 20 * 864e5), tid: 't-dil', mod: false, mins: 80 });

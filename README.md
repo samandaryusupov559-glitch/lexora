@@ -127,6 +127,19 @@ Birinchi joylash ba'zan Google xizmatlari endi yoqilayotgani uchun xato bilan tu
 
 Narxi: Blaze tarifining bepul ulushi (oyiga 2 mln chaqiruv) Lexora uchun yetarli, konteyner saqlash uchun oyiga bir necha sent olinadi. Bot kodining sinovi: `cd functions && npm install && npm test`.
 
+## Lexora ichidagi video dars (Agora)
+
+Agora kalitlari qo'shilsa, darslar Agora orqali ochiladi (Jitsi'dan ustun turadi). Kalitlar bo'lmasa, avvalgi usul (Jitsi yoki Google Meet) ishlayveradi.
+
+1. https://console.agora.io saytida akkaunt oching va yangi **Project** yarating. Autentifikatsiya: **Secured mode: APP ID + Token**.
+2. Project sozlamalarida **App ID** va **Primary Certificate** ni yoqing/ko'chiring (ikkalasi 32 belgili).
+3. GitHub → Settings → Secrets and variables → Actions → "New repository secret" orqali ikkitasini qo'shing:
+   - `AGORA_APP_ID` — App ID
+   - `AGORA_APP_CERT` — Primary Certificate (uni hech kimga ko'rsatmang, faqat GitHub secret'ida tursin)
+4. Actions → "Firebase (bot + rules)" → **Run workflow**. Shundan keyin "Darsni boshlash" darsni Agora'da ochadi.
+
+Agora har oy 10 000 daqiqa bepul beradi (har bir qatnashchi alohida hisoblanadi). Kirish ruxsati serverda yaratilgan token orqali beriladi: faqat o'sha dars, o'sha odam uchun, dars tugashi bilan (3 soatdan oshmasdan) tugaydi. Sertifikat brauzerga hech qachon yuborilmaydi.
+
 ## Lexora ichidagi video dars (Jitsi as a Service)
 
 Darslar Google Meet o'rniga Lexoraning o'zida ochiladi. Kalitlar qo'shilmaguncha hammasi avvalgidek Google Meet bilan ishlaydi.
