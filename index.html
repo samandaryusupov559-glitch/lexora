@@ -1353,6 +1353,12 @@ label.ex-opt:hover{border-color:var(--ink-3)}
 .hw-fdet>summary:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
 .hw-fdet>.hw-files{margin-top:10px}
 .hw-by{margin:0 0 14px}
+.th-board{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;align-items:start}
+@media (max-width:860px){.th-board{grid-template-columns:minmax(0,1fr)}}
+.th-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 0;border-top:1px dashed var(--line)}
+.th-row:first-of-type{border-top:0}
+.th-t{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.th-board .hw-meta{margin-top:2px}
 .hw-secs{display:flex;flex-direction:column;gap:12px}
 .hw-sec{border:1px solid var(--line);border-radius:var(--r);background:var(--sheet-2);padding:0 14px 14px}
 .hw-sec>summary{display:flex;align-items:center;gap:10px;cursor:pointer;list-style:none;padding:14px 2px;font-weight:700;font-size:18px}
@@ -2516,7 +2522,28 @@ function vTeacherHome(){
       <span class="row" style="gap:8px;flex-wrap:wrap"><button class="btn" data-act="go" data-v="students">${tr('nav.students')}</button><button class="btn pen" data-act="hw-edit">+ ${tr('hw.add')}</button></span></div>
     ${typeof teacherDash==='function'?teacherDash():''}
     ${trials?`<div class="notice info sx-note row" style="justify-content:space-between;gap:12px;flex-wrap:wrap"><span>${tr('th.trialN',{n:trials})}</span><button class="btn sm pen" data-act="go" data-v="students">${tr('sx.open')}</button></div>`:''}
-    ${waiting.length?`<div class="section"><div class="row" style="justify-content:space-between;align-items:center;gap:10px"><h2 style="margin:0">${tr('th.waitH')}</h2><button class="btn ghost sm" data-act="go" data-v="inbox">${tr('th.all')}</button></div><div class="list" style="margin-top:12px">${waiting.slice(0,4).map(e=>entryCard(e)).join('')}</div></div>`:''}`;
+    ${waiting.length?`<div class="section"><div class="row" style="justify-content:space-between;align-items:center;gap:10px"><h2 style="margin:0">${tr('th.waitH')}</h2><button class="btn ghost sm" data-act="go" data-v="inbox">${tr('th.all')}</button></div><div class="list" style="margin-top:12px">${waiting.slice(0,4).map(e=>entryCard(e)).join('')}</div></div>`:''}
+    ${thBoard()}`;
+}
+// the rest of the teacher's home: upcoming deadlines, unread chats, who is behind on homework, quick links
+function thBoard(){
+  const today=todayStr(), hws=hwList();
+  const upcoming = hws.filter(h=>!h.due || h.due>=today).sort((a,b)=>(a.due||'9')>(b.due||'9')?1:-1).slice(0,4);
+  const upRows = upcoming.map(h=>{ const uids=hwUids(h), done=uids.filter(u=>S.hwFor?.[u]?.done?.[h.id]).length;
+    return `<div class="th-row"><div style="min-width:0"><b class="th-t">${esc(h.title)}</b><div class="hw-meta">${hwDue(h.due)}<span class="small faint num">${tr('hw.nDone',{n:done,m:uids.length})}</span></div></div>${done<uids.length?`<button class="btn sm" data-act="hw-remind" data-hid="${esc(h.id)}">${tr('hw.remind')}</button>`:''}</div>`; }).join('');
+  const {dms,gs}=chatThreadsT(), unread=[...dms,...gs].filter(c=>unreadFor(c,'t')).sort(byLast);
+  const chRows = unread.slice(0,4).map(c=>chRow(`data-k="${c.k}" data-id="${esc(c.id)}"`, c.nm, c.uid||c.id, c.lastText||'', c.lastAt, true, false)).join('');
+  const pend = {}; hws.forEach(h=>hwUids(h).forEach(u=>{ if(!S.hwFor?.[u]?.done?.[h.id]) pend[u]=(pend[u]||0)+1; }));
+  const behind = myStudentIds().filter(u=>pend[u]).sort((a,b)=>pend[b]-pend[a]).slice(0,5);
+  const bRows = behind.map(u=>`<button class="chrow" data-act="open-student" data-sid="${esc(u)}">${avatar(S.profiles[u]?.name,u)}<span class="chrow-t"><b>${esc(S.profiles[u]?.name||tr('stu.unnamed'))}</b></span><span class="chrow-m"><span class="pill bk-wait num">${tr('th.left',{n:pend[u]})}</span></span></button>`).join('');
+  const q = (v,l)=>`<button class="btn" data-act="go" data-v="${v}">${l}</button>`;
+  const tile = (h,body,empty,more) => `<section class="dash-tile"><div class="row" style="justify-content:space-between;gap:8px"><h3>${h}</h3>${more||''}</div>${body||`<p class="muted small">${empty}</p>`}</section>`;
+  return `<div class="th-board section">
+    ${tile(tr('th.upH'), upRows, tr('th.upNone'), `<button class="btn ghost sm" data-act="go" data-v="homework">${tr('th.all')}</button>`)}
+    ${tile(tr('th.msgH'), chRows, tr('th.msgNone'), `<button class="btn ghost sm" data-act="go" data-v="chat">${tr('th.open')}</button>`)}
+    ${tile(tr('th.behindH'), bRows, tr('th.behindNone'))}
+    ${tile(tr('th.quickH'), `<div class="row" style="gap:8px">${q('chat',tr('dm.nav'))}${q('homework',tr('hw.nav'))}${q('students',tr('nav.students'))}${q('groups',tr('c.grpH'))}${q('exams',tr('ex.nav'))}</div>`, '')}
+  </div>`;
 }
 function hwTabs(cur){
   const w=allEntries().filter(e=>e.status==='submitted').length;
