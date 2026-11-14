@@ -48,14 +48,10 @@ jobs:
           JAAS_APP_ID: ${{ secrets.JAAS_APP_ID }}
           JAAS_KID: ${{ secrets.JAAS_KID }}
           JAAS_KEY: ${{ secrets.JAAS_KEY }}
-          # optional: the in-site video call on Agora (agora.io). If both are set, Agora is used instead of JaaS.
-          AGORA_APP_ID: ${{ secrets.AGORA_APP_ID }}
-          AGORA_APP_CERT: ${{ secrets.AGORA_APP_CERT }}
         run: |
           printf 'TELEGRAM_TOKEN=%s\nSITE_URL=%s\nOWNER_EMAIL=%s\nREGION=%s\n' "$TELEGRAM_TOKEN" "$SITE_URL" "$OWNER_EMAIL" "$REGION" > functions/.env
           # the private key goes in as one base64 line, so its line breaks survive the .env file
           printf 'JAAS_APP_ID=%s\nJAAS_KID=%s\nJAAS_KEY=%s\n' "$JAAS_APP_ID" "$JAAS_KID" "$(printf '%s' "$JAAS_KEY" | base64 -w0)" >> functions/.env
-          printf 'AGORA_APP_ID=%s\nAGORA_APP_CERT=%s\n' "$AGORA_APP_ID" "$AGORA_APP_CERT" >> functions/.env
 
       - uses: google-github-actions/auth@v2
         if: env.HAS_SA == 'true'

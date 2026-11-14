@@ -915,16 +915,6 @@ td.nwc.off{color:var(--ink-3);font-size:18px}
 .call-box{flex:1;min-height:0;border-radius:20px;overflow:hidden;background:#111;border:1px solid var(--line)}
 .call-box .loading,.call-box .empty{background:var(--sheet);height:100%;display:grid;place-content:center;text-align:center;padding:20px}
 .call-box iframe{display:block;border:0}
-.call-box:has(.ag-grid){display:flex;flex-direction:column}
-.ag-grid{flex:1;min-height:0;overflow:auto;display:grid;gap:8px;padding:8px;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));grid-auto-rows:minmax(170px,1fr)}
-.ag-tile{position:relative;background:#242424;border-radius:14px;overflow:hidden;min-height:170px}
-.ag-v{position:absolute;inset:0}.ag-v video{object-fit:cover}
-.ag-ph{position:absolute;inset:0;display:grid;place-items:center;font:700 44px/1 var(--f-ui);color:#cfcfcf}
-.ag-tile.has-v .ag-ph{display:none}
-.ag-n{position:absolute;left:8px;bottom:8px;max-width:calc(100% - 16px);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#fff;background:rgba(0,0,0,.55);padding:2px 9px;border-radius:8px;font-size:13px}
-.ag-bar{display:flex;justify-content:center;gap:10px;flex-wrap:wrap;padding:10px;background:#1a1a1a}
-.ag-bar .btn.off{background:var(--pen);color:#fff;border-color:var(--pen)}
-.ag-bar .btn.on{background:var(--blue);color:#fff;border-color:var(--blue)}
 .agr{margin:12px 0 0;padding-left:22px;display:flex;flex-direction:column;gap:10px;line-height:1.5}
 .agr-d summary{cursor:pointer;font-weight:600;color:var(--blue)}
 .agr-d .agr{font-size:14.5px;margin-bottom:6px}
@@ -6754,8 +6744,8 @@ function liveBanner(){
 }
 
 
-/* ---------------- in-site video call (Agora, or Jitsi as a Service / 8x8.vc) ---------------- */
-// site/call = {on, provider, app}: written by the bot after each deploy (on only when the Agora or JaaS keys are set). Until then lessons use Google Meet.
+/* ---------------- in-site video call (Jitsi as a Service / 8x8.vc) ---------------- */
+// site/call = {on, provider, app}: written by the bot after each deploy (on only when the JaaS keys are set). Until then lessons use Google Meet.
 // calls/{room} = {tid, uids, label, at, until, by}: who may enter; the bot (callToken) gives each of them a personal pass.
 const callOn = () => !!S.callCfg?.on && !S.demo;
 const callUrl = room => siteUrl()+'#call='+room;
@@ -6775,62 +6765,12 @@ async function callApi(room, ping){
 }
 let jitsiJs=null;
 const loadJitsi = app => jitsiJs ||= new Promise((ok,bad)=>{ const s=document.createElement('script'); s.src=`https://8x8.vc/${encodeURIComponent(app)}/external_api.js`; s.onload=ok; s.onerror=()=>{ jitsiJs=null; s.remove(); bad(new Error('script')); }; document.head.appendChild(s); });
-// ---- Agora: the same lesson rooms, drawn by Lexora itself (tiles, mic / camera / screen buttons). The server gives each person a token (callToken).
-let agoraJs=null;
-const loadAgora = () => window.AgoraRTC ? Promise.resolve() : (agoraJs ||= new Promise((ok,bad)=>{ const s=document.createElement('script'); s.src='https://cdn.jsdelivr.net/npm/agora-rtc-sdk-ng@4.24.9/AgoraRTC_N-production.js'; s.onload=ok; s.onerror=()=>{ agoraJs=null; s.remove(); bad(new Error('script')); }; document.head.appendChild(s); }));
-async function callStartAgora(room, r, fail){
-  try{ await loadAgora(); }catch(e){ return fail('net'); }
-  const box=$('#call-box'); if(S.callRoom!==room || !box || !window.AgoraRTC) return;
-  $('#call-title').textContent=r.label||'Lexora';
-  box.innerHTML=`<div class="ag-grid" id="ag-grid"></div><div class="ag-bar">
-    <button type="button" class="btn sm" id="ag-mic">🎤 ${tr('call.mic')}</button><button type="button" class="btn sm" id="ag-cam">📷 ${tr('call.cam')}</button>${navigator.mediaDevices?.getDisplayMedia?`<button type="button" class="btn sm" id="ag-scr">🖥 ${tr('call.screen')}</button>`:''}</div>`;
-  const AG=window.AgoraRTC; try{ AG.setLogLevel(3); }catch(e){}
-  const client=AG.createClient({mode:'rtc', codec:'vp8'}), grid=$('#ag-grid'), roster={...(r.roster||{})}, T={mic:null, cam:null, scr:null};
-  let dead=false, asking=false;
-  const nameOf = uid => roster[uid] || (uid===r.uid ? r.name : '') || '…';
-  const tile = uid => { let t=document.getElementById('ag-t-'+uid);
-    if(!t){ t=document.createElement('div'); t.className='ag-tile'; t.id='ag-t-'+uid; t.innerHTML='<div class="ag-v"></div><div class="ag-ph"></div><div class="ag-n"></div>'; grid.appendChild(t); }
-    const n=nameOf(uid); t.querySelector('.ag-n').textContent=n; t.querySelector('.ag-ph').textContent=(String(n).trim()[0]||'?').toUpperCase(); return t; };
-  const mine = () => tile(r.uid), showVideo = (t,on) => t.classList.toggle('has-v', !!on);
-  // names come from the server (who joined), not from Agora: ask again when someone unknown appears
-  const refresh = async () => { if(asking||dead) return; asking=true; try{ const x=await callApi(room,true); if(x?.roster){ Object.assign(roster,x.roster); [...grid.children].forEach(t=>tile(+t.id.slice(5))); } }catch(e){} asking=false; };
-  const dispose = () => { dead=true; for(const k of ['mic','cam','scr']){ try{ T[k]?.close(); }catch(e){} T[k]=null; } try{ client.leave(); }catch(e){} };
-  S.call={api:{dispose}, room, ping:setInterval(()=>{ refresh(); }, 60e3)};
-  client.on('user-joined', u=>{ tile(u.uid); if(!roster[u.uid]) refresh(); });
-  client.on('user-published', async (user, media)=>{ try{ await client.subscribe(user, media); }catch(e){ return; } if(dead) return;
-    const t=tile(user.uid); if(media==='video'){ showVideo(t,true); user.videoTrack.play(t.querySelector('.ag-v')); } else user.audioTrack.play();
-    if(!roster[user.uid]) refresh(); });
-  client.on('user-unpublished', (user, media)=>{ if(media==='video') showVideo(tile(user.uid), false); });
-  client.on('user-left', u=>document.getElementById('ag-t-'+u.uid)?.remove());
-  const renew = async () => { const x=await callApi(room).catch(()=>null); if(x?.ok && x.token) client.renewToken(x.token).catch(()=>{}); };
-  client.on('token-privilege-will-expire', renew); client.on('token-privilege-did-expire', renew);
-  try{ await client.join(r.appId, r.channel, r.token, r.uid); }catch(e){ dispose(); return fail('server', String(e?.code||e?.message||e).slice(0,80)); }
-  if(dead) { dispose(); return; }
-  mine();
-  try{ [T.mic,T.cam]=await AG.createMicrophoneAndCameraTracks({}, {encoderConfig:'480p_1'}); }
-  catch(e){ try{ T.mic=await AG.createMicrophoneAudioTrack(); }catch(e2){} try{ T.cam=await AG.createCameraVideoTrack({encoderConfig:'480p_1'}); }catch(e3){} }
-  if(dead){ dispose(); return; }
-  const out=[T.mic,T.cam].filter(Boolean);
-  if(!out.length) toast(tr('call.noMedia'));
-  else { if(T.cam){ showVideo(mine(),true); T.cam.play(mine().querySelector('.ag-v')); } try{ await client.publish(out); }catch(e){ toast(tr('call.noMedia')); } }
-  $('#ag-mic').addEventListener('click', async ev=>{ const btn=ev.currentTarget; if(!T.mic){ toast(tr('call.noMedia')); return; } const on=!T.mic.enabled; await T.mic.setEnabled(on); btn.classList.toggle('off', !on); });
-  $('#ag-cam').addEventListener('click', async ev=>{ const btn=ev.currentTarget; if(!T.cam){ toast(tr('call.noMedia')); return; } const on=!T.cam.enabled; await T.cam.setEnabled(on); if(!T.scr) showVideo(mine(), on); btn.classList.toggle('off', !on); });
-  const scr=$('#ag-scr');
-  if(scr){
-    const stopScr = async () => { const s=T.scr; if(!s) return; T.scr=null; try{ await client.unpublish(s); }catch(e){} try{ s.close(); }catch(e){} scr.classList.remove('on');
-      if(T.cam && !dead){ try{ await client.publish(T.cam); T.cam.play(mine().querySelector('.ag-v')); showVideo(mine(), T.cam.enabled); }catch(e){} } else showVideo(mine(), false); };
-    scr.addEventListener('click', async ()=>{ if(T.scr){ await stopScr(); return; }
-      try{ const s=await AG.createScreenVideoTrack({encoderConfig:'1080p_1'}, 'disable'); if(dead){ s.close(); return; } T.scr=s;
-        if(T.cam) await client.unpublish(T.cam); await client.publish(s); s.play(mine().querySelector('.ag-v')); showVideo(mine(), true); scr.classList.add('on'); s.on('track-ended', stopScr); }catch(e){} });
-  }
-}
 async function callStart(room){
   if(S.callRoom===room) return; callStop(); S.callRoom=room;
   const fail = (k, why) => { if(S.callRoom!==room) return; S.callRoom=null; const b=$('#call-box'); if(b) b.innerHTML=`<div class="empty"><h3>${tr('call.errH')}</h3><p>${tr('call.e.'+k)!=='call.e.'+k?tr('call.e.'+k):tr('call.e.server')}</p>${why?`<p class="faint small">${esc(why)}</p>`:''}</div>`; };
   if(S.demo || !S.user) return fail('demo');
   let r; try{ r=await callApi(room); }catch(e){ return fail('net'); }
   if(!r.ok) return fail(r.error||'server', r.why);
-  if(r.provider==='agora') return callStartAgora(room, r, fail);
   try{ await loadJitsi(r.room.split('/')[0]); }catch(e){ return fail('net'); }
   const box=$('#call-box'); if(S.callRoom!==room || !box || !window.JitsiMeetExternalAPI) return;
   $('#call-title').textContent = r.label || 'Lexora'; box.innerHTML='';
