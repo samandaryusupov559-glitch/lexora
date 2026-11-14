@@ -5739,14 +5739,13 @@ function vLanding(){
   const all=teamList(false), f=S.view.lang||'';
   const list = f ? all.filter(t=>(t.langs||[]).includes(f)) : all;
   const langs=[...new Set(all.flatMap(t=>t.langs||[]))];
-  const students=all.reduce((a,t)=>a+(+t.stats?.students||0),0);
   const card = t => { const st=t.stats||{};
     return `<button class="tcard" data-act="c-tprof" data-tid="${esc(t.tid)}">
       ${tCardPh(t)}<span class="tcard-top">${t.photo?'':tPhoto(t,t.tid)}<span style="min-width:0"><b class="tname">${esc(t.name||'')}</b>${t.headline?`<span class="small muted tcard-hl">${esc(t.headline)}</span>`:''}</span></span>
       ${levelBadge(st)}
       <span class="tchips">${(t.langs||[]).map(l=>`<span class="lchip">${esc(l)}</span>`).join('')}${t.levels?`<span class="lchip ghost">${esc(t.levels)}</span>`:''}</span>
       ${t.bio?`<span class="small tcard-bio">${esc(t.bio.slice(0,150))}${t.bio.length>150?'…':''}</span>`:''}
-      <span class="tkv"><span><b class="num">${+st.students||0}</b>${tr('c.kStudents')}</span><span><b class="num">${st.gain>0?'+'+st.gain:'–'}</b>${tr('c.kGain')}</span>${S.role==='owner'?`<span><b class="num">${+t.years||'–'}</b>${tr('c.kYears')}</span>`:''}${t.lessonLen?`<span><b class="num">${t.lessonLen}</b>${tr('c.kMin')}</span>`:''}</span>
+      <span class="tkv"><span><b class="num">${st.gain>0?'+'+st.gain:'–'}</b>${tr('c.kGain')}</span>${S.role==='owner'?`<span><b class="num">${+t.years||'–'}</b>${tr('c.kYears')}</span>`:''}${t.lessonLen?`<span><b class="num">${t.lessonLen}</b>${tr('c.kMin')}</span>`:''}</span>
       ${fromPrice(t)?`<span class="tcard-price">${tr('pc.from',{p:som(fromPrice(t))})} <span class="faint">/ ${tr('pc.month')}</span></span>`:''}
       <span class="tcard-go">${tr('c.viewProfile')} →</span></button>`; };
   const loading = !S.teamLoaded, fmt = S.lxFmt==='group' ? 'group' : 'ind', aud = S.lxAud==='t' ? 't' : 's';
@@ -5767,7 +5766,7 @@ function vLanding(){
         <h1>${tr('lx.h')}</h1>
         <p class="lx-desc">${tr('lx.p')}</p>
         <div class="lx-ctas"><button class="btn primary lx-btn" data-act="c-trial">${tr('c.trial')} ${LX_ARROW}</button><a class="btn lx-btn outline" href="#lx-how">${tr('lx.how')} <span aria-hidden="true">›</span></a></div>
-        <div class="lx-meta"><div class="lx-stats"><div><b class="num">${all.length||'–'}</b><span>${tr('c.sTeachers')}</span></div><div><b class="num">${students||'–'}</b><span>${tr('c.sStudents')}</span></div><div><b class="num">${names.length}</b><span>${tr('c.sLangs')}</span></div></div>
+        <div class="lx-meta"><div class="lx-stats"><div><b class="num">${all.length||'–'}</b><span>${tr('c.sTeachers')}</span></div><div><b class="num">${names.length}</b><span>${tr('c.sLangs')}</span></div></div>
           <div class="lx-links"><button class="lx-chip" data-act="c-gchat">${I.chat} ${tr('dm.guestBtn')}${guestDot()}</button><button class="lx-chip" data-act="c-apply">${I.team} ${tr('c.joinBtn')}</button></div></div>
       </div>
       <div class="lx-stage ed-stage" role="group" aria-label="${tr('lx.space')}"><span class="lx-orbit"></span><span class="lx-star a" aria-hidden="true">✳</span><span class="lx-star b" aria-hidden="true">✦</span>
@@ -5858,7 +5857,7 @@ function openTeacherProfile(tid){
       <div class="row" style="gap:16px;align-items:flex-start">${t.photo?'':tPhoto(t,tid,'tph lg')}<div style="min-width:0">
         ${t.headline?`<p style="font-weight:600">${esc(t.headline)}</p>`:''}${levelBadge(st)}
         <div class="tchips" style="margin-top:8px">${(t.langs||[]).map(l=>`<span class="lchip">${esc(l)}</span>`).join('')}${t.levels?`<span class="lchip ghost">${esc(t.levels)}</span>`:''}</div></div></div>
-      <div class="tkv big"><span><b class="num">${+st.students||0}</b>${tr('c.kStudents')}</span><span><b class="num">${st.gain>0?'+'+st.gain:'–'}</b>${tr('c.kGain')}</span><span><b class="num">${st.band!=null?fmtBand(st.band):'–'}</b>${tr('c.kBand')}</span>${S.role==='owner'?`<span><b class="num">${+t.years||'–'}</b>${tr('c.kYears')}</span>`:''}${t.lessonLen?`<span><b class="num">${lenText(t.lessonLen)}</b>${tr('c.kLen')}</span>`:''}</div>
+      <div class="tkv big">${S.mode==='guest'?'':`<span><b class="num">${+st.students||0}</b>${tr('c.kStudents')}</span>`}<span><b class="num">${st.gain>0?'+'+st.gain:'–'}</b>${tr('c.kGain')}</span><span><b class="num">${st.band!=null?fmtBand(st.band):'–'}</b>${tr('c.kBand')}</span>${S.role==='owner'?`<span><b class="num">${+t.years||'–'}</b>${tr('c.kYears')}</span>`:''}${t.lessonLen?`<span><b class="num">${lenText(t.lessonLen)}</b>${tr('c.kLen')}</span>`:''}</div>
       ${t.bio?`<div><span class="label">${tr('c.bio')}</span><p style="margin-top:6px;white-space:pre-line">${esc(t.bio)}</p></div>`:''}
       ${(t.achievements||[]).length?`<div><span class="label">${tr('c.ach')}</span><ul class="tach">${t.achievements.map(a=>`<li>${esc(a)}</li>`).join('')}</ul></div>`:''}
       <div id="tprof-media" data-tid="${esc(tid)}"></div>
