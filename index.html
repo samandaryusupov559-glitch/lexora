@@ -1345,6 +1345,15 @@ label.ex-opt:hover{border-color:var(--ink-3)}
 .hw-fdet>summary:hover{border-color:var(--ink-3)}
 .hw-fdet>summary:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
 .hw-fdet>.hw-files{margin-top:10px}
+.hw-by{margin:0 0 14px}
+.hw-secs{display:flex;flex-direction:column;gap:12px}
+.hw-sec{border:1px solid var(--line);border-radius:var(--r);background:var(--sheet-2);padding:0 14px 14px}
+.hw-sec>summary{display:flex;align-items:center;gap:10px;cursor:pointer;list-style:none;padding:14px 2px;font-weight:700;font-size:18px}
+.hw-sec>summary::-webkit-details-marker{display:none}
+.hw-sec>summary::before{content:'▸';font-size:14px;color:var(--ink-3);transition:transform .2s var(--ease)}
+.hw-sec[open]>summary::before{transform:rotate(90deg)}
+.hw-sec>summary:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+.hw-sec .hw-sec-n{min-width:0;overflow-wrap:anywhere}
 .hw-file{display:inline-flex;align-items:center;gap:10px;max-width:100%;padding:8px 14px 8px 8px;border:1px solid var(--line);border-radius:var(--r-sm);background:var(--sheet);color:var(--ink);font-weight:600;font-size:15px;transition:border-color .2s var(--ease),transform .2s var(--ease)}
 .hw-file:hover{border-color:var(--ink-3);transform:translateY(-1px)}
 .hw-file:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
@@ -7124,7 +7133,7 @@ async function hwDrop(uid, hid){
 }
 const hwDue = due => { if(!due) return ''; const late = due < todayStr(); return `<span class="due${late?' late':''}">${late?tr('hw.late')+' · ':''}${tr('hw.due',{d:esc(dloc(parseDate(due),{day:'numeric',month:'short'}))})}</span>`; };
 // more than 2 attachments fold into a collapsible “📎 Files (n)” row so a card with many audio files stays short; the open/closed choice survives a re-render
-const hwOpenSet = new Set();
+const hwOpenSet = new Set(), hwSecClosed = new Set();
 const hwFiles = (files, hid, who) => {
   if(!(files||[]).length) return '';
   const list = `<div class="hw-files">${files.map((f,i)=>`<button class="hw-file" data-act="hw-open" data-hid="${esc(hid)}" data-i="${i}" data-who="${who}"><span class="hw-fic" aria-hidden="true">${hwIcon(f.kind)}</span><span class="hw-fname">${esc(f.name||f.url)}</span></button>`).join('')}</div>`;
@@ -7132,7 +7141,7 @@ const hwFiles = (files, hid, who) => {
   const key = who+':'+hid;
   return `<details class="hw-fdet" data-k="${esc(key)}"${hwOpenSet.has(key)?' open':''}><summary>📎 ${tr('hw.files',{n:files.length})}</summary>${list}</details>`;
 };
-document.addEventListener('toggle', e => { const d=e.target; if(d?.classList?.contains('hw-fdet')) d.open ? hwOpenSet.add(d.dataset.k) : hwOpenSet.delete(d.dataset.k); }, true);
+document.addEventListener('toggle', e => { const d=e.target, c=d?.classList; if(c?.contains('hw-fdet')) d.open ? hwOpenSet.add(d.dataset.k) : hwOpenSet.delete(d.dataset.k); else if(c?.contains('hw-sec')) d.open ? hwSecClosed.delete(d.dataset.k) : hwSecClosed.add(d.dataset.k); }, true);
 function vHomework(){ return S.mode==='student' ? vHwStudent() : vHwTeacher(); }
 function vHwTeacher(){
   const list=hwList(), names=Object.fromEntries(myStudentList().map(x=>[x.uid,x.name])), groups=Object.fromEntries(myGroups().map(g=>[g.id,g.name]));
@@ -7141,8 +7150,18 @@ function vHwTeacher(){
       <div class="row hw-acts">${done<uids.length?`<button class="btn sm" data-act="hw-remind" data-hid="${esc(h.id)}" title="${esc(tr('hw.remindT',{n:uids.length-done}))}">${tr('hw.remind')}</button>`:''}<button class="btn sm" data-act="hw-share" data-hid="${esc(h.id)}">${tr('hw.share')}</button><button class="btn ghost sm" data-act="hw-edit" data-hid="${esc(h.id)}">${tr('edit')}</button><button class="btn ghost sm del-btn" data-act="hw-del" data-hid="${esc(h.id)}">${tr('delete')}</button></div></div>
       ${h.note?`<p class="hw-note">${esc(h.note)}</p>`:''}${hwFiles(h.files, h.id, 't')}
       <div class="tchips hw-to">${(h.to?.gids||[]).map(g=>`<span class="lchip">${esc(groups[g]||'–')}</span>`).join('')}${(h.to?.uids||[]).map(u=>`<span class="lchip ghost">${esc(names[u]||'–')}</span>`).join('')}</div></article>`; };
+  // “by who”: one collapsible section per group and per student; homework given to several appears in each of them
+  const by = LS.get('hw-by','all')==='who';
+  const sections = () => {
+    const m=new Map(), put=(k,label,kind,h)=>{ if(!m.has(k)) m.set(k,{k,label,kind,items:[]}); m.get(k).items.push(h); };
+    list.forEach(h=>{ const g=h.to?.gids||[], u=h.to?.uids||[];
+      g.forEach(id=>put('g:'+id, groups[id]||'–', 'g', h)); u.forEach(id=>put('u:'+id, names[id]||'–', 'u', h)); if(!g.length && !u.length) put('x:', '–', 'x', h); });
+    return [...m.values()].sort((a,b)=>(a.kind===b.kind?0:a.kind==='g'?-1:1) || a.label.localeCompare(b.label));
+  };
+  const sec = x => `<details class="hw-sec" data-k="${esc(x.k)}"${hwSecClosed.has(x.k)?'':' open'}><summary><span class="hw-sec-n">${x.kind==='g'?'👥 ':''}${esc(x.label)}</span><span class="pill">${tr('hw.cnt',{n:x.items.length})}</span></summary><div class="list">${x.items.map(card).join('')}</div></details>`;
+  const toggle = `<div class="seg hw-by" role="group">${[['all','hw.byAll'],['who','hw.byWho']].map(([v,k])=>`<button type="button" data-act="hw-by" data-v="${v}" aria-pressed="${(by?'who':'all')===v}">${tr(k)}</button>`).join('')}</div>`;
   return hwTabs('homework')+`<div class="page-head"><div><h1>${tr('hw.h')}</h1><p>${tr('hw.p')}</p></div><button class="btn primary" data-act="hw-edit">+ ${tr('hw.add')}</button></div>
-    ${list.length?`<div class="list">${list.map(card).join('')}</div>`:`<div class="empty"><h3>${tr('hw.noneH')}</h3><p>${tr('hw.noneP')}</p><p style="margin-top:14px"><button class="btn primary" data-act="hw-edit">${tr('hw.add')}</button></p></div>`}`;
+    ${list.length?toggle:''}${list.length?(by?`<div class="hw-secs">${sections().map(sec).join('')}</div>`:`<div class="list">${list.map(card).join('')}</div>`):`<div class="empty"><h3>${tr('hw.noneH')}</h3><p>${tr('hw.noneP')}</p><p style="margin-top:14px"><button class="btn primary" data-act="hw-edit">${tr('hw.add')}</button></p></div>`}`;
 }
 // the student's list: open first (soonest due on top), then the ones already done
 function myHwItems(){
@@ -8068,6 +8087,7 @@ document.addEventListener('click', async ev => {
     case 'cr-t': critDlg('t', b.dataset.tid, tName(b.dataset.tid), S.myTCrit?.[b.dataset.tid]?.c); break;
     case 'hw-edit': openHw(b.dataset.hid||''); break;
     case 'hw-share': openHwShare(b.dataset.hid); break;
+    case 'hw-by': LS.set('hw-by', b.dataset.v); renderMain(); break;
     case 'hw-remind': hwRemind(b); break;
     case 'hw-del': hwDelete(b.dataset.hid); break;
     case 'hw-open': hwOpen(b.dataset.hid, b.dataset.i, b.dataset.who); break;
