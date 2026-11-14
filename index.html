@@ -501,6 +501,13 @@ html:has(dialog.dlg[open]){overflow:hidden}
 .nav-open svg{width:19px;height:19px}
 @media (min-width:861px){html.nav-collapsed .nav-open{display:inline-flex}}
 @media (max-width:860px){.nav .nav-collapse{display:none}}
+/* desktop: the “Hide menu” button floats at the bottom-left of the screen, always in reach, no longer a row at the top of the menu */
+@media (min-width:861px){
+  .nav .nav-collapse{position:fixed;left:max(16px,env(safe-area-inset-left,0px));bottom:calc(18px + env(safe-area-inset-bottom,0px));z-index:25;margin:0;padding:9px 16px 9px 12px;background:var(--sheet);border:1px solid var(--line);border-radius:999px;box-shadow:0 12px 28px -12px var(--shadow);color:var(--ink-2);transition:transform .2s var(--ease),box-shadow .2s var(--ease),border-color .2s}
+  .nav .nav-collapse:hover{border-color:var(--ink-3);color:var(--ink);transform:translateY(-2px);box-shadow:0 16px 32px -12px var(--shadow)}
+  .nav .nav-collapse:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+  .nav{padding-bottom:64px}
+}
 /* student pay card */
 .paycard{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:14px;align-items:center;width:100%;text-align:left;padding:14px 18px;margin-top:18px;border-radius:16px;border:1px solid var(--line);background:var(--sheet);box-shadow:0 12px 26px -24px var(--shadow);position:relative;overflow:hidden;transition:transform .25s var(--ease)}
 .paycard:hover{transform:translateY(-2px)}
