@@ -1029,6 +1029,8 @@ td.nwc.off{color:var(--ink-3);font-size:18px}
 .club-in{display:flex;gap:8px;padding:12px 14px;border-top:1px solid var(--line);background:var(--sheet)}
 .club-in textarea{flex:1;resize:none}
 .chat{grid-template-columns:minmax(240px,.75fr) minmax(0,1.75fr)}
+/* the 2-column rule above comes after the .club mobile rule, so on a phone it kept 2 columns and squeezed the chat off-screen: stack list over chat instead */
+@media (max-width:900px){.chat{grid-template-columns:minmax(0,1fr)}.ch-list{max-height:34vh}.club-chat{min-height:60vh;max-height:none}.club-msgs{min-height:240px;max-height:55vh}}
 .ch-list{display:flex;flex-direction:column;gap:2px;padding:8px;max-height:72vh;overflow-y:auto}
 .ch-sec{font-size:12px;letter-spacing:0;color:var(--ink-3);margin:10px 8px 4px}
 .ch-none{margin:2px 8px 6px}
