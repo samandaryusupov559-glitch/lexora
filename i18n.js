@@ -344,6 +344,7 @@ en: {
   "pf.number": "Card or phone number", "pf.holder": "Name on the account", "pf.holderPh": "e.g. Samandar Y.",
   "pf.link": "Payment link (optional)", "pf.badLink": "The link must start with https://", "pf.needNum": "Add the card or phone number.",
   "pf.noMethodsT": "No payment details yet.", "pf.saved": "Saved.", "pf.waitN": {"one": "{n} report to check", "other": "{n} reports to check"},
+  "pf.oneH": "Lexora payment card", "pf.oneP": "Add the one card that all students pay to. Students see only this card.", "pf.oneHave": "All students pay only to this card. To change it, delete it and add a new one.", "pf.badCard": "Enter a 16-digit card number.",
   "lg.link": "Student’s journal account", "lg.linkNone": "Not linked", "lg.linkHint": "Link it so the student sees their balance when they sign in.", "lg.linked": "linked",
   /* ---------- noticeboard, learn, plans, bookings ---------- */
   "nav.board": "Noticeboard", "nav.book": "Extra lessons", "nav.learn": "Learn",
@@ -1851,6 +1852,7 @@ uz: {
   "pf.number": "Karta yoki telefon raqami", "pf.holder": "Hisob egasining ismi", "pf.holderPh": "masalan, Samandar Y.",
   "pf.link": "To‘lov havolasi (ixtiyoriy)", "pf.badLink": "Havola https:// bilan boshlanishi kerak", "pf.needNum": "Karta yoki telefon raqamini yozing.",
   "pf.noMethodsT": "Hali to‘lov ma’lumotlari yo‘q.", "pf.saved": "Saqlandi.", "pf.waitN": {"other": "Tekshirish uchun {n} ta xabar"},
+  "pf.oneH": "Lexora to‘lov kartasi", "pf.oneP": "Barcha o‘quvchilar pul tashlaydigan yagona kartani qo‘shing. O‘quvchilar faqat shu kartani ko‘radi.", "pf.oneHave": "Barcha o‘quvchilar faqat shu kartaga to‘laydi. O‘zgartirish uchun uni o‘chirib, yangisini qo‘shing.", "pf.badCard": "16 xonali karta raqamini kiriting.",
   "lg.link": "Talabaning kundalik akkaunti", "lg.linkNone": "Bog‘lanmagan", "lg.linkHint": "Bog‘lasangiz, talaba kirganda o‘z balansini ko‘radi.", "lg.linked": "bog‘langan",
   "nav.board": "E’lonlar", "nav.book": "Qo‘shimcha darslar", "nav.learn": "O‘rganish",
   "rules.old": "Bu bo‘lim uchun Firebase’ning yangi xavfsizlik qoidalari kerak. <b>firestore.rules</b> matnini Firebase → Firestore Database → Rules bo‘limiga qo‘yib, Publish tugmasini bosing.",
@@ -3357,6 +3359,7 @@ ru: {
   "pf.number": "Номер карты или телефона", "pf.holder": "Имя владельца", "pf.holderPh": "например, Samandar Y.",
   "pf.link": "Ссылка для оплаты (необязательно)", "pf.badLink": "Ссылка должна начинаться с https://", "pf.needNum": "Добавьте номер карты или телефона.",
   "pf.noMethodsT": "Платёжных данных пока нет.", "pf.saved": "Сохранено.", "pf.waitN": {"one": "{n} сообщение на проверку", "few": "{n} сообщения на проверку", "many": "{n} сообщений на проверку", "other": "{n} сообщения на проверку"},
+  "pf.oneH": "Платёжная карта Lexora", "pf.oneP": "Добавьте единственную карту, на которую платят все ученики. Ученики видят только её.", "pf.oneHave": "Все ученики платят только на эту карту. Чтобы изменить, удалите её и добавьте новую.", "pf.badCard": "Введите 16-значный номер карты.",
   "lg.link": "Аккаунт ученика в дневнике", "lg.linkNone": "Не привязан", "lg.linkHint": "Привяжите, чтобы ученик видел свой баланс при входе.", "lg.linked": "привязан",
   "nav.board": "Объявления", "nav.book": "Доп. занятия", "nav.learn": "Учиться",
   "rules.old": "Для этого раздела нужны новые правила безопасности Firebase. Вставьте <b>firestore.rules</b> в Firebase → Firestore Database → Rules и нажмите Publish.",
