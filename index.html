@@ -1336,6 +1336,13 @@ label.ex-opt:hover{border-color:var(--ink-3)}
 .hw-acts{gap:6px}
 .hw-note{white-space:pre-wrap;color:var(--ink-2);max-width:70ch}
 .hw-files{display:flex;flex-wrap:wrap;gap:8px}
+.hw-fdet>summary{display:inline-flex;align-items:center;gap:8px;cursor:pointer;list-style:none;padding:8px 14px;border:1px solid var(--line);border-radius:999px;background:var(--sheet);font-weight:600;font-size:15px;color:var(--ink)}
+.hw-fdet>summary::-webkit-details-marker{display:none}
+.hw-fdet>summary::after{content:'▾';font-size:13px;color:var(--ink-3);transition:transform .2s var(--ease)}
+.hw-fdet[open]>summary::after{transform:rotate(180deg)}
+.hw-fdet>summary:hover{border-color:var(--ink-3)}
+.hw-fdet>summary:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+.hw-fdet>.hw-files{margin-top:10px}
 .hw-file{display:inline-flex;align-items:center;gap:10px;max-width:100%;padding:8px 14px 8px 8px;border:1px solid var(--line);border-radius:var(--r-sm);background:var(--sheet);color:var(--ink);font-weight:600;font-size:15px;transition:border-color .2s var(--ease),transform .2s var(--ease)}
 .hw-file:hover{border-color:var(--ink-3);transform:translateY(-1px)}
 .hw-file:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
@@ -7114,7 +7121,16 @@ async function hwDrop(uid, hid){
   const d=s.data(); if(!d.items?.[hid]) return; delete d.items[hid]; if(d.done) delete d.done[hid]; await ref.set(d);
 }
 const hwDue = due => { if(!due) return ''; const late = due < todayStr(); return `<span class="due${late?' late':''}">${late?tr('hw.late')+' · ':''}${tr('hw.due',{d:esc(dloc(parseDate(due),{day:'numeric',month:'short'}))})}</span>`; };
-const hwFiles = (files, hid, who) => (files||[]).length ? `<div class="hw-files">${files.map((f,i)=>`<button class="hw-file" data-act="hw-open" data-hid="${esc(hid)}" data-i="${i}" data-who="${who}"><span class="hw-fic" aria-hidden="true">${hwIcon(f.kind)}</span><span class="hw-fname">${esc(f.name||f.url)}</span></button>`).join('')}</div>` : '';
+// more than 2 attachments fold into a collapsible “📎 Files (n)” row so a card with many audio files stays short; the open/closed choice survives a re-render
+const hwOpenSet = new Set();
+const hwFiles = (files, hid, who) => {
+  if(!(files||[]).length) return '';
+  const list = `<div class="hw-files">${files.map((f,i)=>`<button class="hw-file" data-act="hw-open" data-hid="${esc(hid)}" data-i="${i}" data-who="${who}"><span class="hw-fic" aria-hidden="true">${hwIcon(f.kind)}</span><span class="hw-fname">${esc(f.name||f.url)}</span></button>`).join('')}</div>`;
+  if(files.length<=2) return list;
+  const key = who+':'+hid;
+  return `<details class="hw-fdet" data-k="${esc(key)}"${hwOpenSet.has(key)?' open':''}><summary>📎 ${tr('hw.files',{n:files.length})}</summary>${list}</details>`;
+};
+document.addEventListener('toggle', e => { const d=e.target; if(d?.classList?.contains('hw-fdet')) d.open ? hwOpenSet.add(d.dataset.k) : hwOpenSet.delete(d.dataset.k); }, true);
 function vHomework(){ return S.mode==='student' ? vHwStudent() : vHwTeacher(); }
 function vHwTeacher(){
   const list=hwList(), names=Object.fromEntries(myStudentList().map(x=>[x.uid,x.name])), groups=Object.fromEntries(myGroups().map(g=>[g.id,g.name]));
