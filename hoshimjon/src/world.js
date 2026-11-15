@@ -96,7 +96,7 @@ const LANES = [];
 })();
 function placeRes(r) { const ln = r.lane; if (ln.ax === 'z') r.pos.set(ln.c, 0, r.t); else r.pos.set(r.t, 0, ln.c); r.root.position.copy(r.pos); }
 function resDef(r) {            // suhbat daraxti: tanlangan tilda qisqa salomlashuv
-  const L = CHAT[chatLang()], i = Math.floor(Math.random() * L.length), u = CHAT_UZ[i];
+  const L = CHAT[chatLang()], i = Math.floor(Math.random() * Math.min(L.length, CHAT_UZ.length)), u = CHAT_UZ[i];
   r.def.tree = { n1: { say: L[i][0], uz: u[0], choices: [{ t: L[i][1], uz: u[1], ok: true, next: 'END' }] } };
 }
 
@@ -137,7 +137,7 @@ function worldUpdate(dt) {
       A.tgt = m - dir * 0.9; B.tgt = m + dir * 0.9; ln.phase = 'meet'; ln.timer = 40;
     } else if (ln.phase === 'meet') {
       if (Math.abs(A.t - A.tgt) < 0.15 && Math.abs(B.t - B.tgt) < 0.15) {
-        ln.phase = 'chat'; ln.line = 0; ln.timer = 0.4; ln.conv = CHAT[chatLang()][Math.floor(rw() * 3)];
+        ln.phase = 'chat'; ln.line = 0; ln.timer = 0.4; ln.conv = CHAT[chatLang()][Math.floor(rw() * CHAT[chatLang()].length)];
       } else if (ln.timer <= 0) { ln.phase = 'wander'; ln.timer = 8; }
     } else if (ln.phase === 'chat' && ln.timer <= 0) {
       if (ln.line >= ln.conv.length) { ln.phase = 'wander'; ln.timer = 14 + rw() * 14; }
