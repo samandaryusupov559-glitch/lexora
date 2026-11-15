@@ -355,7 +355,7 @@ const AVP = {
 };
 const AVK = ['skin', 'hair', 'style', 'shirt', 'pants', 'hat'];
 const AVL = { skin: 'Teri rangi', hair: 'Soch rangi', style: 'Soch uslubi', shirt: 'Ust kiyim', pants: 'Shim', hat: 'Bosh kiyim' };
-const avFromUid = uid => { const h = hashN(uid); return { skin: h % 6, hair: (h >> 3) % 7, style: (h >> 6) % 3, shirt: (h >> 9) % 8, pants: (h >> 12) % 5, hat: 0 }; };
+const avFromUid = uid => { const h = hashN(uid); return { skin: h % 6, hair: (h >>> 3) % 7, style: (h >>> 6) % 3, shirt: (h >>> 9) % 8, pants: (h >>> 12) % 5, hat: 0 }; };
 const avClean = a => { const o = {}; AVK.forEach((k, i) => { const n = AVP[k].length, v = Array.isArray(a) ? a[i] : a && a[k]; o[k] = Number.isInteger(v) && v >= 0 && v < n ? v : 0; }); return o; };
 const avOpts = a => ({ skin: AVP.skin[a.skin], hair: AVP.hair[a.hair], hairStyle: AVP.style[a.style], shirt: AVP.shirt[a.shirt], pants: AVP.pants[a.pants], hat: AVP.hat[a.hat] });
 S.av = store.get('hj_avatar', null); if (S.av) S.av = avClean(S.av);
@@ -883,7 +883,7 @@ ov.addEventListener('click', e => {
   const a = t.dataset.act, ks = Object.keys(S.saved).filter(k => LEX[k]);
   if (a === 'start') beginPlay();
   else if (a === 'join') joinPublic();
-  else if (a === 'avatar') openAvatar(showTitle);
+  else if (a === 'avatar') openAvatar(EMBED && ONLINE() ? enterLive : showTitle);   /* Lexora ichida onlayn bo'lsa, "Tayyor" shaharga kiritadi */
   else if (a === 'live') enterLive();
   else if (a === 'catalog') { const m = S.mode; openCatalog(() => { if (m === 'title') showTitle(); else if (m === 'summary') completeChapter(); else if (m === 'end') showEnd(); else { hideOv(); S.mode = 'play'; } }); }
   else if (a === 'closecat') closeCatalog();
