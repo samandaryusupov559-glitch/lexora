@@ -1842,7 +1842,7 @@ h3{font-weight:700;letter-spacing:-.02em}
 <div id="dlg"></div>
 <div id="toast" class="toast" hidden role="status" aria-live="polite"></div>
 
-<script src="hoshimjon/bridge.js"></script>
+<script src="lexora-city/bridge.js"></script>
 <script type="module">
 import { LANGS, DICT } from './i18n.js?v=2026.11.15d';
 /* ---------------- constants ---------------- */
@@ -7695,7 +7695,7 @@ async function sbStart(){
   x.busy=false; renderMain();
 }
 
-/* Lexora City (Hoshimjon): a 3D language town in a same-origin frame. hoshimjon/bridge.js moves chat, positions,
+/* Lexora City : a 3D language town in a same-origin frame. lexora-city/bridge.js moves chat, positions,
    progress and feedback between the frame and Firestore; teachers get a "Watch" tab with chats, mistakes and feedback. */
 const HJ = {bridge:null, key:'', unsubs:[], chat:[], prog:[], feed:[], sess:[]};
 const hjName = () => (S.mode==='student' ? S.myProfile?.name : '') || S.me?.name || (S.me?.email||'').split('@')[0] || 'Student';
@@ -7766,7 +7766,7 @@ function vGame(){
     ${staff ? `<div class="seg" role="group"><button data-act="hj-tab" data-t="play" aria-pressed="${!watch}">${tr('hj.play')}</button><button data-act="hj-tab" data-t="watch" aria-pressed="${f.tab==='watch'}">${tr('hj.watch')}</button><button data-act="hj-tab" data-t="stats" aria-pressed="${f.tab==='stats'}">${tr('hj.stats')}</button></div>` : ''}</div>`;
   if(watch){ hjWatchStart(f.lang, f.day|0); return head+bar+(f.tab==='stats' ? hjStatsHtml() : hjWatchHtml()); }
   setTimeout(()=>hjPlayStart(f.lang),0);
-  return head+bar+`<iframe class="hj-frame" id="hj-frame" data-k="${esc(f.lang)}" src="hoshimjon/index.html?embed=1" allow="fullscreen" title="${esc(tr('hj.h'))}"></iframe>`;
+  return head+bar+`<iframe class="hj-frame" id="hj-frame" data-k="${esc(f.lang)}" src="lexora-city/index.html?embed=1" allow="fullscreen" title="${esc(tr('hj.h'))}"></iframe>`;
 }
 function vLibrary(){
   const items=Object.entries(S.lib||{}).map(([id,x])=>({id,...x}));
@@ -8285,7 +8285,7 @@ document.addEventListener('click', async ev => {
     case 'hj-lang': go('game',{lang:b.dataset.v, tab:S.view.tab}); break;
     case 'hj-tab': go('game',{lang:S.view.lang, tab:b.dataset.t}); break;
     case 'hj-day': go('game',{lang:S.view.lang, tab:'watch', day:+b.dataset.d}); break;
-    case 'hj-copy': { const u=location.origin+'/hoshimjon/?src=share'; (navigator.clipboard?navigator.clipboard.writeText(u):Promise.reject()).then(()=>toast(tr('hj.copied')),()=>{ prompt(tr('hj.share'),u); }); break; }
+    case 'hj-copy': { const u=location.origin+'/lexora-city/?src=share'; (navigator.clipboard?navigator.clipboard.writeText(u):Promise.reject()).then(()=>toast(tr('hj.copied')),()=>{ prompt(tr('hj.share'),u); }); break; }
     case 'hj-del': S.db.doc('hjchat/'+b.dataset.id).delete().catch(()=>toast(tr('hj.err'))); break;
     case 'hj-fix': { const v=b.closest('.hj-row').querySelector('input').value.trim().slice(0,300);
       S.db.doc('hjchat/'+b.dataset.id).update({fix:v, fixBy:hjName()}).then(()=>toast(tr('hj.saved0'))).catch(()=>toast(tr('hj.err'))); break; }
