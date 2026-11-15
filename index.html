@@ -3430,7 +3430,7 @@ const enDate = (s,o) => parseDate(s).toLocaleDateString('en-GB',o);
 const reEsc = s => s.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
 const str = (v,n=400) => String(v??'').trim().slice(0,n);
 
-const PM_DEF = {news:{on:true, name:'The Lexora Daily', price:50000, days:30, hour:7, city:'tashkent'}, study:{on:true, price:50000, days:30}, bundle:{on:false, price:80000, days:30}, speak:{on:true, perMin:2600, days:30}};
+const PM_DEF = {news:{on:true, name:'The Lexora Daily', price:50000, days:30, hour:7, city:'tashkent'}, study:{on:true, price:50000, days:30}, bundle:{on:false, price:80000, days:30}, speak:{on:true, perMin:2500, days:30}};
 function pmInfo(){ const p=S.pm||{}; return {news:{...PM_DEF.news, ...(p.news||{})}, study:{...PM_DEF.study, ...(p.study||{})}, bundle:{...PM_DEF.bundle, ...(p.bundle||{})}, speak:{...PM_DEF.speak, ...(p.speak||{})}, langs:(Array.isArray(p.langs)?p.langs.filter(l=>typeof l==='string'):[]).length?p.langs.filter(l=>typeof l==='string'):['English']}; }
 const langPill = l => l&&l!=='English' ? `<span class="pill">${esc(langName(l))}</span>` : '';
 async function savePm(mut, okMsg){
@@ -3483,6 +3483,10 @@ const studyUntil = p => passUntil(p,'study'), newsUntil = p => passUntil(p,'news
 const hasNews = () => S.mode==='teacher' || newsUntil(S.myPass)>Date.now();
 const speakUntil = p => passUntil(p,'speak'), hasSpeak = () => S.mode==='teacher' || speakUntil(S.myPass)>Date.now();
 const hasStudy = () => S.mode==='teacher' || studyUntil(S.myPass)>Date.now();
+// Speaking Buddy packs: the owner's list (minutes + price), or 10/30/60/100 minutes at the price of one minute
+const speakPacks = () => { const P=pmInfo().speak, raw=Array.isArray(P.packs)?P.packs:[];
+  const ok=raw.map(x=>({mins:Math.round(+x.mins), price:Math.max(0,Math.round(+x.price))})).filter(x=>x.mins>=1 && x.mins<=5000 && isFinite(x.price)).sort((a,b)=>a.mins-b.mins);
+  return ok.length ? ok : [10,30,60,100].map(m=>({mins:m, price:m*P.perMin})); };
 const pmDays = k => Math.max(1, +pmInfo()[k].days || 30);
 const pmName = k => k==='news' ? pmInfo().news.name : k==='bundle' ? tr('pm.b.name') : k==='speak' ? tr('sb.nav') : tr('st.name');
 const dayMonth = ms => dloc(new Date(ms),{day:'numeric',month:'long'});
@@ -3538,12 +3542,12 @@ async function pmGrant(uid, it, amount){
   const days=pmDays(it.kind==='bundle'?'bundle':ks[0]), ends={}; let spkSecs=0;
   ks.forEach((k,i)=>{ const st=cur[k]||{until:0,hist:[]}, from=Math.max(Date.now(), +st.until||0);
     // Speaking Buddy is sold per minute: the money that arrived buys that many minutes, added to what is left (an old pass with no minutes counts as 60)
-    const perMin=Math.max(1,+pmInfo().speak.perMin||2600), secs=k==='speak' ? Math.max(0,Math.floor((+amount||0)/perMin*60)) : 0;
+    const perMin=(+it.mins>0 && +it.price>0) ? it.price/it.mins : Math.max(1,+pmInfo().speak.perMin||2500), secs=k==='speak' ? Math.max(0,Math.floor((+amount||0)/perMin*60+1e-6)) : 0;
     if(k==='speak' && !secs) throw new Error('amount');
     if(k==='speak') spkSecs=secs;
     if(k==='speak') st.quota=(typeof st.quota==='number' ? st.quota : (+st.until>0 ? 3600 : 0))+secs;
     st.until=k==='speak' ? Math.max(+st.until||0, Date.now()+3650*DAY) : from+days*DAY;   // minutes do not expire; `until` stays far away so old checks keep working
-    st.hist=[...(st.hist||[]).slice(-23), {oid:it.id, at:nowTs(), amount:i?0:(+amount||0), days:k==='speak'?0:days, ...(secs?{secs, perMin}:{})}]; st.lang=it.lang||st.lang||'English'; cur[k]=st; ends[k]=st.until; });
+    st.hist=[...(st.hist||[]).slice(-23), {oid:it.id, at:nowTs(), amount:i?0:(+amount||0), days:k==='speak'?0:days, ...(secs?{secs, perMin:Math.round(perMin*100)/100}:{})}]; st.lang=it.lang||st.lang||'English'; cur[k]=st; ends[k]=st.until; });
   await S.db.doc('passes/'+uid).set(cur);
   notify('order',[uid],()=>({subject:tr('pm.emOk',{what:pmName(it.kind==='bundle'?'bundle':ks[0])}), kicker:tr('em.ordK'), lines:ks.map(k=>k==='news'?tr('pm.emNews',{d:dayMonth(ends.news),h:hh(pmInfo().news.hour)}):k==='speak'?tr('sb.emSpeak',{m:Math.floor(spkSecs/60)}):tr('pm.emStudy',{d:dayMonth(ends.study)}))}));
 }
@@ -3569,7 +3573,8 @@ function openPassBuy(kind){
   showDlg(`<form id="pb-form" novalidate>${dlgHead(tr('mk.h'), esc(pmName(kind)))}
     <div class="dlg-body"><p class="muted">${kind==='speak'?tr('sb.buyP',{p:som(P.speak.perMin)}):kind==='news'?tr('nw.buyP',{h:hh(P.news.hour),n:days}):kind==='bundle'?tr('pm.b.buyP',{n:days}):tr('st.buyP',{n:days})}</p>
       ${kind!=='speak'&&until>Date.now()?`<p class="notice info small" style="margin:0">${tr('st.extend',{d:esc(dayMonth(until)),n:days})}</p>`:''}
-      ${kind==='speak'?`<label class="field"><span>${tr('sb.buyMins')}</span><input class="inp num" id="pb-mins" type="number" min="10" max="600" step="5" value="30"></label>`:''}
+      ${kind==='speak'?`<div class="field"><span>${tr('sb.packs')}</span><div class="lp-filter" role="group" id="pb-packs">${speakPacks().map(pk=>`<button type="button" data-m="${pk.mins}" aria-pressed="false">${tr('sb.mm',{n:pk.mins})} · ${som(pk.price)}</button>`).join('')}</div></div>
+        <label class="field"><span>${tr('sb.buyMins')}</span><input class="inp num" id="pb-mins" type="number" min="1" max="5000" step="1" inputmode="numeric" value="30"></label>`:''}
       <div class="field"><span>${tr('mk.total')}</span><b class="num mk-total">${som(price)}</b></div>
       <div class="field"><span>${tr('pf.how')}</span>${ms.length?`<div class="list pm-list">${ms.map(m=>methodRow(m,false)).join('')}</div>`:`<p class="small faint">${tr('pf.noMethods')}</p>`}</div>
       <div class="lg-2"><label class="field"><span>${tr('pf.method')}</span><select class="inp" id="pb-method">${kinds.map(k=>`<option value="${k}">${tr('lg.m.'+k)}</option>`).join('')}</select></label>
@@ -3577,25 +3582,30 @@ function openPassBuy(kind){
       ${P.langs.length>1&&kind!=='speak'?`<label class="field"><span>${tr('pm.l.pick')}</span><select class="inp" id="pb-lang">${langOpts(P.langs, P.langs[0])}</select></label>`:''}
       <p class="small faint">${tr('mk.safe')}</p><p class="lg-err" id="pb-err" role="alert"></p></div>
     <div class="dlg-foot"><button type="button" class="btn ghost" data-act="dlg-close">${tr('cancel')}</button><button class="btn pen" id="pb-save">${tr('mk.paidSend')}</button></div></form>`, {type:'pass', id:kind});
-  const sbMins=()=>Math.min(600,Math.max(10,Math.round(+$('#pb-mins')?.value||30)));   // Speaking Buddy: the student picks the minutes
-  if(kind==='speak') $('#pb-mins').addEventListener('input',()=>{ $('.mk-total').textContent=som(sbMins()*P.speak.perMin); });
+  // Speaking Buddy: the student types any number of minutes or taps a pack; a pack has its own price, other numbers cost minutes × the price of one minute
+  const sbMins=()=>Math.min(5000,Math.max(1,Math.round(+$('#pb-mins')?.value||30)));
+  const sbPrice=m=>{ const pk=speakPacks().find(x=>x.mins===m); return pk ? pk.price : m*P.speak.perMin; };
+  if(kind==='speak'){ const upd=()=>{ const m=sbMins(); $('.mk-total').textContent=som(sbPrice(m)); document.querySelectorAll('#pb-packs button').forEach(b=>b.setAttribute('aria-pressed', String(+b.dataset.m===m))); };
+    $('#pb-mins').addEventListener('input',upd);
+    $('#pb-packs').addEventListener('click',e=>{ const b=e.target.closest('button[data-m]'); if(!b) return; $('#pb-mins').value=b.dataset.m; upd(); });
+    upd(); }
   $('#pb-form').addEventListener('submit', async e=>{
     e.preventDefault(); const next=clone(S.myPOrders)||{items:[]}; next.items=(next.items||[]).slice(-49); next.name=S.myProfile?.name||'';
     const mins=kind==='speak'?sbMins():0;
-    const it={id:newId(), kind, method:$('#pb-method').value, ref:$('#pb-ref').value.trim(), price:kind==='speak'?mins*P.speak.perMin:price, at:nowTs(), ...(mins?{mins}:{}), ...($('#pb-lang')?{lang:$('#pb-lang').value}:{})};
+    const it={id:newId(), kind, method:$('#pb-method').value, ref:$('#pb-ref').value.trim(), price:kind==='speak'?sbPrice(mins):price, at:nowTs(), ...(mins?{mins}:{}), ...($('#pb-lang')?{lang:$('#pb-lang').value}:{})};
     next.items.push(it); $('#pb-save').disabled=true;
     try{ await S.db.doc('passOrders/'+S.uid).set(next); S.myPOrders=next; closeDlg(); toast(tr('mk.sent')); refreshStudent(); }catch(e2){ $('#pb-save').disabled=false; dbErr(e2,'order'); }
   });
 }
 /* teacher: Speaking Buddy money arrived: the system turns it into minutes (amount ÷ price of one minute) */
 function openSbPay(uid,it){
-  const perMin=pmInfo().speak.perMin, name=S.profiles[uid]?.name||'?';
+  const perMin=(+it.mins>0 && +it.price>0) ? it.price/it.mins : pmInfo().speak.perMin, name=S.profiles[uid]?.name||'?';
   showDlg(`<form id="sp-form" novalidate>${dlgHead(tr('sb.po.h'), esc(name))}
     <div class="dlg-body">${it.mins?`<p class="muted">${tr('sb.po.ask',{m:it.mins, p:som(it.price)})}</p>`:''}
       <label class="field"><span>${tr('sb.po.amt')}</span><input class="inp num" id="sp-amt" type="number" min="0" step="1000" value="${+it.price||0}"></label>
       <p class="notice info small" style="margin:0" id="sp-calc"></p></div>
     <div class="dlg-foot"><button type="button" class="btn ghost" data-act="dlg-close">${tr('cancel')}</button><button class="btn primary" id="sp-save">${tr('mk.confirmPaid')}</button></div></form>`, {type:'give'});
-  const mins=()=>Math.floor(Math.max(0,+$('#sp-amt').value||0)/perMin*60)/60, calc=()=>{ const m=mins(); $('#sp-calc').textContent=tr('sb.po.calc',{m:(Math.round(m*10)/10), p:som(perMin)}); $('#sp-save').disabled=m<=0; };
+  const mins=()=>Math.floor(Math.max(0,+$('#sp-amt').value||0)/perMin*60+1e-6)/60, calc=()=>{ const m=mins(); $('#sp-calc').textContent=tr('sb.po.calc',{m:(Math.round(m*10)/10), p:som(Math.round(perMin))}); $('#sp-save').disabled=m<=0; };
   $('#sp-amt').addEventListener('input',calc); calc();
   $('#sp-form').addEventListener('submit', async e=>{ e.preventDefault(); $('#sp-save').disabled=true;
     try{ await pmGrant(uid,it,Math.max(0,Math.round(+$('#sp-amt').value||0))); closeDlg(); toast(tr('bk.saved')); }
@@ -3719,12 +3729,16 @@ function pmSettings(kind){
     });
   } else if(kind==='speak'){ const T=P.speak;
     showDlg(`<form id="ps-form" novalidate>${dlgHead(tr('pm.settings'), tr('sb.nav'))}<div class="dlg-body">
-      <label class="field"><span>${tr('sb.s.rate')}</span><input class="inp num" id="ps-rate" type="number" min="100" step="100" value="${+T.perMin||2600}"></label>
+      <label class="field"><span>${tr('sb.s.rate')}</span><input class="inp num" id="ps-rate" type="number" min="100" step="100" value="${+T.perMin||2500}"></label>
       <p class="small faint">${tr('sb.s.rateH')}</p>
+      <div class="field"><span>${tr('sb.s.packs')}</span>${Array.from({length:6},(_,i)=>speakPacks()[i]||{}).map((r,i)=>`<div class="lg-2" style="margin-bottom:6px"><input class="inp num" id="ps-pm${i}" type="number" min="1" max="5000" placeholder="${esc(tr('sb.s.pmins'))}" value="${r.mins||''}"><input class="inp num" id="ps-pp${i}" type="number" min="0" step="500" placeholder="${esc(tr('sb.s.pprice'))}" value="${r.price!=null?r.price:''}"></div>`).join('')}<p class="small faint">${tr('sb.s.packsH')}</p></div>
       <label class="row" style="gap:8px"><input type="checkbox" id="ps-on" ${T.on?'checked':''}> <span>${tr('pm.sell')}</span></label></div>
       <div class="dlg-foot"><button type="button" class="btn ghost" data-act="dlg-close">${tr('cancel')}</button><button class="btn primary">${tr('save')}</button></div></form>`, {type:'ps'});
     $('#ps-form').addEventListener('submit', async e=>{ e.preventDefault();
-      const speak={on:$('#ps-on').checked, perMin:Math.min(1000000,Math.max(100,Math.round(+$('#ps-rate').value||2600))), days:+T.days||30};
+      const perMin=Math.min(1000000,Math.max(100,Math.round(+$('#ps-rate').value||2500))), seen=new Set(), packs=[];
+      for(let i=0;i<6;i++){ const m=Math.round(+$('#ps-pm'+i).value||0); if(m<1||m>5000||seen.has(m)) continue; seen.add(m); const raw=$('#ps-pp'+i).value; packs.push({mins:m, price:raw===''?m*perMin:Math.max(0,Math.round(+raw||0))}); }
+      packs.sort((a,b)=>a.mins-b.mins);
+      const speak={on:$('#ps-on').checked, perMin, days:+T.days||30, packs};
       if(await savePm(n=>{ n.speak=speak; }, tr('bk.saved'))) closeDlg();
     });
   } else { const T=P.study;
