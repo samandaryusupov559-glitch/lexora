@@ -686,6 +686,7 @@ button.slot.ask:hover{transform:translateY(-2px);border-color:var(--pen);box-sha
 .pm-art-cards span:nth-child(1){transform:rotate(-12deg) translate(-12px,4px);color:var(--c-prep)} .pm-art-cards span:nth-child(2){transform:rotate(6deg) translate(10px,-2px);color:var(--pen)} .pm-art-cards span:nth-child(3){color:var(--ok)}
 .pm-card:hover .pm-art-cards span:nth-child(1){transform:rotate(-18deg) translate(-20px,6px)} .pm-card:hover .pm-art-cards span:nth-child(2){transform:rotate(12deg) translate(18px,-4px)}
 .pm-art-cards span{transition:transform .4s var(--spring)}
+.pm-art-speak span:nth-child(2){font-size:20px} .pm-art-speak span:nth-child(3){font-size:44px}
 .pm-body{padding:18px 20px;display:flex;flex-direction:column;gap:8px;min-width:0}
 .pm-body h3{font-size:22px;line-height:1.15;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 .pm-feats{margin:2px 0 0;padding:0;list-style:none;display:grid;gap:4px;font-size:14.5px;color:var(--ink-2)}
@@ -3596,7 +3597,7 @@ const pmBack = () => S.mode==='student' && (hasNews()||hasStudy()||myPassOrders(
 const newsArt = () => `<div class="pm-art-news" aria-hidden="true"><b>${esc(pmInfo().news.name)}</b><i></i><span></span><span></span><span class="s"></span><em></em><span></span><span class="s"></span></div>`;
 const bundleArt = () => `<div class="pm-art-cards" aria-hidden="true"><span>📰</span><span>Aa</span><span>✓</span></div>`;
 const cardsArt = () => `<div class="pm-art-cards" aria-hidden="true"><span>Aa</span><span>?</span><span>✓</span></div>`;
-const speakArt = () => `<div class="pm-art-cards" aria-hidden="true"><span>🎙</span><span>Hi</span><span>✓</span></div>`;
+const speakArt = () => `<div class="pm-art-cards pm-art-speak" aria-hidden="true"><span>Hi</span><span>Salom</span><span>🎙</span></div>`;
 function pmCard(kind, o){
   return `<article class="pm-card pm-${kind}"><div class="pm-art">${kind==='news'?newsArt():kind==='bundle'?bundleArt():kind==='speak'?speakArt():cardsArt()}</div><div class="pm-body">
     <span class="label">${o.tag}</span><h3>${o.title}</h3><p class="muted">${o.pitch}</p>
