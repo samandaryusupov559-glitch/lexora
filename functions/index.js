@@ -627,7 +627,7 @@ async function speakRun(uid, body, now = Date.now()) {
   if (!agent) return { code: 400, body: { ok: false, error: 'lang' } };
   const staff = !!(await senderOf(uid)), st = await speakState(uid, now), info = { ...st, staff };
   if ((body || {}).action !== 'start') return { code: 200, body: { ok: true, ...info } };
-  const key = process.env.ELEVENLABS_API_KEY;
+  const key = String(process.env.ELEVENLABS_API_KEY || '').trim().replace(/^["']|["']$/g, '');   // a pasted key may carry a space, a line break or quotes
   if (!key) return { code: 503, body: { ok: false, error: 'off' } };
   let trial = false;
   if (!staff && !st.paid) {
@@ -637,7 +637,7 @@ async function speakRun(uid, body, now = Date.now()) {
   try {
     const r = await fetch('https://api.elevenlabs.io/v1/convai/conversation/get-signed-url?agent_id=' + encodeURIComponent(agent), { headers: { 'xi-api-key': key } });
     const j = await r.json().catch(() => ({}));
-    if (!r.ok || !j.signed_url) { const e = new Error('elevenlabs ' + r.status); e.why = r.status + ' ' + JSON.stringify(j.detail || j).slice(0, 160); throw e; }
+    if (!r.ok || !j.signed_url) { const e = new Error('elevenlabs ' + r.status); e.why = r.status + ' ' + JSON.stringify(j.detail || j).slice(0, 130) + ' | key: ' + key.length + ' chars, starts ' + key.slice(0, 3); throw e; }
     const after = trial ? await speakState(uid, now) : st;
     return { code: 200, body: { ok: true, signedUrl: j.signed_url, ...after, staff } };
   } catch (e) {
