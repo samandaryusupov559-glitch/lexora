@@ -33,3 +33,9 @@ Rules:
 - Each marked word needs an entry in `LEX`: `{ uz: "tarjima", g: "Uzbek grammar/usage note", ex: "example sentence that contains the key exactly" }`.
   Do not reuse an existing LEX key. No braces inside choices.
 - Do not change the story chapters, the engine, models or any file outside this folder.
+
+
+## Dunyo (world.js, world1.js)
+- `world1.js`: katta binolar (daraxtlardan oldin kiradi). `world.js`: mashinalar, qushlar, shahar aholisi (`RES`). Ikkalasi `build.py` orqali `game.js` ichiga qo'shiladi.
+- Aholi `LANES` bo'ylab yuradi, juftlashib uchrashadi va `CHAT[til]` dan suhbat qiladi. Yangi suhbat qo'shish: `CHAT` ga qator qo'shing (4 ta gap), `CHAT_UZ` ga tarjima.
+- Yangi aholi qo'shish: `RES_NAMES` ga ism, `LANES` sonini oshiring.

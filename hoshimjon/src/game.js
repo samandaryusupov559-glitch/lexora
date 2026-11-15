@@ -85,7 +85,7 @@ const camera = new THREE.PerspectiveCamera(55, 1, 0.1, 400);
   gr.addColorStop(0, '#2f3d86'); gr.addColorStop(0.42, '#c8718f'); gr.addColorStop(0.74, '#f6a96b'); gr.addColorStop(1, '#fbd39a');
   g.fillStyle = gr; g.fillRect(0, 0, 2, 256);
   scene.background = new THREE.CanvasTexture(cv);
-  scene.fog = new THREE.Fog(0xf2b184, 45, 135);
+  scene.fog = new THREE.Fog(0xf2b184, 60, 200);
 })();
 scene.add(new THREE.HemisphereLight(0xffd9b0, 0x56664a, 0.95));
 const sun = new THREE.DirectionalLight(0xffb870, 1.1);
@@ -101,18 +101,26 @@ const rand = rng(77);
 
 /* ---- zamin, yo'llar ---- */
 (function ground() {
-  const g = new THREE.Mesh(new THREE.PlaneGeometry(300, 300), M(0x7fae6a));
+  const g = new THREE.Mesh(new THREE.PlaneGeometry(520, 520), M(0x7fae6a));
   g.rotation.x = -Math.PI / 2; g.receiveShadow = true; scene.add(g);
   const road = M(0x5a5d6a);
-  const r1 = new THREE.Mesh(new THREE.PlaneGeometry(8, 150), road); r1.rotation.x = -Math.PI / 2; r1.position.y = 0.02; r1.receiveShadow = true; scene.add(r1);
-  const r2 = new THREE.Mesh(new THREE.PlaneGeometry(150, 8), road); r2.rotation.x = -Math.PI / 2; r2.position.y = 0.021; r2.receiveShadow = true; scene.add(r2);
+  const r1 = new THREE.Mesh(new THREE.PlaneGeometry(8, 280), road); r1.rotation.x = -Math.PI / 2; r1.position.y = 0.02; r1.receiveShadow = true; scene.add(r1);
+  const r2 = new THREE.Mesh(new THREE.PlaneGeometry(280, 8), road); r2.rotation.x = -Math.PI / 2; r2.position.y = 0.021; r2.receiveShadow = true; scene.add(r2);
   const plaza = new THREE.Mesh(new THREE.CircleGeometry(10, 48), M(0xdccdaa)); plaza.rotation.x = -Math.PI / 2; plaza.position.y = 0.04; plaza.receiveShadow = true; scene.add(plaza);
   const ring = new THREE.Mesh(new THREE.RingGeometry(9.2, 10, 48), M(0xb9845a)); ring.rotation.x = -Math.PI / 2; ring.position.y = 0.05; scene.add(ring);
+  [[111, 7, 0, -52], [111, 7, 0, 52], [7, 111, -52, 0], [7, 111, 52, 0]].forEach(([w, h, x, z]) => {
+    const m = new THREE.Mesh(new THREE.PlaneGeometry(w, h), road); m.rotation.x = -Math.PI / 2; m.position.set(x, 0.022, z); m.receiveShadow = true; scene.add(m);
+  });
   const dash = M(0xf1e8cf);
-  for (let z = -66; z <= 66; z += 6) { if (Math.abs(z) < 11) continue; const d = new THREE.Mesh(new THREE.PlaneGeometry(0.3, 2.6), dash); d.rotation.x = -Math.PI / 2; d.position.set(0, 0.03, z); scene.add(d); }
-  for (let x = -66; x <= 66; x += 6) { if (Math.abs(x) < 11) continue; const d = new THREE.Mesh(new THREE.PlaneGeometry(2.6, 0.3), dash); d.rotation.x = -Math.PI / 2; d.position.set(x, 0.03, 0); scene.add(d); }
+  for (let z = -132; z <= 132; z += 6) { if (Math.abs(z) < 11) continue; const d = new THREE.Mesh(new THREE.PlaneGeometry(0.3, 2.6), dash); d.rotation.x = -Math.PI / 2; d.position.set(0, 0.03, z); scene.add(d); }
+  for (let x = -132; x <= 132; x += 6) { if (Math.abs(x) < 11) continue; const d = new THREE.Mesh(new THREE.PlaneGeometry(2.6, 0.3), dash); d.rotation.x = -Math.PI / 2; d.position.set(x, 0.03, 0); scene.add(d); }
 })();
 
+function onRoad(x, z, m) {
+  m = m || 0;
+  return Math.abs(x) < 7 + m || Math.abs(z) < 7 + m ||
+    (Math.abs(Math.abs(x) - 52) < 6 + m && Math.abs(z) < 58 + m) || (Math.abs(Math.abs(z) - 52) < 6 + m && Math.abs(x) < 58 + m);
+}
 /* ---- binolar ---- */
 const boxes = [];      // to'g'ri to'rtburchak to'siqlar
 const circles = [];    // dumaloq to'siqlar
@@ -132,8 +140,11 @@ function addBuilding(o) {
   mk(new THREE.BoxGeometry(o.w, o.h, o.d), M(o.color), 0, o.h / 2, 0);
   mk(new THREE.BoxGeometry(o.w + 0.3, 0.5, o.d + 0.3), M(0x8d7f6c), 0, 0.25, 0);
   const rh = o.rh || 2.4;
-  const rg = new THREE.Group(); rg.scale.set((o.w / 2 + 0.7) / 0.7071, rh, (o.d / 2 + 0.7) / 0.7071); rg.position.y = o.h + rh / 2;
-  const cone = new THREE.Mesh(new THREE.ConeGeometry(1, 1, 4), M(o.roof)); cone.rotation.y = Math.PI / 4; cone.castShadow = true; rg.add(cone); g.add(rg);
+  if (o.flat) { mk(new THREE.BoxGeometry(o.w + 0.5, 0.5, o.d + 0.5), M(o.roof), 0, o.h + 0.25, 0); mk(new THREE.BoxGeometry(o.w * 0.35, 1.2, o.d * 0.35), M(0x8d8f99), 0, o.h + 1.1, 0); }
+  else {
+    const rg = new THREE.Group(); rg.scale.set((o.w / 2 + 0.7) / 0.7071, rh, (o.d / 2 + 0.7) / 0.7071); rg.position.y = o.h + rh / 2;
+    const cone = new THREE.Mesh(new THREE.ConeGeometry(1, 1, 4), M(o.roof)); cone.rotation.y = Math.PI / 4; cone.castShadow = true; rg.add(cone); g.add(rg);
+  }
   if (o.sign) {
     mk(new THREE.BoxGeometry(1.7, 2.7, 0.25), M(0x5a3a28), 0, 1.35, o.d / 2 + 0.02);
     mk(new THREE.BoxGeometry(o.w * 0.5, 0.14, 1.5), M(o.awning || 0xc8452f), 0, 3.1, o.d / 2 + 0.7).rotation.x = 0.22;
@@ -141,7 +152,8 @@ function addBuilding(o) {
     sp.position.set(0, 4.1, o.d / 2 + 0.06); g.add(sp);
   }
   const glass = M(0xffe7a6, { emissive: 0xffc866, emissiveIntensity: 0.55, roughness: 0.4 });
-  const rows = o.h > 6 ? [2.3, 5.3, 7.4] : [2.4];
+  let rows = o.h > 6 ? [2.3, 5.3, 7.4] : [2.4];
+  if (o.h > 10) { rows = [2.3]; for (let y = 5.6; y < o.h - 1.2; y += 3.1) rows.push(y); }
   rows.forEach((y, ri) => {
     const cols = o.sign && ri === 0 ? [-1, 1] : [-1, 0, 1];
     cols.forEach(c => mk(new THREE.BoxGeometry(1.4, 1.3, 0.16), glass, c * o.w * 0.3, y, o.d / 2 + 0.02));
@@ -174,15 +186,16 @@ const fountain = new THREE.Group();
   circles.push({ x: 0, z: 0, r: 3.3 });
 })();
 
+/*__WORLD1__*/
 /* ---- daraxtlar, chiroqlar, skameyka, bulutlar ---- */
 const NPC_SPOTS = [[-5.6, -14], [5.6, -14], [6.6, 17], [-7, 7.5], [-6.6, 16], [4.6, -4.4]];
 (function trees() {
   const trunk = M(0x6b4a30), leaf1 = M(0x3f8a4f), leaf2 = M(0x58a35a);
   let n = 0, tries = 0;
-  while (n < 55 && tries < 800) {
+  while (n < 170 && tries < 3000) {
     tries++;
-    const x = (rand() - 0.5) * 112, z = (rand() - 0.5) * 112;
-    if (Math.abs(x) < 7 || Math.abs(z) < 7 || Math.hypot(x, z) < 13) continue;
+    const x = (rand() - 0.5) * 196, z = (rand() - 0.5) * 196;
+    if (onRoad(x, z, 1.5) || Math.hypot(x, z) < 13) continue;
     if (boxes.some(b => x > b.x0 - 3.5 && x < b.x1 + 3.5 && z > b.z0 - 3.5 && z < b.z1 + 3.5)) continue;
     if (NPC_SPOTS.some(p => Math.hypot(p[0] - x, p[1] - z) < 5)) continue;
     const s = 0.8 + rand() * 0.7, g = new THREE.Group(); g.position.set(x, 0, z); g.scale.setScalar(s);
@@ -352,9 +365,11 @@ function rebuildHero() {
   if (typeof LIVE !== 'undefined' && LIVE.heroLabel) hero.root.add(LIVE.heroLabel);
 }
 scene.add(hero.root);
+const WB = 100;   // dunyo chegarasi
 const player = { pos: new THREE.Vector3(0, 0, 32), rot: Math.PI, walkT: 0, talking: false };
 
 /* ---- NPClar: 3D modellar (GLB). Model yuklanguncha oddiy shakldagi nusxa turadi ---- */
+/*__WORLD__*/
 const PLACE = {
   farid: () => market.front(2.4), maya: () => cafe.front(2.4), elena: () => hotel.front(2.4),
   leo: () => ({ x: -7, z: 7.5 }), noor: () => library.front(2.4), keeper: () => ({ x: 4.6, z: -4.4 })
@@ -461,7 +476,7 @@ canvas.addEventListener('pointerup', endDrag); canvas.addEventListener('pointerc
 
 function nearestNpc() {
   let best = null, bd = 3.8;
-  for (const n of NPC) { const d = Math.hypot(n.pos.x - player.pos.x, n.pos.z - player.pos.z); if (d < bd) { bd = d; best = n; } }
+  for (const n of NPC.concat(RES)) { const d = Math.hypot(n.pos.x - player.pos.x, n.pos.z - player.pos.z); if (d < bd) { bd = d; best = n; } }
   return best;
 }
 function collide(p, r) {
@@ -476,7 +491,7 @@ function collide(p, r) {
       }
     }
   }
-  for (const c of circles) {
+  for (const c of circles.concat(RES.map(q => ({ x: q.pos.x, z: q.pos.z, r: 0.45 })))) {
     const dx = p.x - c.x, dz = p.z - c.z, d = Math.hypot(dx, dz), m = c.r + r;
     if (d < m && d > 1e-6) { p.x = c.x + dx / d * m; p.z = c.z + dz / d * m; }
   }
@@ -531,7 +546,7 @@ function update(dt) {
       let dx = fx * iz + rx * ix, dz = fz * iz + rz * ix; const dl = Math.hypot(dx, dz); dx /= dl; dz /= dl;
       player.pos.x += dx * spd * dt; player.pos.z += dz * spd * dt;
       collide(player.pos, 0.55);
-      player.pos.x = clamp(player.pos.x, -58, 58); player.pos.z = clamp(player.pos.z, -58, 58);
+      player.pos.x = clamp(player.pos.x, -WB, WB); player.pos.z = clamp(player.pos.z, -WB, WB);
       player.rot += angDiff(player.rot, Math.atan2(dx, dz)) * Math.min(1, dt * 14);
       moving = mag * run; player.walkT += dt * (8 + 3 * run);
     }
@@ -564,6 +579,7 @@ function update(dt) {
   }
   fountain.water.position.y = 0.7 + Math.sin(T * 2) * 0.012;
   clouds.forEach(c => { c.position.x += dt * 0.6; if (c.position.x > 130) c.position.x = -130; });
+  worldUpdate(dt);
   liveUpdate(dt);
   updateCamera(dt);
   updateHud();
@@ -610,6 +626,7 @@ function rich(text) {
   });
 }
 function openDialog(npc) {
+  if (npc.def.id === 'res') resDef(npc);
   const def = npc.def, run = def.chapter === S.chapter;
   let tree, adv = false, startId = 'n1';
   const tops = (typeof TOPICS !== 'undefined' && TOPICS[def.id]) || [], done = S.topics[def.id] || 0;
@@ -917,5 +934,5 @@ if (hot && hot.snapshot) hot.snapshot(() => ({ saved: S.saved, hasPack: S.hasPac
 /*__LIVE__*/
 frame();
 if (hot && hot.ready) hot.ready(start); else start((hot && hot.data) || {});
-window.__game = { S, player, NPC, LIVE };
+window.__game = { S, player, NPC, LIVE, RES, camera, WORLD_CARS, WORLD_BIRDS, boxes, scene, get camYaw() { return camYaw; }, set camYaw(v) { camYaw = v; } };
 })();
