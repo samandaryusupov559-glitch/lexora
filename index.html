@@ -1826,7 +1826,7 @@ h3{font-weight:700;letter-spacing:-.02em}
 <div id="toast" class="toast" hidden role="status" aria-live="polite"></div>
 
 <script type="module">
-import { LANGS, DICT } from './i18n.js?v=2026.11.15c';
+import { LANGS, DICT } from './i18n.js?v=2026.11.15d';
 /* ---------------- constants ---------------- */
 const TYPES = [['gr','Gr'],['t','T'],['art','Art'],['prep','Prep'],['ww','WW'],['sp','Sp'],['p','P'],['wo','WO'],['agr','Agr'],['st','St'],['good','★']]
   .map(([k,code])=>({k, code, get name(){ return tr('type.'+k); }}));
@@ -7598,7 +7598,7 @@ function vSpeak(){
   else if(!cur) inner=`<div class="notice">${tr('sb.noLang')}</div>`;
   else if(S.demo || !S.user) inner=`<div class="notice">${tr('sb.demo')}</div>`;
   else if(!staff && !paid && left===0) inner=`<h3>${tr('sb.payH')}</h3><p class="muted">${tr('sb.payP',{n:pmInfo().speak.days, p:som(pmInfo().speak.price)})}</p>${pend?`<div class="pm-status">${tr('pm.pending')}</div>`:`<button class="btn pen" data-act="pb-open" data-k="speak">${tr('mk.buy')}</button>`}`;
-  else inner=`<p class="muted">${staff?tr('sb.staff'):paid?tr('sb.pass',{d:esc(dayMonth(until))}):left==null?tr('sb.loading'):tr('sb.freeLeft',{n:left,t:x.info.free||2})}</p>${x.err?`<div class="notice" role="alert" style="margin:0">${tr('sb.e.'+(x.err==='off'&&staff?'offT':x.err))}</div>`:''}${start}`;
+  else inner=`<p class="muted">${staff?tr('sb.staff'):paid?tr('sb.pass',{d:esc(dayMonth(until))}):left==null?tr('sb.loading'):tr('sb.freeLeft',{n:left,t:x.info.free||2})}</p>${x.err?`<div class="notice" role="alert" style="margin:0">${tr('sb.e.'+(staff&&['off','net','up'].includes(x.err)?x.err+'T':x.err),{w:esc(x.why||'')})}</div>`:''}${start}`;
   const body = cur ? `<div id="sb-box" class="sb-box" data-l="${esc(cur)}">${inner}</div>` : `<div id="sb-box" class="sb-box">${inner}</div>`;
   return `<div class="page-head"><div><h1>${tr('sb.h')}</h1><p>${tr('sb.p')}</p></div></div>${chips}
     <div class="card section sb-card">${body}</div>
@@ -7615,11 +7615,11 @@ async function sbStart(){
   const x=sbSt(), lang=sbCur(); if(x.busy || !lang) return;
   x.busy=true; x.err=''; renderMain();
   try{
-    await sbScript();   // the widget code first, so a failed download never uses up a free conversation
+    try{ await sbScript(); }catch(e){ x.err='script'; x.busy=false; renderMain(); return; }   // the widget code first, so a failed download never uses up a free conversation
     const r=await sbApi('start', lang);
     if(r.ok && r.signedUrl){ x.busy=false; x.info=r; sbMount(lang, r.signedUrl); renderMain(); return; }
     if(r.error==='paywall'){ x.info=r; x.err=''; }
-    else x.err = r.error==='off' ? 'off' : r.error==='upstream' ? 'net' : 'server';
+    else { x.err = r.error==='off' ? 'off' : r.error==='upstream' ? 'up' : 'server'; x.why=r.why||''; }
   }catch(e){ x.err='net'; }
   x.busy=false; renderMain();
 }

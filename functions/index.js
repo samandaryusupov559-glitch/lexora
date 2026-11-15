@@ -637,12 +637,12 @@ async function speakRun(uid, body, now = Date.now()) {
   try {
     const r = await fetch('https://api.elevenlabs.io/v1/convai/conversation/get-signed-url?agent_id=' + encodeURIComponent(agent), { headers: { 'xi-api-key': key } });
     const j = await r.json().catch(() => ({}));
-    if (!r.ok || !j.signed_url) throw new Error('elevenlabs ' + r.status);
+    if (!r.ok || !j.signed_url) { const e = new Error('elevenlabs ' + r.status); e.why = r.status + ' ' + JSON.stringify(j.detail || j).slice(0, 160); throw e; }
     const after = trial ? await speakState(uid, now) : st;
     return { code: 200, body: { ok: true, signedUrl: j.signed_url, ...after, staff } };
   } catch (e) {
     if (trial) await speakGive(uid, now);
-    logger.error('speakToken', e); return { code: 502, body: { ok: false, error: 'upstream' } };
+    logger.error('speakToken', e); return { code: 502, body: { ok: false, error: 'upstream', why: String(e.why || e.message || e).slice(0, 200), staff } };
   }
 }
 exports.speakToken = onRequest({ cors: CALL_ORIGINS, invoker: 'public' }, async (req, res) => {
