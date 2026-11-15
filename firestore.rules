@@ -650,5 +650,41 @@ service cloud.firestore {
       allow read: if isMe(uid) || isTeacher();
       allow write: if isTeacher();
     }
+
+    // Lexora City (the 3D game): live positions, city chat, progress and feedback.
+    // Everyone signed in sees the city; only teachers read progress and every feedback note and correct chat lines.
+    match /hjplayers/{uid} {
+      allow read: if signedIn();
+      allow create, update: if isMe(uid)
+        && request.resource.data.uid == uid
+        && request.resource.data.name is string && request.resource.data.name.size() <= 60
+        && request.resource.data.room is string && request.resource.data.room.size() <= 20
+        && request.resource.data.x is number && request.resource.data.z is number && request.resource.data.r is number;
+      allow delete: if isMe(uid) || isTeacher();
+    }
+    match /hjchat/{id} {
+      allow read: if signedIn();
+      allow create: if signedIn()
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.name is string && request.resource.data.name.size() <= 60
+        && request.resource.data.room is string && request.resource.data.room.size() <= 40
+        && request.resource.data.text is string && request.resource.data.text.size() > 0 && request.resource.data.text.size() <= 200
+        && !('fix' in request.resource.data);
+      allow update: if (isTeacher() || isStaff())
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['fix', 'fixBy']);
+      allow delete: if isTeacher() || isStaff();
+    }
+    match /hjprog/{uid} {
+      allow read: if isMe(uid) || isTeacher() || isStaff();
+      allow create, update: if isMe(uid) && request.resource.data.uid == uid
+        && request.resource.data.name is string && request.resource.data.name.size() <= 60
+        && request.resource.data.weak is list && request.resource.data.weak.size() <= 15;
+    }
+    match /hjfeed/{id} {
+      allow read: if isTeacher() || isStaff() || (signedIn() && resource.data.uid == request.auth.uid);
+      allow create: if signedIn() && request.resource.data.uid == request.auth.uid
+        && request.resource.data.text is string && request.resource.data.text.size() > 0 && request.resource.data.text.size() <= 600;
+      allow delete: if isTeacher() || isStaff();
+    }
   }
 }

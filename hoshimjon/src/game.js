@@ -38,7 +38,7 @@ const S = {
   stats: {}, level: 1, topics: {}      // moslashuv: so'z statistikasi, daraja (0 oson, 1 o'rta, 2 qiyin), suhbat mavzulari
 };
 let D = null;               // joriy suhbat
-function persist() { store.set(SKEY(), S.saved); store.set(SKEY() + '_prog', { stats: S.stats, level: S.level, topics: S.topics }); if (DEMO) store.set('hj_pack', S.hasPack); }
+function persist() { scheduleProg(); store.set(SKEY(), S.saved); store.set(SKEY() + '_prog', { stats: S.stats, level: S.level, topics: S.topics }); if (DEMO) store.set('hj_pack', S.hasPack); }
 function loadProg() {
   const p = store.get(SKEY() + '_prog', {});
   S.stats = p.stats || {}; S.level = typeof p.level === 'number' ? p.level : 1; S.topics = p.topics || {};
@@ -305,6 +305,7 @@ function buildChar(opt) {
     c.scale.z = 0.95;
   }
   g.scale.setScalar(o.scale);
+  P.mats = { shirt, hair, skin, pants };
   const root = new THREE.Group(); root.add(g);
   return { root, g, P };
 }
@@ -329,7 +330,7 @@ function markerSprite() {
 }
 
 /* ---- Hoshimjon ---- */
-const hero = buildChar({ plaid: true, hood: true, backpack: true, skin: 0xf1c09b, hair: 0x2b1b14, pants: 0x24262f, hairStyle: 'short', hat: 'beanie' });
+const hero = buildChar({ shirt: 0x3b6ea5, skin: 0xf1c09b, hair: 0x2b1b14, pants: 0x24262f, hairStyle: 'short', hat: 'beanie' });
 scene.add(hero.root);
 const player = { pos: new THREE.Vector3(0, 0, 32), rot: Math.PI, walkT: 0, talking: false };
 function setCap(on) { hero.P.hat.visible = !!on; }
@@ -396,8 +397,10 @@ const npcById = id => NPC.find(n => n.def.id === id);
 /* ================= KIRISH ================= */
 const keys = {};
 window.addEventListener('keydown', e => {
+  if (e.target && /^(INPUT|TEXTAREA)$/.test(e.target.tagName)) { if (e.key === 'Escape') e.target.blur(); return; }
   const k = e.key.length === 1 ? e.key.toLowerCase() : e.key;
   keys[k] = true;
+  if (S.mode === 'play' && LIVE.on && (k === 't' || (k === 'Enter' && !nearestNpc()))) { e.preventDefault(); if (locked()) document.exitPointerLock(); $('#chat').classList.remove('min'); $('#cIn').focus(); return; }
   if (S.mode === 'play' && (k === 'e' || k === 'Enter')) { const n = nearestNpc(); if (n) openDialog(n); }
   if (S.mode === 'dialog') {
     if (k === 'Escape') closeDialog();
@@ -541,6 +544,7 @@ function update(dt) {
   }
   fountain.water.position.y = 0.7 + Math.sin(T * 2) * 0.012;
   clouds.forEach(c => { c.position.x += dt * 0.6; if (c.position.x > 130) c.position.x = -130; });
+  liveUpdate(dt);
   updateCamera(dt);
   updateHud();
 }
@@ -710,13 +714,15 @@ function showOv(html) { ov.innerHTML = html; ov.classList.remove('hidden'); ov.s
 function hideOv() { ov.classList.add('hidden'); ov.innerHTML = ''; }
 const FACES = [['happy', 'Xursand'], ['surprised', 'Hayron'], ['thinking', "O'ylanmoqda"], ['confident', 'Ishonchli'], ['excited', 'Hayajonda'], ['focused', 'Diqqatli']];
 function showTitle() {
-  S.mode = 'title'; $('#hud').classList.add('hidden'); $('#hint').classList.add('hidden');
-  showOv('<div class="scr"><img class="hero" src="' + IMG.main + '" alt="Hoshimjon">'
-    + '<div class="t-right"><p class="eyebrow">3D til o\'rganish o\'yini</p>'
-    + '<h1>Hoshimjon va <span>sehrli qalpoqcha</span></h1>'
-    + '<p class="lead">Qalpoqchasi yo\'qolgach, Hoshimjon chet elda hech kimni tushunmaydi. Ovqat, ish va tunash joyi uchun u ingliz tilini suhbatlar orqali o\'rganishi kerak.</p>'
-    + '<div class="btns"><button class="btn primary" data-act="start">O\'yinni boshlash</button><button class="btn" data-act="catalog">So\'zlar katalogi (' + savedCount() + ')</button></div>'
-    + '<div class="faces">' + FACES.map(f => '<figure><img src="' + IMG[f[0]] + '" alt="' + f[1] + '">' + f[1] + '</figure>').join('') + '</div></div></div>');
+  S.mode = 'title'; $('#hud').classList.add('hidden'); $('#hint').classList.add('hidden'); $('#chat').classList.add('hidden'); app.classList.remove('live');
+  const on = ONLINE();
+  showOv('<div class="scr"><div class="t-right" style="max-width:640px"><p class="eyebrow">Jonli 3D til shahri</p>'
+    + '<h1>Lexora <span>City</span></h1>'
+    + '<p class="lead">Shaharda boshqa o\'quvchilar bilan o\'zingiz o\'rganayotgan tilda gaplashing, NPClar bilan mashq qiling va yangi so\'zlarni saqlang. Saqlangan so\'zlar katalogga tushadi.</p>'
+    + '<div class="btns">' + (on ? '<button class="btn primary" data-act="live">Jonli shaharga kirish' + (LX && LX.lang ? ' (' + esc(LX.lang) + ')' : '') + '</button>' : '')
+    + '<button class="btn' + (on ? '' : ' primary') + '" data-act="start">Sarguzasht: qalpoqcha qissasi</button><button class="btn" data-act="catalog">So\'zlar katalogi (' + savedCount() + ')</button></div>'
+    + (on ? '' : '<p class="note" style="margin-top:14px">Jonli shahar Lexora ichida ishlaydi: lexoralc.uz saytiga kirib, «O\'yin» bo\'limini oching.</p>')
+    + '</div></div>');
 }
 const SLIDES = [
   { img: 'excited', text: "Hoshimjon sehrli qalpoqchasi bilan dunyodagi istalgan tilni tushunardi. Bugun u birinchi marta chet elga keldi." },
@@ -823,6 +829,7 @@ ov.addEventListener('click', e => {
   const t = e.target.closest('[data-act]'); if (!t) return;
   const a = t.dataset.act, ks = Object.keys(S.saved).filter(k => LEX[k]);
   if (a === 'start') { slideI = 0; showSlide(); }
+  else if (a === 'live') enterLive();
   else if (a === 'next') { if (slideI < SLIDES.length - 1) { slideI++; showSlide(); } else beginPlay(); }
   else if (a === 'catalog') { const m = S.mode; openCatalog(() => { if (m === 'title') showTitle(); else if (m === 'summary') completeChapter(); else if (m === 'end') showEnd(); else { hideOv(); S.mode = 'play'; } }); }
   else if (a === 'closecat') closeCatalog();
@@ -856,7 +863,8 @@ ov.addEventListener('click', e => {
 window.addEventListener('message', e => {
   if (e.origin !== location.origin) return;
   const d = e.data; if (!d || d.type !== 'lexora-user') return;
-  LX = { hasPack: !!d.hasPack, uid: String(d.uid || '').replace(/[^\w-]/g, '').slice(0, 64) };
+  LX = { hasPack: !!d.hasPack, uid: String(d.uid || '').replace(/[^\w-]/g, '').slice(0, 64), name: String(d.name || '').slice(0, 30), lang: String(d.lang || 'English').slice(0, 20), online: !!d.online };
+  applyHeroLook();
   S.saved = store.get(SKEY(), {}); loadProg(); S.hasPack = LX.hasPack; $('#wCount').textContent = savedCount();
   if (S.mode === 'catalog') renderCatalog(); else if (S.mode === 'title') showTitle();
 });
@@ -871,7 +879,8 @@ function start(d) {
   else showTitle();
 }
 if (hot && hot.snapshot) hot.snapshot(() => ({ saved: S.saved, hasPack: S.hasPack, chapter: S.chapter, started: S.started && S.chapter <= CHAPTERS.length }));
+/*__LIVE__*/
 frame();
 if (hot && hot.ready) hot.ready(start); else start((hot && hot.data) || {});
-window.__game = { S, player, NPC };
+window.__game = { S, player, NPC, LIVE };
 })();

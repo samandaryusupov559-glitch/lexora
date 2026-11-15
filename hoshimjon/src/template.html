@@ -9,6 +9,30 @@
 <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&family=Nunito:wght@500;700;800&display=swap" rel="stylesheet">
 <style>
 #dlg.hard .choice small{display:none!important}
+#chat{position:absolute;left:12px;bottom:12px;width:min(360px,calc(100vw - 24px));max-height:46vh;display:flex;flex-direction:column;background:rgba(23,26,41,.88);color:#fff;border-radius:16px;padding:10px;z-index:6;box-shadow:0 10px 30px rgba(0,0,0,.3)}
+#chat.hidden{display:none}
+#chat .c-head{display:flex;align-items:center;gap:8px;font-size:13px;margin-bottom:6px}
+#chat .c-head .sp{flex:1}
+#chat #cOnline{color:#9be58b;font-size:12px}
+#cLog{overflow:auto;flex:1;min-height:70px;max-height:24vh;font-size:14px;line-height:1.35}
+#cLog .m{padding:3px 0;word-break:break-word}
+#cLog .m b{color:#f2b035}
+#cLog .m.me b{color:#8fd0ff}
+#cLog .fx{color:#9be58b;font-size:13px;margin-left:10px}
+#cLog .fx:before{content:"\270E  "}
+#cPhr{display:flex;gap:5px;overflow-x:auto;padding:6px 0;scrollbar-width:thin}
+#cPhr .chip{white-space:nowrap;font-size:12px}
+#cForm{display:flex;gap:6px}
+#cForm input{flex:1;min-width:0;border:0;border-radius:10px;padding:9px 10px;font:inherit;font-size:14px}
+#chat.min #cLog,#chat.min #cPhr,#chat.min #cForm{display:none}
+#fb{position:absolute;inset:0;background:rgba(10,12,24,.55);display:flex;align-items:center;justify-content:center;z-index:9}
+#fb.hidden{display:none}
+.fb-card{background:#f6eedd;color:#171a29;border-radius:16px;padding:16px;width:min(420px,92vw);display:flex;flex-direction:column;gap:10px}
+.fb-card textarea{width:100%;border:2px solid #171a29;border-radius:10px;padding:8px;font:inherit;resize:vertical;box-sizing:border-box}
+.fb-card .chip.pri{background:#f2b035;color:#171a29}
+.live .obj,.live .compass,.live .hearts{display:none}
+@media (max-width:700px){#chat{max-height:38vh;bottom:78px}}
+
 /* Yo'nalish: Toshkent kechki quyoshi. Indigo fon, qalpoq kremi, firuza va oltin urg'u. Bitta dunyo, bitta mavzu. */
 :root{
   --ink:#171a29; --ink2:#232840; --ink3:#2f3556;
@@ -175,11 +199,20 @@ h1 span{color:var(--gold)}
     <div class="hud-l">
       <div class="hearts" id="hearts" title="Kuch"></div>
       <button class="pill" id="bWords">So'zlar katalogi<b id="wCount">0</b></button>
+      <button class="pill" id="bFeed">Fikr qoldirish</button>
+      <button class="pill" id="bFull">Katta ekran</button>
     </div>
     <div class="obj" id="obj"></div>
     <div class="compass"><div class="ring"><div class="arrow" id="arrow"></div></div><div class="dist" id="dist"></div></div>
   </div>
   <div id="hint" class="hidden">WASD yoki o'qlar: yurish. Shift: yugurish. Sichqoncha: shaharga bir marta bosing va atrofga qarang (Esc: kursorni qaytarish), g'ildirak: yaqinlashtirish. E: gaplashish.</div>
+  <div id="chat" class="hidden">
+    <div class="c-head"><b id="cRoom">Shahar</b><span id="cOnline"></span><span class="sp"></span><button class="chip" id="cToggle" type="button">Yig'ish</button><button class="chip" id="cExit" type="button">Chiqish</button></div>
+    <div id="cLog"></div>
+    <div id="cPhr"></div>
+    <form id="cForm"><input id="cIn" maxlength="200" autocomplete="off" placeholder="Yozing va Enter bosing"><button class="chip" type="submit">Yuborish</button></form>
+  </div>
+  <div id="fb" class="hidden"><div class="fb-card"><b>Fikringizni yozing</b><textarea id="fbIn" maxlength="600" rows="4" placeholder="O'yin haqida fikr, taklif yoki xato"></textarea><div><button class="chip" id="fbNo" type="button">Bekor</button> <button class="chip pri" id="fbYes" type="button">Yuborish</button></div></div></div>
   <button id="prompt" class="hidden"></button>
   <div id="joy"><div id="stick"></div></div>
   <div id="dlg" class="hidden">

@@ -3,7 +3,7 @@
 `../index.html` is BUILT from these files. Never edit it by hand.
 
 - `data.js`: all content. `LEX` (word cards), `CHAPTERS`, `NPCS` (story dialogues), `TOPICS` (extra dialogues).
-- `game.js`: the engine (Three.js scene, dialogue, catalog, adaptive difficulty).
+- `game.js`: the engine (Three.js scene, dialogue, catalog, adaptive difficulty). `live.js`: the online city (other players, chat, feedback); build.py inlines it into game.js at `/*__LIVE__*/`.
 - `template.html`: page shell and CSS.
 - `check.js`: validates data.js. Must print `bad: 0`.
 
