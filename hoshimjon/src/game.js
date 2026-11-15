@@ -11,7 +11,7 @@ const store = {
 function speak(t) {
   try {
     const u = new SpeechSynthesisUtterance(String(t).replace(/[{}]/g, ''));
-    u.lang = 'en-US'; u.rate = 0.9;
+    u.lang = speakLang(); u.rate = 0.9;
     window.speechSynthesis.cancel(); window.speechSynthesis.speak(u);
   } catch (e) {}
 }
@@ -27,8 +27,9 @@ function toast(msg) {
 const EMBED = /[?&]embed=1/.test(location.search);
 const HOSTED = /(^|\.)lexoralc\.uz$|\.github\.io$|^localhost$|^127\./.test(location.hostname);
 const DEMO = !EMBED && !HOSTED;
+let PACK = 'English';          // faol til paketi
 let LX = null;              // ilovadan kelgan {hasPack, uid}
-const SKEY = () => 'hj_saved' + (LX && LX.uid && !LX.anon ? '_' + LX.uid : '');
+const SKEY = () => 'hj_saved' + (LX && LX.uid && !LX.anon ? '_' + LX.uid : '') + (PACK !== 'English' ? '_' + PACK : '');
 const S = {
   mode: 'title',            // title | story | play | dialog | summary | catalog | end
   chapter: 1, hearts: 3, mistakes: 0,
@@ -63,7 +64,7 @@ function reviewTree() {
     const others = shuffle(all.filter(x => x !== k && LEX[x].uz !== right)).slice(0, 2).map(x => LEX[x].uz);
     const last = i === pick.length - 1;
     tree['n' + (i + 1)] = {
-      say: (i ? 'Next one. ' : "Let's review your words. ") + 'What does {' + k + '} mean?', uz: "'" + k + "' nimani anglatadi?",
+      say: (i ? UI.next : UI.first) + UI.what.replace('{%}', '{' + k + '}'), uz: "'" + k + "' nimani anglatadi?",
       choices: shuffle([{ t: right, uz: '', ok: true, next: last ? 'END' : 'n' + (i + 2) }].concat(others.map(o => ({ t: o, uz: '', ok: false, why: "To'g'ri javob: " + right + '. ' + LEX[k].g }))))
     };
   });
@@ -370,6 +371,7 @@ const player = { pos: new THREE.Vector3(0, 0, 32), rot: Math.PI, walkT: 0, talki
 
 /* ---- NPClar: 3D modellar (GLB). Model yuklanguncha oddiy shakldagi nusxa turadi ---- */
 /*__WORLD__*/
+/*__PACKS__*/
 const PLACE = {
   farid: () => market.front(2.4), maya: () => cafe.front(2.4), elena: () => hotel.front(2.4),
   leo: () => ({ x: -7, z: 7.5 }), noor: () => library.front(2.4), keeper: () => ({ x: 4.6, z: -4.4 })
@@ -638,7 +640,7 @@ function openDialog(npc) {
     tree = Object.assign({}, def.tree);
     const old = Object.keys(S.saved).filter(k => LEX[k] && S.saved[k].ch > 0 && S.saved[k].ch < S.chapter).sort((a, b) => weakness(b) - weakness(a));
     if (old.length) {
-      tree.n0 = { memo: true, say: 'Nice to see you again! Do you still remember {' + old[0] + '}?', uz: "Yana ko'rishganimdan xursandman! '" + old[0] + "' so'zini hali eslaysizmi?", choices: [{ t: 'Yes, I do.', uz: 'Ha, eslayman.', ok: true, next: 'n1' }] };
+      tree.n0 = { memo: true, say: UI.memo.replace('{%}', '{' + old[0] + '}'), uz: "Yana ko'rishganimdan xursandman! '" + old[0] + "' so'zini hali eslaysizmi?", choices: [{ t: UI.memoYes, uz: 'Ha, eslayman.', ok: true, next: 'n1' }] };
       startId = 'n0';
     }
   } else if (def.chapter < S.chapter && tops[done]) { tree = tops[done].tree; adv = true; }
@@ -916,7 +918,7 @@ window.addEventListener('message', e => {
   if (e.origin !== location.origin) return;
   const d = e.data; if (!d || d.type !== 'lexora-user') return;
   LX = { hasPack: !!d.hasPack, uid: String(d.uid || '').replace(/[^\w-]/g, '').slice(0, 64), name: String(d.name || '').slice(0, 30), lang: String(d.lang || 'English').slice(0, 20), online: !!d.online, anon: !!d.anon };
-  applyHeroLook();
+  applyHeroLook(); usePack(LX.lang);
   S.saved = store.get(SKEY(), {}); loadProg(); S.hasPack = LX.hasPack; $('#wCount').textContent = savedCount();
   if (S.mode === 'catalog') renderCatalog(); else if (S.mode === 'title') showTitle();
 });
@@ -934,5 +936,5 @@ if (hot && hot.snapshot) hot.snapshot(() => ({ saved: S.saved, hasPack: S.hasPac
 /*__LIVE__*/
 frame();
 if (hot && hot.ready) hot.ready(start); else start((hot && hot.data) || {});
-window.__game = { S, player, NPC, LIVE, RES, camera, WORLD_CARS, WORLD_BIRDS, boxes, scene, get camYaw() { return camYaw; }, set camYaw(v) { camYaw = v; } };
+window.__game = { PACKS, usePack, LEX, NPCS, S, player, NPC, LIVE, RES, camera, WORLD_CARS, WORLD_BIRDS, boxes, scene, get camYaw() { return camYaw; }, set camYaw(v) { camYaw = v; } };
 })();

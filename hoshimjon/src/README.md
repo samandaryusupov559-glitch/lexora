@@ -39,3 +39,11 @@ Rules:
 - `world1.js`: katta binolar (daraxtlardan oldin kiradi). `world.js`: mashinalar, qushlar, shahar aholisi (`RES`). Ikkalasi `build.py` orqali `game.js` ichiga qo'shiladi.
 - Aholi `LANES` bo'ylab yuradi, juftlashib uchrashadi va `CHAT[til]` dan suhbat qiladi. Yangi suhbat qo'shish: `CHAT` ga qator qo'shing (4 ta gap), `CHAT_UZ` ga tarjima.
 - Yangi aholi qo'shish: `RES_NAMES` ga ism, `LANES` sonini oshiring.
+
+
+## Til paketlari (packs.js)
+- Ingliz tilidan boshqa 7 til (Russian, German, Turkish, Spanish, Korean, Chinese, Japanese) uchun NPC darslari. Stsenariy `SCEN` da bir xil, har til faqat o'z matnini beradi (`defPack`).
+- Til `LX.lang` (Lexora) yoki ochiq sahifadagi tanlovdan olinadi; `usePack(til)` lug'at, NPC daraxtlari va idle matnlarini almashtiradi. Saqlangan so'zlar til bo'yicha alohida kalitda turadi.
+- Yangi til: `defPack('Til', 'xx-XX', kalitlar[14], ui, k => ({ nodes: [10 ta [gap, to'g'ri, xato1, xato2]], idle: [4 ta [gap, javob]] }))`. Yangi mavzular (haftalik) hozircha faqat inglizcha `TOPICS` ga qo'shiladi.
+- Matnlar tilshunos tomonidan tekshirilmagan: ustoz ko'rib chiqishi kerak.
+- Build: `node check.js && python3 build.py ../index.html` (packs.js va world*.js avtomatik qo'shiladi).

@@ -164,4 +164,12 @@ async function joinPublic() {
   const ok = await pubStart(name, lang);
   setTimeout(() => { if (ok && ONLINE()) enterLive(); else toast('Onlayn ulanish hozir mavjud emas. Missiyalarni yakka o\'ynang.'); }, 400);
 }
+if (!EMBED) {
+  usePack(store.get('hj_lang', 'English'));
+  document.addEventListener('change', e => {
+    if (!e.target || e.target.id !== 'jLang') return;
+    store.set('hj_lang', e.target.value); usePack(e.target.value);
+    const cb = document.querySelector('[data-act=catalog]'); if (cb) cb.textContent = "So'zlar katalogi (" + savedCount() + ')';
+  });
+}
 if (!EMBED && HOSTED) pubStart(store.get('hj_nick', 'Mehmon'), store.get('hj_lang', 'English')).then(ok => { if (ok && S.mode === 'title') setTimeout(showTitle, 60); });
