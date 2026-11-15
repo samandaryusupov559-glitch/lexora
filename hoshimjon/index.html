@@ -179,7 +179,7 @@ h1 span{color:var(--gold)}
     <div class="obj" id="obj"></div>
     <div class="compass"><div class="ring"><div class="arrow" id="arrow"></div></div><div class="dist" id="dist"></div></div>
   </div>
-  <div id="hint" class="hidden">WASD yoki o'qlar: yurish. Shift: yugurish. Sichqoncha bilan sudrang: kamera. E: gaplashish.</div>
+  <div id="hint" class="hidden">WASD yoki o'qlar: yurish. Shift: yugurish. Sichqoncha: shaharga bir marta bosing va atrofga qarang (Esc: kursorni qaytarish), g'ildirak: yaqinlashtirish. E: gaplashish.</div>
   <button id="prompt" class="hidden"></button>
   <div id="joy"><div id="stick"></div></div>
   <div id="dlg" class="hidden">
@@ -888,15 +888,25 @@ joy.addEventListener('pointerdown', e => { jid = e.pointerId; try { joy.setPoint
 joy.addEventListener('pointermove', e => { if (e.pointerId === jid) moveJoy(e); });
 const endJoy = e => { if (e.pointerId === jid) { jid = null; jv.x = jv.y = 0; stick.style.transform = 'translate(0,0)'; } };
 joy.addEventListener('pointerup', endJoy); joy.addEventListener('pointercancel', endJoy);
-let camYaw = 0, camPitch = 0.5, drag = null;
-canvas.addEventListener('pointerdown', e => { drag = { id: e.pointerId, x: e.clientX, y: e.clientY }; try { canvas.setPointerCapture(e.pointerId); } catch (x) {} });
+let camYaw = 0, camPitch = 0.5, drag = null, zoom = 9.5;
+const locked = () => document.pointerLockElement === canvas;
+canvas.addEventListener('pointerdown', e => { drag = { id: e.pointerId, x: e.clientX, y: e.clientY, moved: 0 }; try { canvas.setPointerCapture(e.pointerId); } catch (x) {} });
 canvas.addEventListener('pointermove', e => {
   if (drag && e.pointerId === drag.id) {
-    camYaw -= (e.clientX - drag.x) * 0.006; camPitch = clamp(camPitch + (e.clientY - drag.y) * 0.004, 0.2, 1.1);
+    drag.moved += Math.abs(e.clientX - drag.x) + Math.abs(e.clientY - drag.y);
+    camYaw -= (e.clientX - drag.x) * 0.006; camPitch = clamp(camPitch + (e.clientY - drag.y) * 0.004, 0.05, 1.35);
     drag.x = e.clientX; drag.y = e.clientY;
   }
 });
-const endDrag = e => { if (drag && e.pointerId === drag.id) drag = null; };
+const endDrag = e => {
+  if (drag && e.pointerId === drag.id) {
+    // sichqoncha bilan bir marta bosish: kursor yashirinadi va sichqoncha harakati kamerani aylantiradi (Esc: chiqish)
+    if (e.type === 'pointerup' && e.pointerType === 'mouse' && drag.moved < 6 && S.mode === 'play' && !locked() && canvas.requestPointerLock) { try { canvas.requestPointerLock(); } catch (x) {} }
+    drag = null;
+  }
+};
+document.addEventListener('mousemove', e => { if (locked() && S.mode === 'play') { camYaw -= e.movementX * 0.0032; camPitch = clamp(camPitch + e.movementY * 0.0028, 0.05, 1.35); } });
+canvas.addEventListener('wheel', e => { e.preventDefault(); zoom = clamp(zoom + e.deltaY * 0.01, 4.5, 18); }, { passive: false });
 canvas.addEventListener('pointerup', endDrag); canvas.addEventListener('pointercancel', endDrag);
 
 function nearestNpc() {
@@ -932,6 +942,7 @@ if (window.ResizeObserver) new ResizeObserver(resize).observe(app); else window.
 resize();
 
 function updateCamera(dt) {
+  if (S.mode !== 'play' && locked()) document.exitPointerLock();
   let tx, ty, tz, dist = 10, pitch = camPitch;
   if (S.mode === 'title' || S.mode === 'story' || S.mode === 'summary' || S.mode === 'end' || S.mode === 'catalog' && !S.started) {
     camYaw += dt * 0.1; tx = 0; ty = 2.5; tz = 0; dist = 34; pitch = 0.33;
@@ -942,7 +953,7 @@ function updateCamera(dt) {
     const y1 = a + Math.PI / 2, y2 = a - Math.PI / 2;
     const tgt = Math.abs(angDiff(camYaw, y1)) < Math.abs(angDiff(camYaw, y2)) ? y1 : y2;
     camYaw += angDiff(camYaw, tgt) * Math.min(1, dt * 3);
-  } else { tx = player.pos.x; ty = 1.6; tz = player.pos.z; dist = 9.5; }
+  } else { tx = player.pos.x; ty = 1.6; tz = player.pos.z; dist = zoom; }
   const k = 1 - Math.exp(-dt * 6);
   focus.x += (tx - focus.x) * k; focus.y += (ty - focus.y) * k; focus.z += (tz - focus.z) * k;
   camDist += (dist - camDist) * k;
