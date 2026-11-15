@@ -594,15 +594,15 @@ exports.callToken = onRequest({ cors: CALL_ORIGINS, invoker: 'public' }, async (
   catch (e) { logger.error('callToken', e); res.status(500).json({ ok: false, error: 'server', why: String((e && e.message) || e).slice(0, 100) + ' | ' + keyShape() }); }
 });
 
-/* ---------------- Speaking Buddy: 2 free conversations, then a paid monthly pass ----------------
+/* ---------------- Speaking Buddy: 1 free conversation, then a paid monthly pass ----------------
    The ElevenLabs agents are private (they only start with a signed link), so the only way in is this function.
    speakUse/{uid}  {used, log:[{at,lang}]}   conversations started on the free trial (server only; the person may read their own)
    passes/{uid}.speak.until                   the paid pass (written by the owner when the money arrived, like the newspaper)
-   The owner and the teachers are never limited.
+   Only the owner is never limited; invited teachers do not use the Speaking Buddy (403 'teacher').
    POST {action:'status'|'start', lang}  with  Authorization: Bearer <Firebase ID token>
    Needs the ELEVENLABS_API_KEY setting (GitHub secret, written to functions/.env by the workflow). */
 const SPEAK_AGENTS = { English: 'agent_3201m7f6ds26e77rjbtk5df4k7qh', Russian: 'agent_8701m7f70eysf0aa39cfccvgqpvw' };
-const SPEAK_FREE = 2;
+const SPEAK_FREE = 1;
 async function speakState(uid, now) {
   const [u, p] = await Promise.all([db.doc('speakUse/' + uid).get(), db.doc('passes/' + uid).get()]);
   const used = (u.exists && +u.data().used) || 0, until = +(((p.exists && p.data()) || {}).speak || {}).until || 0;
@@ -625,7 +625,8 @@ async function speakGive(uid, now) {   // a trial taken for a link that could no
 async function speakRun(uid, body, now = Date.now()) {
   const lang = String((body || {}).lang || ''), agent = SPEAK_AGENTS[lang];
   if (!agent) return { code: 400, body: { ok: false, error: 'lang' } };
-  const staff = !!(await senderOf(uid)), st = await speakState(uid, now), info = { ...st, staff };
+  const who = await senderOf(uid), staff = !!(who && who.owner), st = await speakState(uid, now), info = { ...st, staff };
+  if (who && !who.owner) return { code: 403, body: { ok: false, error: 'teacher', ...info } };   // invited teachers do not use it
   if ((body || {}).action !== 'start') return { code: 200, body: { ok: true, ...info } };
   const key = String(process.env.ELEVENLABS_API_KEY || '').trim().replace(/^["']|["']$/g, '');   // a pasted key may carry a space, a line break or quotes
   if (!key) return { code: 503, body: { ok: false, error: 'off' } };

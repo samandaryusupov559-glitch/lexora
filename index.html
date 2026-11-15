@@ -2394,7 +2394,7 @@ function renderNav(){
     const waiting = allEntries().filter(e=>e.status==='submitted').length;
     document.title = (waiting?`(${waiting}) `:'')+'Lexora · '+tr('title.teacher');
     n.innerHTML = navCollapseBtn() + navMenu([NI('home',tr('nav.home'),'home'), NI('chat',tr('dm.nav'),'chat',chatUnreadT()), STUDENTS_NAV(), NI('me',tr('c.meH'),'team'), NI('groups',tr('c.grpH'),'people'), NI('homework',tr('hw.nav'),'hw',waiting)],
-      [['lessons',tr('nav.gLessons'),[NI('exams',tr('ex.nav'),'cards'), NI('club',tr('c.clubNav'),'bulb',clubVideoOn()?'●':0), NI('library',tr('c.libNav'),'book'), NI('speak',tr('sb.nav'),'mic'), NI('bank',tr('nav.bank'),'bank')]],
+      [['lessons',tr('nav.gLessons'),[NI('exams',tr('ex.nav'),'cards'), NI('club',tr('c.clubNav'),'bulb',clubVideoOn()?'●':0), NI('library',tr('c.libNav'),'book'), NI('bank',tr('nav.bank'),'bank')]],
        ['centre',tr('nav.gCentre'),[NI('centre',tr('c.centreH'),'spark',Object.values(S.leads||{}).filter(l=>!l.st).length+pendingTorders())]]]) + `<div class="nav-foot">${tr('c.navFootStaff')}</div>`;
     return;
   }
@@ -7562,6 +7562,7 @@ const libIcon = k => k==='audio'?'🎧':k==='video'?'🎬':k==='link'?'🔗':'�
 /* ---------------- Speaking Buddy (ElevenLabs voice agents, one per language) ---------------- */
 const SB_LANGS = ['English','Russian'];   // the agents themselves are private; the speakToken function holds their ids
 const SB_SRC = 'https://unpkg.com/@elevenlabs/convai-widget-embed';
+const SB_MAX_MIN = 5;   // a conversation is closed on the page after this many minutes
 let sbPromise = null;
 function sbScript(){
   if(customElements.get('elevenlabs-convai')) return Promise.resolve();
@@ -7591,10 +7592,11 @@ function sbMount(lang, url){
   x.live=lang; clearTimeout(x.t);
   b.dataset.l=lang;
   b.innerHTML=`<p>${tr('sb.ready')}</p><p class="small muted">${tr('sb.keep')}</p><elevenlabs-convai signed-url="${esc(url)}"></elevenlabs-convai>`;
-  // the link lives 15 minutes; after that the chat is closed and a new start (a new trial) is needed
-  x.t=setTimeout(()=>{ x.live=''; x.info=null; if(S.view.name==='speak'){ $('#sb-box')?.querySelector('elevenlabs-convai')?.remove(); renderMain(); } }, 14*60e3);
+  // the chat is closed after SB_MAX_MIN minutes (the link itself lives 15); a new start (a new trial) is needed
+  x.t=setTimeout(()=>{ x.live=''; x.info=null; if(S.view.name==='speak'){ $('#sb-box')?.querySelector('elevenlabs-convai')?.remove(); renderMain(); } }, SB_MAX_MIN*60e3);
 }
 function vSpeak(){
+  if(S.role==='staff') return `<div class="page-head"><div><h1>${tr('sb.h')}</h1></div></div><div class="notice">${tr('sb.teachersOff')}</div>`;   // invited teachers do not use it
   const ready=langsReady(), ls=ready?sbLangs():[], cur=ready?sbCur():'', x=sbSt(), now=Date.now();
   const chips = ls.length>1 ? `<div class="lp-filter" role="group" aria-label="${tr('c.fLang')}">${ls.map(l=>`<button data-act="sb-lang" data-v="${esc(l)}" aria-pressed="${l===cur}">${esc(langName(l))}</button>`).join('')}</div>` : '';
   const staff=S.mode==='teacher', until=speakUntil(S.myPass), paid=!staff && until>now, left=x.info && x.info.left!=null ? x.info.left : null;
@@ -7605,7 +7607,7 @@ function vSpeak(){
   else if(!cur) inner=`<div class="notice">${tr('sb.noLang')}</div>`;
   else if(S.demo || !S.user) inner=`<div class="notice">${tr('sb.demo')}</div>`;
   else if(!staff && !paid && left===0) inner=`<h3>${tr('sb.payH')}</h3><p class="muted">${tr('sb.payP',{n:pmInfo().speak.days, p:som(pmInfo().speak.price)})}</p>${pend?`<div class="pm-status">${tr('pm.pending')}</div>`:`<button class="btn pen" data-act="pb-open" data-k="speak">${tr('mk.buy')}</button>`}`;
-  else inner=`<p class="muted">${staff?tr('sb.staff'):paid?tr('sb.pass',{d:esc(dayMonth(until))}):left==null?tr('sb.loading'):tr('sb.freeLeft',{n:left,t:x.info.free||2})}</p>${x.err?`<div class="notice" role="alert" style="margin:0">${tr('sb.e.'+(staff&&['off','net','up'].includes(x.err)?x.err+'T':x.err),{w:esc(x.why||'')})}</div>`:''}${start}`;
+  else inner=`<p class="muted">${staff?tr('sb.staff'):paid?tr('sb.pass',{d:esc(dayMonth(until))}):left==null?tr('sb.loading'):tr('sb.freeLeft',{n:left,t:x.info.free||1})}</p>${x.err?`<div class="notice" role="alert" style="margin:0">${tr('sb.e.'+(staff&&['off','net','up'].includes(x.err)?x.err+'T':x.err),{w:esc(x.why||'')})}</div>`:''}${start}`;
   const body = cur ? `<div id="sb-box" class="sb-box" data-l="${esc(cur)}">${inner}</div>` : `<div id="sb-box" class="sb-box">${inner}</div>`;
   return `<div class="page-head"><div><h1>${tr('sb.h')}</h1><p>${tr('sb.p')}</p></div></div>${chips}
     <div class="card section sb-card">${body}</div>

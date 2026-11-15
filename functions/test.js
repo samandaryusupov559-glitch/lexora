@@ -283,26 +283,26 @@ const ev = (params, after, before) => ({ params, data: before === undefined ? { 
   const sp = (uid, body, now = 5e12) => bot._t.speakRun(uid, body, now);
   ok('an unknown language is refused', (await sp('s3', { action: 'start', lang: 'Klingon' })).code === 400);
   let sr = await sp('s3', { action: 'status', lang: 'English' });
-  ok('status shows 2 free left and does not use one', sr.code === 200 && sr.body.left === 2 && sr.body.used === 0 && !sr.body.paid && elCalls === 0);
+  ok('status shows 1 free left and does not use one', sr.code === 200 && sr.body.left === 1 && sr.body.used === 0 && !sr.body.paid && elCalls === 0);
   sr = await sp('s3', { action: 'start', lang: 'English' });
   ok('without the key nothing starts and no trial is used', sr.code === 503 && !store.has('speakUse/s3'));
   process.env.ELEVENLABS_API_KEY = 'k';
   sr = await sp('s3', { action: 'start', lang: 'English' });
-  ok('first conversation: signed link, 1 left', sr.code === 200 && /agent_3201/.test(sr.body.signedUrl) && sr.body.left === 1);
-  sr = await sp('s3', { action: 'start', lang: 'Russian' });
-  ok('second conversation (Russian): its own agent, 0 left', sr.code === 200 && /agent_8701/.test(sr.body.signedUrl) && sr.body.left === 0);
-  const calls0 = elCalls; sr = await sp('s3', { action: 'start', lang: 'English' });
-  ok('third is refused with 402 and no link is asked for', sr.code === 402 && sr.body.error === 'paywall' && elCalls === calls0);
+  ok('first conversation: signed link, 0 left', sr.code === 200 && /agent_3201/.test(sr.body.signedUrl) && sr.body.left === 0);
+  const calls0 = elCalls; sr = await sp('s3', { action: 'start', lang: 'Russian' });
+  ok('second is refused with 402 and no link is asked for', sr.code === 402 && sr.body.error === 'paywall' && elCalls === calls0);
   store.set('passes/s3', { name: 'Kid', speak: { until: 5e12 + 864e5, hist: [] } });
   sr = await sp('s3', { action: 'start', lang: 'English' });
-  ok('with a paid pass it starts and uses no trial', sr.code === 200 && sr.body.paid && store.get('speakUse/s3').used === 2);
+  ok('with a paid pass it starts and uses no trial', sr.code === 200 && sr.body.paid && store.get('speakUse/s3').used === 1);
   sr = await sp('s3', { action: 'start', lang: 'English' }, 5e12 + 2 * 864e5);
   ok('after the pass ends it is refused again', sr.code === 402);
-  store.set('speakUse/s3', { used: 2 }); store.delete('passes/s3'); elOk = false; store.set('speakUse/s4', { used: 1, log: [{ at: 1, lang: 'English' }] }); users.s4 = { email: 'b@x.com', emailVerified: true };
+  store.set('speakUse/s3', { used: 1 }); store.delete('passes/s3'); elOk = false; store.set('speakUse/s4', { used: 0, log: [] }); users.s4 = { email: 'b@x.com', emailVerified: true };
   sr = await sp('s4', { action: 'start', lang: 'English' });
-  ok('if ElevenLabs fails the trial is given back', sr.code === 502 && store.get('speakUse/s4').used === 1);
+  ok('if ElevenLabs fails the trial is given back', sr.code === 502 && store.get('speakUse/s4').used === 0);
   elOk = true;
-  for (const who of ['own', 'dil']) { store.set('speakUse/' + who, { used: 9 }); sr = await sp(who, { action: 'start', lang: 'English' }); ok(who + ' (owner/teacher) is never limited', sr.code === 200 && store.get('speakUse/' + who).used === 9); }
+  store.set('speakUse/own', { used: 9 }); sr = await sp('own', { action: 'start', lang: 'English' }); ok('the owner is never limited', sr.code === 200 && store.get('speakUse/own').used === 9);
+  const calls1 = elCalls; sr = await sp('dil', { action: 'start', lang: 'English' }); ok('an invited teacher cannot use it (403) and no link is asked for', sr.code === 403 && sr.body.error === 'teacher' && elCalls === calls1);
+  sr = await sp('dil', { action: 'status', lang: 'English' }); ok('a teacher status is refused too', sr.code === 403);
   delete process.env.ELEVENLABS_API_KEY; global.fetch = tgFetch;
 
   console.log('Teacher sign-in mail');
