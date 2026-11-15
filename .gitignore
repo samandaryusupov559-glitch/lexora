@@ -2,3 +2,5 @@ functions/node_modules/
 functions/.env
 node_modules/
 *.log
+# Local secrets written by `elevenlabs onboard`
+/.env.local
