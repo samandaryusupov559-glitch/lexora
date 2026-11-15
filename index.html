@@ -3430,7 +3430,7 @@ const enDate = (s,o) => parseDate(s).toLocaleDateString('en-GB',o);
 const reEsc = s => s.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
 const str = (v,n=400) => String(v??'').trim().slice(0,n);
 
-const PM_DEF = {news:{on:true, name:'The Lexora Daily', price:50000, days:30, hour:7, city:'tashkent'}, study:{on:true, price:50000, days:30}, bundle:{on:false, price:80000, days:30}, speak:{on:true, perMin:2500, days:30}};
+const PM_DEF = {news:{on:true, name:'The Lexora Daily', price:50000, days:30, hour:7, city:'tashkent'}, study:{on:true, price:50000, days:30}, bundle:{on:true, price:119000, days:30, mins:20}, speak:{on:true, perMin:2500, days:30}};
 function pmInfo(){ const p=S.pm||{}; return {news:{...PM_DEF.news, ...(p.news||{})}, study:{...PM_DEF.study, ...(p.study||{})}, bundle:{...PM_DEF.bundle, ...(p.bundle||{})}, speak:{...PM_DEF.speak, ...(p.speak||{})}, langs:(Array.isArray(p.langs)?p.langs.filter(l=>typeof l==='string'):[]).length?p.langs.filter(l=>typeof l==='string'):['English']}; }
 const langPill = l => l&&l!=='English' ? `<span class="pill">${esc(langName(l))}</span>` : '';
 async function savePm(mut, okMsg){
@@ -3488,7 +3488,7 @@ const speakPacks = () => { const P=pmInfo().speak, raw=Array.isArray(P.packs)?P.
   const ok=raw.map(x=>({mins:Math.round(+x.mins), price:Math.max(0,Math.round(+x.price))})).filter(x=>x.mins>=1 && x.mins<=5000 && isFinite(x.price)).sort((a,b)=>a.mins-b.mins);
   return ok.length ? ok : [10,30,60,100].map(m=>({mins:m, price:m*P.perMin})); };
 const pmDays = k => Math.max(1, +pmInfo()[k].days || 30);
-const pmName = k => k==='news' ? pmInfo().news.name : k==='bundle' ? tr('pm.b.name') : k==='speak' ? tr('sb.nav') : tr('st.name');
+const pmName = k => k==='news' ? pmInfo().news.name : k==='bundle' ? bName() : k==='speak' ? tr('sb.nav') : tr('st.name');
 const dayMonth = ms => dloc(new Date(ms),{day:'numeric',month:'long'});
 function nwDay(id){
   const x=S.nwDays[id]; if(!x) return {st: S.mode==='teacher' && S.pmL['w'+weekOf(id.slice(-10))] ? 'none' : 'wait'};
@@ -3535,14 +3535,16 @@ function poRow(o, teacher){
     <div class="req-act"><span class="pill bk-${o.st}">${tr('pm.st.'+o.st)}</span>${act}</div></div>`;
 }
 // a bundle opens the newspaper and the practice pack together (the money is counted once, on the newspaper)
-const pmKinds = it => it.kind==='bundle' ? ['news','study'] : [it.kind==='news'||it.kind==='speak' ? it.kind : 'study'];
+const bMins = () => Math.max(0,Math.round(+pmInfo().bundle.mins||0));   // Speaking Buddy minutes inside the bundle (0 = none)
+const bName = () => tr(bMins()>0?'pm.b.name3':'pm.b.name');
+const pmKinds = it => it.kind==='bundle' ? ['news','study',...(bMins()>0?['speak']:[])] : [it.kind==='news'||it.kind==='speak' ? it.kind : 'study'];
 async function pmGrant(uid, it, amount){
   const ks=pmKinds(it), cur=clone(S.passes[uid])||{}; cur.name=S.profiles[uid]?.name||cur.name||''; cur.no=cur.no||{}; delete cur.no[it.id];
   // paying again adds the days on top of what is left
   const days=pmDays(it.kind==='bundle'?'bundle':ks[0]), ends={}; let spkSecs=0;
   ks.forEach((k,i)=>{ const st=cur[k]||{until:0,hist:[]}, from=Math.max(Date.now(), +st.until||0);
     // Speaking Buddy is sold per minute: the money that arrived buys that many minutes, added to what is left (an old pass with no minutes counts as 60)
-    const perMin=(+it.mins>0 && +it.price>0) ? it.price/it.mins : Math.max(1,+pmInfo().speak.perMin||2500), secs=k==='speak' ? Math.max(0,Math.floor((+amount||0)/perMin*60+1e-6)) : 0;
+    const perMin=(+it.mins>0 && +it.price>0) ? it.price/it.mins : Math.max(1,+pmInfo().speak.perMin||2500), secs=k!=='speak' ? 0 : it.kind==='bundle' ? bMins()*60 : Math.max(0,Math.floor((+amount||0)/perMin*60+1e-6));
     if(k==='speak' && !secs) throw new Error('amount');
     if(k==='speak') spkSecs=secs;
     if(k==='speak') st.quota=(typeof st.quota==='number' ? st.quota : (+st.until>0 ? 3600 : 0))+secs;
@@ -3553,7 +3555,7 @@ async function pmGrant(uid, it, amount){
 }
 async function pmUndo(uid, it){
   const cur=clone(S.passes[uid])||{}; if(cur.no) delete cur.no[it.id];
-  for(const k of pmKinds(it)){ const st=cur[k];
+  for(const k of new Set([...pmKinds(it), ...(it.kind==='bundle'?['speak']:[])])){ const st=cur[k];   // a bundle bought with minutes gives them back too
     if(st){ const h=(st.hist||[]).find(x=>x.oid===it.id); if(h){ st.until=Math.max(0,(+st.until||0)-h.days*DAY); if(h.secs && typeof st.quota==='number') st.quota=Math.max(0,st.quota-h.secs); st.hist=st.hist.filter(x=>x!==h); } } }
   await S.db.doc('passes/'+uid).set(cur);
 }
@@ -3571,7 +3573,7 @@ function openPassBuy(kind){
   if(mine.some(o=>o.kind===kind&&o.st==='wait')){ toast(tr('pm.already')); return; }
   const until=kind==='bundle'?Math.min(newsUntil(S.myPass),studyUntil(S.myPass)):passUntil(S.myPass,kind), days=pmDays(kind);
   showDlg(`<form id="pb-form" novalidate>${dlgHead(tr('mk.h'), esc(pmName(kind)))}
-    <div class="dlg-body"><p class="muted">${kind==='speak'?tr('sb.buyP',{p:som(P.speak.perMin)}):kind==='news'?tr('nw.buyP',{h:hh(P.news.hour),n:days}):kind==='bundle'?tr('pm.b.buyP',{n:days}):tr('st.buyP',{n:days})}</p>
+    <div class="dlg-body"><p class="muted">${kind==='speak'?tr('sb.buyP',{p:som(P.speak.perMin)}):kind==='news'?tr('nw.buyP',{h:hh(P.news.hour),n:days}):kind==='bundle'?tr(bMins()>0?'pm.b.buyP3':'pm.b.buyP',{n:days,m:bMins()}):tr('st.buyP',{n:days})}</p>
       ${kind!=='speak'&&until>Date.now()?`<p class="notice info small" style="margin:0">${tr('st.extend',{d:esc(dayMonth(until)),n:days})}</p>`:''}
       ${kind==='speak'?`<div class="field"><span>${tr('sb.packs')}</span><div class="lp-filter" role="group" id="pb-packs">${speakPacks().map(pk=>`<button type="button" data-m="${pk.mins}" aria-pressed="false">${tr('sb.mm',{n:pk.mins})} · ${som(pk.price)}</button>`).join('')}</div></div>
         <label class="field"><span>${tr('sb.buyMins')}</span><input class="inp num" id="pb-mins" type="number" min="1" max="5000" step="1" inputmode="numeric" value="30"></label>`:''}
@@ -3615,7 +3617,7 @@ function openSbPay(uid,it){
 function openPmGive(kind){
   const P=pmInfo(), studs=Object.entries(S.profiles).sort((a,b)=>(a[1].name||'').localeCompare(b[1].name||''));
   if(!studs.length){ toast(tr('task.noStudents')); return; }
-  showDlg(`<form id="pg-form" novalidate>${dlgHead(kind==='news'?esc(P.news.name):kind==='bundle'?tr('pm.b.name'):kind==='speak'?tr('sb.nav'):tr('st.name'), tr('pm.give'))}
+  showDlg(`<form id="pg-form" novalidate>${dlgHead(kind==='news'?esc(P.news.name):kind==='bundle'?bName():kind==='speak'?tr('sb.nav'):tr('st.name'), tr('pm.give'))}
     <div class="dlg-body"><label class="field"><span>${tr('student')}</span><select class="inp" id="pg-who">${studs.map(([uid,p])=>`<option value="${esc(uid)}">${esc(p.name||'?')}</option>`).join('')}</select></label>
       ${kind==='speak'?'':`<p class="small muted">${tr('st.giveP',{n:pmDays(kind)})}</p>`}
       ${P.langs.length>1&&kind!=='speak'?`<label class="field"><span>${tr('pm.l.pick')}</span><select class="inp" id="pg-lang">${langOpts(P.langs, P.langs[0])}</select></label>`:''}
@@ -3662,8 +3664,8 @@ function pmShopS(){
       status: pend?tr('pm.pending'):'', ok:on,
       btns: on?`<button class="btn primary" data-act="go" data-v="speak">${I.mic} ${tr('sv.openIn')}</button>`:`<button class="btn ghost" data-act="go" data-v="speak">${tr('pm.peek')}</button>${pend?'':`<button class="btn pen" data-act="pb-open" data-k="speak">${tr('mk.buy')}</button>`}`})); }
   if(P.bundle.on && P.news.on && P.study.on){
-    const both=hasNews()&&hasStudy(), pend=mine.some(o=>o.kind==='bundle'&&o.st==='wait'), save=(+P.news.price||0)+(+P.study.price||0)-(+P.bundle.price||0);
-    out.push(pmCard('bundle',{tag:tr('pm.b.tag'), title:tr('pm.b.name'), pitch:tr('pm.b.pitch'), feats:[tr('pm.b.f1'), tr('pm.b.f2'), ...(save>0?[tr('pm.b.f3',{n:som(save)})]:[])], price:P.bundle.price, per:tr('st.days',{n:pmDays('bundle')}),
+    const both=hasNews()&&hasStudy(), pend=mine.some(o=>o.kind==='bundle'&&o.st==='wait'), save=(+P.news.price||0)+(+P.study.price||0)+bMins()*P.speak.perMin-(+P.bundle.price||0);
+    out.push(pmCard('bundle',{tag:tr('pm.b.tag'), title:bName(), pitch:tr(bMins()>0?'pm.b.pitch3':'pm.b.pitch'), feats:[tr('pm.b.f1'), tr('pm.b.f2'), ...(bMins()>0?[tr('pm.b.f4',{m:bMins()})]:[]), ...(save>0?[tr('pm.b.f3',{n:som(save)})]:[])], price:P.bundle.price, per:tr('st.days',{n:pmDays('bundle')}),
       status: both?tr('st.activeTill',{d:esc(dayMonth(Math.min(newsUntil(S.myPass),studyUntil(S.myPass))))}) : pend?tr('pm.pending'):'', ok:both,
       btns: both?`<button class="btn primary" data-act="go" data-v="services">${I.cards} ${tr('sv.openIn')}</button>`:(pend?'':`<button class="btn pen" data-act="pb-open" data-k="bundle">${tr('mk.buy')}</button>`)})); }
   return out.length ? `<div class="pm-row">${out.join('')}</div>` : '';
@@ -3677,7 +3679,7 @@ function pmShopT(){
   return `<div class="section" style="margin-top:0"><h2>${tr('pm.h')}</h2><p class="small muted" style="margin:-6px 0 12px">${tr('pm.l.cur',{l:esc(P.langs.map(langName).join(', '))})} <button class="btn ghost sm" data-act="pm-set" data-k="langs">${tr('pm.l.edit')}</button></p><div class="pm-row">
     ${pmCard('news',{tag:tr('nw.tag'), title:esc(P.news.name)+' '+off(P.news.on), pitch:tr('nw.statT',{r:readers.length}), status:todo?tr('nw.todo',{n:todo}):'', price:P.news.price, per:tr('st.days',{n:P.news.days}), btns:`<button class="btn primary" data-act="go" data-v="news">${tr('pm.manage')}</button>`})}
     ${pmCard('study',{tag:tr('st.tag'), title:tr('st.name')+' '+off(P.study.on), pitch:tr('st.statT',{a:active,s:Object.values(S.stIdx).reduce((a,x)=>a+(x?.sets||[]).length,0)}), price:P.study.price, per:tr('st.days',{n:P.study.days}), btns:`<button class="btn primary" data-act="go" data-v="study">${tr('pm.manage')}</button>`})}
-    ${pmCard('bundle',{tag:tr('pm.b.tag'), title:tr('pm.b.name')+' '+off(P.bundle.on&&P.news.on&&P.study.on), pitch:tr('pm.b.statT',{n:Object.values(S.passes).filter(p=>newsUntil(p)>now&&studyUntil(p)>now).length}), price:P.bundle.price, per:tr('st.days',{n:P.bundle.days}), btns:`<button class="btn" data-act="pm-give" data-k="bundle">${tr('pm.give')}</button><button class="btn primary" data-act="pm-set" data-k="bundle">${tr('pm.settings')}</button>`})}
+    ${pmCard('bundle',{tag:tr('pm.b.tag'), title:bName()+' '+off(P.bundle.on&&P.news.on&&P.study.on), pitch:tr('pm.b.statT',{n:Object.values(S.passes).filter(p=>newsUntil(p)>now&&studyUntil(p)>now).length}), price:P.bundle.price, per:tr('st.days',{n:P.bundle.days}), btns:`<button class="btn" data-act="pm-give" data-k="bundle">${tr('pm.give')}</button><button class="btn primary" data-act="pm-set" data-k="bundle">${tr('pm.settings')}</button>`})}
     ${pmCard('speak',{tag:tr('sb.tag'), title:tr('sb.nav')+' '+off(P.speak.on), pitch:tr('sb.statT',{n:Object.values(S.passes).filter(p=>speakUntil(p)>now).length}), price:P.speak.perMin, per:tr('sb.perMin'), btns:`<button class="btn" data-act="pm-give" data-k="speak">${tr('pm.give')}</button><button class="btn primary" data-act="pm-set" data-k="speak">${tr('pm.settings')}</button>`})}
   </div>${reqs.length?`<h3 class="pm-reqh">${tr('pm.reqH')}</h3><div class="list">${reqs.map(o=>poRow(o,true)).join('')}</div>`:''}</div>`;
 }
@@ -3716,15 +3718,16 @@ function pmSettings(kind){
       const langs=[...document.querySelectorAll('.ps-lang:checked')].map(i=>i.value); if(!langs.length) langs.push('English');
       if(await savePm(n=>{ n.langs=langs; }, tr('bk.saved'))) closeDlg();
     });
-  } else if(kind==='bundle'){ const B=P.bundle, sep=(+P.news.price||0)+(+P.study.price||0);
-    showDlg(`<form id="ps-form" novalidate>${dlgHead(tr('pm.settings'), tr('pm.b.name'))}<div class="dlg-body">
+  } else if(kind==='bundle'){ const B=P.bundle, sep=(+P.news.price||0)+(+P.study.price||0)+bMins()*P.speak.perMin;
+    showDlg(`<form id="ps-form" novalidate>${dlgHead(tr('pm.settings'), bName())}<div class="dlg-body">
       <p class="small muted">${tr('pm.b.setP',{sum:som(sep)})}</p>
       <div class="lg-2"><label class="field"><span>${tr('nw.s.price')}</span><input class="inp num" id="ps-price" type="number" min="0" step="1000" value="${+B.price||0}"></label>
         <label class="field"><span>${tr('st.s.days')}</span><input class="inp num" id="ps-days" type="number" min="1" max="366" value="${+B.days||30}"></label></div>
+      <label class="field"><span>${tr('pm.b.s.mins')}</span><input class="inp num" id="ps-bmins" type="number" min="0" max="2000" value="${+B.mins||0}"></label>
       <label class="row" style="gap:8px"><input type="checkbox" id="ps-on" ${B.on?'checked':''}> <span>${tr('pm.sell')}</span></label></div>
       <div class="dlg-foot"><button type="button" class="btn ghost" data-act="dlg-close">${tr('cancel')}</button><button class="btn primary">${tr('save')}</button></div></form>`, {type:'ps'});
     $('#ps-form').addEventListener('submit', async e=>{ e.preventDefault();
-      const bundle={on:$('#ps-on').checked, price:Math.max(0,Math.round(+$('#ps-price').value||0)), days:Math.min(366,Math.max(1,Math.round(+$('#ps-days').value||30)))};
+      const bundle={on:$('#ps-on').checked, price:Math.max(0,Math.round(+$('#ps-price').value||0)), days:Math.min(366,Math.max(1,Math.round(+$('#ps-days').value||30))), mins:Math.min(2000,Math.max(0,Math.round(+$('#ps-bmins').value||0)))};
       if(await savePm(n=>{ n.bundle=bundle; }, tr('bk.saved'))) closeDlg();
     });
   } else if(kind==='speak'){ const T=P.speak;
