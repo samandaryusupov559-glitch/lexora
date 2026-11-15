@@ -686,6 +686,12 @@ button.slot.ask:hover{transform:translateY(-2px);border-color:var(--pen);box-sha
 .pm-art-cards span:nth-child(1){transform:rotate(-12deg) translate(-12px,4px);color:var(--c-prep)} .pm-art-cards span:nth-child(2){transform:rotate(6deg) translate(10px,-2px);color:var(--pen)} .pm-art-cards span:nth-child(3){color:var(--ok)}
 .pm-card:hover .pm-art-cards span:nth-child(1){transform:rotate(-18deg) translate(-20px,6px)} .pm-card:hover .pm-art-cards span:nth-child(2){transform:rotate(12deg) translate(18px,-4px)}
 .pm-art-cards span{transition:transform .4s var(--spring)}
+.pm-art-bundle{position:relative;width:100%;max-width:150px;height:140px;display:flex;align-items:center;justify-content:center}
+.pm-art-bundle .pm-art-news{width:92px;max-width:92px;position:absolute;left:0;top:6px;transform:rotate(-7deg)}
+.pm-bd-card{position:absolute;right:0;bottom:2px;width:78px;height:92px;border-radius:14px;background:var(--sheet);border:1px solid var(--line);box-shadow:0 12px 22px -12px var(--shadow);display:grid;place-items:center;align-content:center;gap:4px;transform:rotate(7deg);transition:transform .4s var(--spring)}
+.pm-bd-card b{font-family:var(--f-display);font-size:28px;font-weight:700;color:var(--pen)}
+.pm-bd-card u{text-decoration:none;font-size:20px;font-weight:800;color:var(--ok);line-height:1}
+.pm-card:hover .pm-bd-card{transform:rotate(12deg) translate(4px,-4px)}
 .pm-art-speak span:nth-child(2){font-size:20px} .pm-art-speak span:nth-child(3){font-size:44px}
 .pm-body{padding:18px 20px;display:flex;flex-direction:column;gap:8px;min-width:0}
 .pm-body h3{font-size:22px;line-height:1.15;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
@@ -3595,7 +3601,7 @@ const pmBack = () => S.mode==='student' && (hasNews()||hasStudy()||myPassOrders(
   ? `<button class="btn ghost sm pm-back" data-act="go" data-v="services">${I.back} ${tr('sv.h')}</button>`
   : `<button class="btn ghost sm pm-back" data-act="go" data-v="market">${I.back} ${tr('mk.h')}</button>`;
 const newsArt = () => `<div class="pm-art-news" aria-hidden="true"><b>${esc(pmInfo().news.name)}</b><i></i><span></span><span></span><span class="s"></span><em></em><span></span><span class="s"></span></div>`;
-const bundleArt = () => `<div class="pm-art-cards" aria-hidden="true"><span>📰</span><span>Aa</span><span>✓</span></div>`;
+const bundleArt = () => `<div class="pm-art-bundle" aria-hidden="true"><div class="pm-art-news"><b>${esc(pmInfo().news.name)}</b><i></i><span></span><span></span><span class="s"></span><em></em><span></span></div><div class="pm-bd-card"><b>Aa</b><u>✓</u></div></div>`;
 const cardsArt = () => `<div class="pm-art-cards" aria-hidden="true"><span>Aa</span><span>?</span><span>✓</span></div>`;
 const speakArt = () => `<div class="pm-art-cards pm-art-speak" aria-hidden="true"><span>Hi</span><span>Salom</span><span>🎙</span></div>`;
 function pmCard(kind, o){
