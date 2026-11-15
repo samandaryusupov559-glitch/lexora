@@ -2476,6 +2476,7 @@ function renderMain0(){
   // a running call is never redrawn (that would drop it); leaving the page ends it
   if(v==='call' && S.callRoom===S.view.room && $('#call-box')) return;
   if(v!=='call' && S.callRoom) callStop();
+  if(v==='speak' && $('#sb-box elevenlabs-convai') && $('#sb-box').dataset.l===sbCur()) return;   // a running Speaking Buddy chat is never redrawn
   if(v==='login'){ m.innerHTML=vLogin(); setTimeout(()=>$('#login-email')?.focus(),50); return; }
   if(v==='landing'){ m.innerHTML=vLanding(); return; }
   if(v==='verify'){ m.innerHTML=vVerify(); return; }
@@ -7528,8 +7529,8 @@ function libSync(){
   S._libUn = langs.map(l=>S.db.collection('library').where('lang',l).onSnapshot(q=>{ const o={}; q.docs.forEach(d=>{ if(d.exists) o[d.id]=d.data(); }); S.libBy[l]=o; S.lib=Object.assign({}, ...Object.values(S.libBy)); refreshAny(); }, ()=>{}));
 }
 const libIcon = k => k==='audio'?'🎧':k==='video'?'🎬':k==='link'?'🔗':'📘';
-/* ---------------- Speaking Buddy (ElevenLabs voice agent) ---------------- */
-const SB_AGENT = 'agent_3201m7f6ds26e77rjbtk5df4k7qh';
+/* ---------------- Speaking Buddy (ElevenLabs voice agents, one per language) ---------------- */
+const SB_AGENTS = { English:'agent_3201m7f6ds26e77rjbtk5df4k7qh', Russian:'agent_8701m7f70eysf0aa39cfccvgqpvw' };
 const SB_SRC = 'https://unpkg.com/@elevenlabs/convai-widget-embed';
 let sbPromise = null;
 function sbScript(){
@@ -7542,17 +7543,30 @@ function sbScript(){
   });
   return sbPromise;
 }
+// the languages this person can practise: their own languages that have a Speaking Buddy
+// (a person whose languages are not known yet gets English, like everywhere else on the site)
+function sbLangs(){
+  const mine=myLangs(), ls=mine.filter(l=>SB_AGENTS[l]);
+  return ls.length || mine.length ? ls : ['English'];
+}
+function sbCur(){ const ls=sbLangs(), f=S.view; if(!ls.includes(f.lang)) f.lang=ls[0]||''; return f.lang; }
 function vSpeak(){
-  return `<div class="page-head"><div><h1>${tr('sb.h')}</h1><p>${tr('sb.p')}</p></div></div>
-    <div class="card section sb-card"><div id="sb-box" class="sb-box"><div class="loading">${tr('sb.loading')}</div></div></div>
+  const ready=langsReady(), ls=ready?sbLangs():[], cur=ready?sbCur():'';
+  const chips = ls.length>1 ? `<div class="lp-filter" role="group" aria-label="${tr('c.fLang')}">${ls.map(l=>`<button data-act="sb-lang" data-v="${esc(l)}" aria-pressed="${l===cur}">${esc(langName(l))}</button>`).join('')}</div>` : '';
+  const body = !ready ? `<div class="loading">${tr('sb.loading')}</div>`
+    : cur ? `<div id="sb-box" class="sb-box" data-l="${esc(cur)}"><div class="loading">${tr('sb.loading')}</div></div>`
+    : `<div class="notice">${tr('sb.noLang')}</div>`;
+  return `<div class="page-head"><div><h1>${tr('sb.h')}</h1><p>${tr('sb.p')}</p></div></div>${chips}
+    <div class="card section sb-card">${body}</div>
     <div class="card section" style="padding:16px 20px"><h3>${tr('sb.tipsH')}</h3><ol class="small muted lv-steps" style="margin-top:8px"><li>${tr('sb.t1')}</li><li>${tr('sb.t2')}</li><li>${tr('sb.t3')}</li></ol></div>
     <div class="notice">${tr('sb.limit')}</div>`;
 }
 function sbLoad(){
   const box=$('#sb-box'); if(!box) return;
+  const lang=box.dataset.l, agent=SB_AGENTS[lang]; if(!agent) return;
   sbScript().then(()=>{
-    const b=$('#sb-box'); if(!b || S.view.name!=='speak') return;
-    b.innerHTML=`<p>${tr('sb.ready')}</p><elevenlabs-convai agent-id="${SB_AGENT}"></elevenlabs-convai>`;
+    const b=$('#sb-box'); if(!b || S.view.name!=='speak' || b.dataset.l!==lang) return;
+    b.innerHTML=`<p>${tr('sb.ready')}</p><elevenlabs-convai agent-id="${agent}"></elevenlabs-convai>`;
   }).catch(()=>{
     const b=$('#sb-box'); if(!b) return;
     b.innerHTML=`<p class="muted">${tr('sb.err')}</p><button class="btn pen sm" data-act="sb-retry">${tr('sb.retry')}</button>`;
@@ -8075,6 +8089,7 @@ document.addEventListener('click', async ev => {
   switch(act){
     case 'go': if(b.dataset.v==='write'){ startEdit(); } else go(b.dataset.v); break;
     case 'lang': setLang(b.dataset.l); break;
+    case 'sb-lang': S.view.lang=b.dataset.v; renderMain(); break;
     case 'sb-retry': { const bx=$('#sb-box'); if(bx) bx.innerHTML=`<div class="loading">${tr('sb.loading')}</div>`; sbLoad(); break; }
     case 'sign-out': if(S.au) S.au.signOut(S.auth); break;
     case 'login-step': S.view={name:'login',step:b.dataset.s,email:($('#login-email')?.value||S.view.email||'').trim()}; renderMain(); break;
