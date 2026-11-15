@@ -598,7 +598,7 @@ exports.callToken = onRequest({ cors: CALL_ORIGINS, invoker: 'public' }, async (
    The ElevenLabs agents are private (they only start with a signed link), so the only way in is this function.
    speakUse/{uid}  {used, log:[{at,lang}], spent, pend:{at,lang,cid}, hist:[{at,secs,cid}]}   (server only; the person may read their own)
         used  = free conversations taken;  spent = seconds of paid talking used up;  pend = a conversation that has started and is not settled yet
-   passes/{uid}.speak  {until, quota, hist}   written by the owner when the money arrived: quota = seconds bought in all, until = last day
+   passes/{uid}.speak  {until, quota, hist}   written by the owner when the money arrived: quota = seconds bought in all (they never expire; `until` only gates an old pass that has no quota)
    Balance = quota - spent. After every conversation the real length is read from ElevenLabs and taken off the balance (settle).
    A conversation never lasts longer than SPEAK_CAP seconds (the agents close it themselves), so that is the most one can cost.
    Only the owner is never limited; invited teachers do not use the Speaking Buddy (403 'teacher').
@@ -616,7 +616,7 @@ async function speakState(uid, now) {
   const used = +ud.used || 0, until = +sp.until || 0, spent = +ud.spent || 0;
   const quota = until || sp.quota != null ? (typeof sp.quota === 'number' ? Math.max(0, sp.quota) : SPEAK_LEGACY) : 0;
   const secs = Math.max(0, quota - spent);
-  return { free: SPEAK_FREE, used, left: Math.max(0, SPEAK_FREE - used), until, quota, spent, secs, paid: until > now && secs > 0, pending: !!ud.pend };
+  return { free: SPEAK_FREE, used, left: Math.max(0, SPEAK_FREE - used), until, quota, spent, secs, paid: secs > 0 && (typeof sp.quota === 'number' || until > now), pending: !!ud.pend };
 }
 // one trial is taken inside a transaction, so two tabs opened at once cannot both slip through
 async function speakTake(uid, lang, now) {

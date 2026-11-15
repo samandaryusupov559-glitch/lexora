@@ -330,9 +330,12 @@ const ev = (params, after, before) => ({ params, data: before === undefined ? { 
   store.set('passes/s3', { name: 'Kid', speak: { until: 5e12 + 864e5, hist: [] } }); store.set('speakUse/s3', { used: 1 });
   sr = await sp('s3', { action: 'status', lang: 'English' });
   ok('an old pass with no minutes counts as 3600 seconds', sr.body.paid && sr.body.secs === 3600);
+  sr = await sp('s3', { action: 'status', lang: 'English' }, 5e12 + 2 * 864e5);
+  ok('...and an old pass still ends with its days', !sr.body.paid);
   store.set('passes/s3', { name: 'Kid', speak: { until: 5e12 + 864e5, quota: 600, hist: [] } }); store.set('speakUse/s3', { used: 1 });
-  sr = await sp('s3', { action: 'start', lang: 'English' }, 5e12 + 2 * 864e5);
-  ok('after the pass days end it is refused again', sr.code === 402);
+  sr = await sp('s3', { action: 'start', lang: 'English' }, 5e12 + 400 * 864e5);
+  ok('bought minutes do not expire: a year later they still work', sr.code === 200 && sr.body.paid && sr.body.secs === 600);
+  store.delete('speakUse/s3'); store.set('speakUse/s3', { used: 1 });
   store.set('speakUse/s3', { used: 1 }); store.delete('passes/s3'); elOk = false; store.set('speakUse/s4', { used: 0, log: [] }); users.s4 = { email: 'b@x.com', emailVerified: true };
   sr = await sp('s4', { action: 'start', lang: 'English' });
   ok('if ElevenLabs fails the trial is given back', sr.code === 502 && store.get('speakUse/s4').used === 0);
