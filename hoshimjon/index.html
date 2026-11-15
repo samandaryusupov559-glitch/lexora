@@ -8,6 +8,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&family=Nunito:wght@500;700;800&display=swap" rel="stylesheet">
 <style>
+#dlg.hard .choice small{display:none!important}
 /* Yo'nalish: Toshkent kechki quyoshi. Indigo fon, qalpoq kremi, firuza va oltin urg'u. Bitta dunyo, bitta mavzu. */
 :root{
   --ink:#171a29; --ink2:#232840; --ink3:#2f3556;
@@ -255,7 +256,12 @@ const LEX = {
   'found': { uz: "topdi, topgan (find fe'lining o'tgan zamoni)", g: "find - found - found (tartibsiz fe'l).", ex: "I found my keys yesterday." },
   'fountain': { uz: "favvora", g: "Joy oldidan near/by: near the fountain (favvora yonida).", ex: "We met near the fountain." },
   'Here you go': { uz: "Mana, marhamat", g: "Biror narsa uzatayotganda aytiladi. Here you are bilan bir xil ma'noda.", ex: "Here you go. Enjoy your meal." },
-  'take care': { uz: "ehtiyot qilmoq, qarab turmoq", g: "take care of + ot: biror narsaga/kimgadir qaramoq. of ni unutmang: Take care of it.", ex: "Please take care of your health." }
+  'take care': { uz: "ehtiyot qilmoq, qarab turmoq", g: "take care of + ot: biror narsaga/kimgadir qaramoq. of ni unutmang: Take care of it.", ex: "Please take care of your health." },
+
+  'straight ahead': { uz: "to'g'riga", g: "Yo'l ko'rsatishda: go straight ahead - to'g'ri yuring.", ex: "Go straight ahead for two blocks." },
+  'turn left': { uz: "chapga burilmoq", g: "Yo'nalish: turn left (chapga), turn right (o'ngga). Buyruq shaklida fe'l boshlanadi.", ex: "Turn left at the fountain." },
+  'fresh': { uz: "yangi, toza (yangi uzilgan, yangi pishirilgan)", g: "Oziq-ovqat haqida: fresh bread, fresh fruit. Teskarisi: old yoki stale (non uchun).", ex: "We sell fresh fruit every morning." },
+  'a kilo of': { uz: "bir kilogramm", g: "a kilo of + ot: a kilo of apples. Ko'plik: two kilos of apples.", ex: "I would like a kilo of apples, please." },
 };
 
 /* ---------- Qismlar ---------- */
@@ -425,6 +431,30 @@ const NPCS = [
   }
 ];
 
+/* Qo'shimcha suhbat mavzulari. Har bir NPC uchun ro'yxat: har safar yangi mavzu (haftalik avtomatik qo'shiladi). */
+const TOPICS = {
+  leo: [
+    { id: 'leo-directions', tree: {
+      n1: { say: "Excuse me, do you know the way to the station? I think go {straight ahead} and then {turn left}.", uz: "Kechirasiz, bekatga yo'lni bilasizmi? Menimcha to'g'riga yurib, keyin chapga burilish kerak.",
+        choices: [
+          { t: "Yes, go straight ahead and turn left at the fountain.", uz: "Ha, to'g'ri yuring va favvorada chapga buriling.", ok: true, next: 'END' },
+          { t: "Yes, go straight ahead and left turn.", uz: "Ha, to'g'ri yuring va chap burilish.", ok: false, why: "Buyruqda fe'l bo'lishi kerak: turn left (left turn emas)." },
+          { t: "Yes, I am straight ahead.", uz: "Ha, men to'g'riman.", ok: false, why: "Savol yo'l haqida. Yo'l ko'rsatish: go straight ahead, turn left." }
+        ] }
+    } }
+  ],
+  farid: [
+    { id: 'farid-fruit', tree: {
+      n1: { say: "Today I have {fresh} apples. Would you like {a kilo of} apples?", uz: "Bugun menda yangi olmalar bor. Bir kilogramm olma olasizmi?",
+        choices: [
+          { t: "Yes, I would like a kilo of apples, please.", uz: "Ha, bir kilogramm olma olaman.", ok: true, next: 'END' },
+          { t: "Yes, I like a kilo apples.", uz: "Ha, menga bir kilo olma yoqadi.", ok: false, why: "Buyurtmada I would like ishlatiladi, ot oldidan of kerak: a kilo of apples." },
+          { t: "No, the apples are fresh me.", uz: "Yo'q, olmalar yangi menga.", ok: false, why: "Gap mantiqsiz. Rad etish: No, thank you." }
+        ] }
+    } }
+  ]
+};
+
 /* So'zlar matn ichida {kalit} ko'rinishida; shu funksiya qism bo'yicha barcha kalitlarni yig'adi */
 function collectKeys(npc) {
   const out = [];
@@ -475,10 +505,41 @@ const S = {
   chapter: 1, hearts: 3, mistakes: 0,
   saved: store.get('hj_saved', {}),
   hasPack: DEMO ? store.get('hj_pack', false) : false,
-  showUz: false, started: false
+  showUz: false, started: false,
+  stats: {}, level: 1, topics: {}      // moslashuv: so'z statistikasi, daraja (0 oson, 1 o'rta, 2 qiyin), suhbat mavzulari
 };
 let D = null;               // joriy suhbat
-function persist() { store.set(SKEY(), S.saved); if (DEMO) store.set('hj_pack', S.hasPack); }
+function persist() { store.set(SKEY(), S.saved); store.set(SKEY() + '_prog', { stats: S.stats, level: S.level, topics: S.topics }); if (DEMO) store.set('hj_pack', S.hasPack); }
+function loadProg() {
+  const p = store.get(SKEY() + '_prog', {});
+  S.stats = p.stats || {}; S.level = typeof p.level === 'number' ? p.level : 1; S.topics = p.topics || {};
+  S.showUz = S.level === 0;
+}
+loadProg();
+const LEVEL_NAMES = ['Oson', "O'rta", 'Qiyin'];
+function shuffle(a) { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
+function nodeKeys(node) { return (node.say.match(/\{([^}]+)\}/g) || []).map(m => m.slice(1, -1)).filter(k => LEX[k]); }
+function note(node, ok) {
+  if (node.memo) return;
+  nodeKeys(node).forEach(k => { const s = S.stats[k] || (S.stats[k] = { ok: 0, miss: 0 }); if (ok) s.ok++; else s.miss++; });
+  persist();
+}
+const weakness = k => { const s = S.stats[k] || { ok: 0, miss: 0 }; return (s.miss - s.ok) * 10 - s.ok; };
+/* Noor: saqlangan so'zlardan, avval xato qilinganlardan boshlab, 3 savollik takrorlash */
+function reviewTree() {
+  const pick = Object.keys(S.saved).filter(k => LEX[k]).map(k => [k, weakness(k) + Math.random()]).sort((a, b) => b[1] - a[1]).slice(0, 3).map(x => x[0]);
+  const all = Object.keys(LEX), tree = {};
+  pick.forEach((k, i) => {
+    const right = LEX[k].uz;
+    const others = shuffle(all.filter(x => x !== k && LEX[x].uz !== right)).slice(0, 2).map(x => LEX[x].uz);
+    const last = i === pick.length - 1;
+    tree['n' + (i + 1)] = {
+      say: (i ? 'Next one. ' : "Let's review your words. ") + 'What does {' + k + '} mean?', uz: "'" + k + "' nimani anglatadi?",
+      choices: shuffle([{ t: right, uz: '', ok: true, next: last ? 'END' : 'n' + (i + 2) }].concat(others.map(o => ({ t: o, uz: '', ok: false, why: "To'g'ri javob: " + right + '. ' + LEX[k].g }))))
+    };
+  });
+  return tree;
+}
 function savedCount() { return Object.keys(S.saved).filter(k => LEX[k]).length; }
 
 /* ================= THREE: SAHNA ================= */
@@ -986,14 +1047,26 @@ function rich(text) {
 }
 function openDialog(npc) {
   const def = npc.def, run = def.chapter === S.chapter;
-  let tree;
-  if (def.chapter === 0) tree = def.tree;
-  else if (run) tree = def.tree;
+  let tree, adv = false, startId = 'n1';
+  const tops = (typeof TOPICS !== 'undefined' && TOPICS[def.id]) || [], done = S.topics[def.id] || 0;
+  if (def.id === 'noor' && savedCount() >= 3) tree = reviewTree();
+  else if (def.chapter === 0) {
+    if (done >= 1 && tops[done - 1]) tree = tops[done - 1].tree; else tree = def.tree;
+    adv = done === 0 || !!tops[done - 1];
+  } else if (run) {
+    tree = Object.assign({}, def.tree);
+    const old = Object.keys(S.saved).filter(k => LEX[k] && S.saved[k].ch > 0 && S.saved[k].ch < S.chapter).sort((a, b) => weakness(b) - weakness(a));
+    if (old.length) {
+      tree.n0 = { memo: true, say: 'Nice to see you again! Do you still remember {' + old[0] + '}?', uz: "Yana ko'rishganimdan xursandman! '" + old[0] + "' so'zini hali eslaysizmi?", choices: [{ t: 'Yes, I do.', uz: 'Ha, eslayman.', ok: true, next: 'n1' }] };
+      startId = 'n0';
+    }
+  } else if (def.chapter < S.chapter && tops[done]) { tree = tops[done].tree; adv = true; }
   else {
     const i = def.idle;
     tree = { n1: { say: i.say, uz: i.uz, choices: [{ t: i.reply, uz: i.replyUz, ok: true, next: 'END' }] } };
   }
-  D = { npc, tree, id: 'n1', run, locked: false, npcTalk: false, heroTalk: false };
+  D = { npc, tree, id: startId, run, adv, locked: false, npcTalk: false, heroTalk: false, nodeMiss: false };
+  $('#dlg').classList.toggle('hard', S.level === 2);
   S.mode = 'dialog';
   $('#dName').textContent = def.name; $('#dRole').textContent = def.role;
   dLog.innerHTML = ''; dCard.classList.add('hidden'); dChoices.innerHTML = '';
@@ -1013,7 +1086,7 @@ function logRow(kind, html, uz, speakText) {
   dLog.appendChild(row); dLog.scrollTop = dLog.scrollHeight;
 }
 function showNode() {
-  const node = D.tree[D.id];
+  const node = D.tree[D.id]; D.nodeMiss = false;
   D.npcTalk = true; setTimeout(() => { if (D) D.npcTalk = false; }, 1500);
   logRow('npc', rich(node.say), node.uz, node.say);
   renderChoices(node);
@@ -1033,6 +1106,7 @@ function choose(i) {
   const btn = dChoices.querySelectorAll('.choice')[i];
   if (!btn || btn.disabled) return;
   if (c.ok) {
+    if (!D.nodeMiss) note(node, true);
     D.locked = true; D.heroTalk = true; setTimeout(() => { if (D) D.heroTalk = false; }, 1400);
     logRow('me', esc(c.t), c.uz, c.t); dChoices.innerHTML = '';
     setTimeout(() => {
@@ -1041,6 +1115,7 @@ function choose(i) {
       if (c.next === 'END') endDialog(true); else { D.id = c.next; showNode(); }
     }, 750);
   } else {
+    if (!D.nodeMiss) { D.nodeMiss = true; note(node, false); }
     btn.classList.add('wrong'); btn.disabled = true;
     const w = document.createElement('div'); w.className = 'why'; w.textContent = c.why; btn.after(w);
     if (D.run) {
@@ -1061,6 +1136,7 @@ function exhausted() {
 function closeDialog() { endDialog(false); }
 function endDialog(done) {
   const wasRun = D && D.run && D.npc.def.chapter === S.chapter, after = D && D.npc.def.afterEnd;
+  if (done && D && D.adv) { S.topics[D.npc.def.id] = (S.topics[D.npc.def.id] || 0) + 1; persist(); }
   $('#dlg').classList.add('hidden'); dCard.classList.add('hidden'); app.classList.remove('in-dlg');
   D = null; S.mode = 'play';
   if (done && wasRun) completeChapter();
@@ -1123,10 +1199,15 @@ function completeChapter() {
   S.mode = 'summary';
   const ch = CHAPTERS[S.chapter - 1], keys_ = chapterKeys(S.chapter);
   const stars = S.mistakes <= 1 ? 3 : S.mistakes <= 3 ? 2 : 1;
+  const lv0 = S.level;
+  if (stars === 3) S.level = Math.min(2, S.level + 1); else if (stars === 1) S.level = Math.max(0, S.level - 1);
+  S.showUz = S.level === 0; persist();
+  const lvNote = S.level > lv0 ? "Yaxshi natija. Keyingi qismda savollar qiyinroq bo'ladi." : S.level < lv0 ? "Keyingi qismda tarjimalar yordam beradi." : '';
   const mine = keys_.filter(k => S.saved[k]), rest = keys_.filter(k => !S.saved[k]);
   showOv('<div class="scr"><div class="card"><p class="eyebrow" style="color:#c98a12">Qism ' + ch.n + ' tugadi</p><h2>' + esc(ch.title) + '</h2>'
     + '<div class="stars">' + [1, 2, 3].map(i => '<span class="' + (i <= stars ? '' : 'off') + '">&#9733;</span>').join('') + '</div>'
     + '<p>Xatolar: ' + S.mistakes + '. Saqlagan so\'zlaringiz katalogga qo\'shildi.</p>'
+    + '<p class="note">Daraja: <b>' + LEVEL_NAMES[S.level] + '</b>. ' + lvNote + '</p>'
     + '<div class="sub">Saqlangan so\'zlar (' + mine.length + ')</div><div class="chips">' + (mine.length ? mine.map(k => '<span class="cw on">' + esc(k) + '</span>').join('') : '<span class="note">Hali saqlanmagan.</span>') + '</div>'
     + (rest.length ? '<div class="sub">Bu qismdagi boshqa so\'zlar</div><div class="chips">' + rest.map(k => '<span class="cw"><button data-act="addw" data-k="' + esc(k) + '">+ ' + esc(k) + '</button></span>').join('') + '</div><button class="btn sm dark" data-act="addall">Hammasini katalogga qo\'shish</button>' : '')
     + '<div class="row-b"><button class="btn" data-act="catalog">So\'zlar katalogi</button><button class="btn primary" data-act="nextch">' + (S.chapter < CHAPTERS.length ? 'Keyingi qism' : 'Davom etish') + '</button></div></div></div>');
@@ -1236,7 +1317,7 @@ window.addEventListener('message', e => {
   if (e.origin !== location.origin) return;
   const d = e.data; if (!d || d.type !== 'lexora-user') return;
   LX = { hasPack: !!d.hasPack, uid: String(d.uid || '').replace(/[^\w-]/g, '').slice(0, 64) };
-  S.saved = store.get(SKEY(), {}); S.hasPack = LX.hasPack; $('#wCount').textContent = savedCount();
+  S.saved = store.get(SKEY(), {}); loadProg(); S.hasPack = LX.hasPack; $('#wCount').textContent = savedCount();
   if (S.mode === 'catalog') renderCatalog(); else if (S.mode === 'title') showTitle();
 });
 if (EMBED && window.parent !== window) { try { window.parent.postMessage({ type: 'hj-ready' }, location.origin); } catch (e) {} }
