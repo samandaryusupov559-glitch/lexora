@@ -656,8 +656,8 @@ exports.speakToken = onRequest({ cors: CALL_ORIGINS, invoker: 'public' }, async 
 /* ---------------- teacher sign-in link, as a designed Lexora e-mail ----------------
    The Firebase default mail is plain text from "daybook-4497a" and often lands in spam. This sends the same one-time link
    from our own domain through Resend (RESEND_API_KEY, RESEND_FROM = 'Lexora <login@lexoralc.uz>'), as a branded HTML mail.
-   Only the owner and the teachers listed in staff/ get a mail; everyone else gets the same "ok" answer and nothing is sent,
-   so the form cannot be used to spam strangers or to find out who is a teacher. One mail per address per minute.
+   Only the owner and the teachers listed in staff/ get this mail (so the form cannot be used to send our branded mail to strangers);
+   for anyone else the answer is {sent:false} and the site sends the plain Firebase mail as before. One mail per address per minute.
    Without the keys it answers {error:'off'} and the site falls back to the Firebase mail. */
 const LOGIN_TXT = {
   uz: { subj: 'Lexora: kirish havolasi', hi: 'Assalomu alaykum!', body: 'Lexora’ga kirish uchun quyidagi tugmani bosing. Havola bir martalik.', btn: 'Lexora’ga kirish', alt: 'Tugma ishlamasa, havolani brauzerga nusxalang:', ign: 'Bu so‘rovni siz yubormagan bo‘lsangiz, xatni e’tiborsiz qoldiring: hech narsa o‘zgarmaydi.', foot: 'Lexora · onlayn til markazi' },
@@ -687,7 +687,7 @@ async function loginLinkRun(body, now = Date.now()) {
   const key = process.env.RESEND_API_KEY, from = process.env.RESEND_FROM;
   if (!key || !from) return { code: 503, body: { ok: false, error: 'off' } };
   const staff = email === OWNER() || (await db.doc('staff/' + email).get()).exists;
-  if (!staff) return { code: 200, body: { ok: true } };
+  if (!staff) return { code: 200, body: { ok: true, sent: false } };   // not a teacher here: the site falls back to the plain Firebase mail, as before
   const ref = db.doc('loginMail/' + crypto.createHash('sha256').update(email).digest('hex').slice(0, 40)), last = (await ref.get()).data();
   if (last && now - (last.at || 0) < 60e3) return { code: 429, body: { ok: false, error: 'wait' } };
   await ref.set({ at: now });

@@ -317,7 +317,7 @@ const ev = (params, after, before) => ({ params, data: before === undefined ? { 
   ok('a second request within a minute is held back', (await lm('dil@x.com')).code === 429 && mails.length === 1);
   ok('after a minute it works again', (await lm('dil@x.com', {}, 7e12 + 61e3)).code === 200 && mails.length === 2);
   lr = await lm('stranger@x.com');
-  ok('a stranger gets the same ok but no mail', lr.code === 200 && lr.body.ok === true && mails.length === 2);
+  ok('a stranger gets no branded mail and is told to use the Firebase one', lr.code === 200 && lr.body.sent === false && mails.length === 2);
   ok('the owner gets a mail', (await lm('samandaryusupov559@gmail.com')).code === 200 && mails.length === 3);
   ok('the mail exists in uz and en too', /Lexora’ga kirish/.test(bot._t.loginMail('uz', 'https://l').html) && /Sign in to Lexora/.test(bot._t.loginMail('en', 'https://l').html));
   mails.rsOk = false; ok('a Resend failure is reported', (await lm('dil@x.com', {}, 7e12 + 200e3)).code === 502);

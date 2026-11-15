@@ -8152,7 +8152,7 @@ document.addEventListener('click', async ev => {
       try{
         // a designed Lexora mail from our own domain (loginLink function); if it is not set up or fails, the plain Firebase mail is the fallback
         const url=location.origin+location.pathname; let done=false;
-        try{ const r=await fetch(`https://europe-west1-${S.fbProject}.cloudfunctions.net/loginLink`, {method:'POST', headers:{'content-type':'application/json'}, body:JSON.stringify({email, url, lang:LANG})}); const j=await r.json().catch(()=>({})); if(r.status===429){ toast(tr('lo.wait')); b.disabled=false; b.textContent=tr('lo.sendLink'); break; } done=!!j.ok; }catch(e0){}
+        try{ const r=await fetch(`https://europe-west1-${S.fbProject}.cloudfunctions.net/loginLink`, {method:'POST', headers:{'content-type':'application/json'}, body:JSON.stringify({email, url, lang:LANG})}); const j=await r.json().catch(()=>({})); if(r.status===429){ toast(tr('lo.wait')); b.disabled=false; b.textContent=tr('lo.sendLink'); break; } done=!!j.ok && j.sent!==false; }catch(e0){}
         if(!done) await S.au.sendSignInLinkToEmail(S.auth, email, {url, handleCodeInApp:true});
         LS.set('signin-email',email); S.view={name:'login',step:'sent',email}; renderMain(); }
       catch(e){ toast(authMsg(e)); b.disabled=false; b.textContent=tr('lo.sendLink'); } break; }
