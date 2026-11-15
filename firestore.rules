@@ -682,6 +682,19 @@ service cloud.firestore {
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['fix', 'fixBy']);
       allow delete: if isTeacher() || isStaff();
     }
+    // Voice chat in the city: short-lived WebRTC offers/answers between two players. Only the addressee reads a message,
+    // only the sender writes it, and either side may delete it.
+    match /hjsig/{id} {
+      allow read: if anyAuth() && resource.data.to == request.auth.uid;
+      allow create: if anyAuth()
+        && request.resource.data.from == request.auth.uid
+        && request.resource.data.to is string && request.resource.data.to.size() > 0 && request.resource.data.to.size() <= 128
+        && request.resource.data.kind in ['offer', 'answer']
+        && request.resource.data.sid is string && request.resource.data.sid.size() <= 24
+        && request.resource.data.sdp is string && request.resource.data.sdp.size() > 0 && request.resource.data.sdp.size() <= 20000
+        && request.resource.data.ts is number;
+      allow delete: if anyAuth() && (resource.data.to == request.auth.uid || resource.data.from == request.auth.uid);
+    }
     match /hjprog/{uid} {
       allow read: if isMeAny(uid) || isTeacher() || isStaff();
       allow create, update: if isMeAny(uid) && request.resource.data.uid == uid

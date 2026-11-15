@@ -135,5 +135,16 @@ await t('student cannot queue a notice', setDoc(doc(A,'tgq/q3'), NQ('alice')), f
 await t('unverified owner email cannot queue a notice', setDoc(doc(FAKE,'tgq/q4'), NQ('fake')), false);
 await t('nobody reads the queue', getDoc(doc(T,'tgq/q1')), false);
 await t('notice with extra fields is refused', setDoc(doc(T,'tgq/q5'), {...NQ('teach'), html:'<b>'}), false);
+console.log('City voice chat signaling (hjsig)');
+const SIG = (from, to) => ({from, to, kind:'offer', sid:'s1', sdp:'{"type":"offer"}', ts:now});
+const ANON = env.authenticatedContext('anon1', {firebase:{sign_in_provider:'anonymous'}}).firestore();
+await t('anonymous player sends a signal as themselves', setDoc(doc(ANON,'hjsig/g1'), SIG('anon1','alice')), true);
+await t('player cannot send a signal as someone else', setDoc(doc(A,'hjsig/g2'), SIG('bob','alice')), false);
+await t('signal with an unknown kind is refused', setDoc(doc(A,'hjsig/g3'), {...SIG('alice','bob'), kind:'evil'}), false);
+await t('oversized signal is refused', setDoc(doc(A,'hjsig/g4'), {...SIG('alice','bob'), sdp:'x'.repeat(20001)}), false);
+await t('addressee reads their signals', getDocs(query(collection(A,'hjsig'), where('to','==','alice'))), true);
+await t('player cannot read signals addressed to someone else', getDocs(query(collection(A,'hjsig'), where('to','==','bob'))), false);
+await t('third player cannot delete a signal', deleteDoc(doc(B,'hjsig/g1')), false);
+await t('addressee deletes a consumed signal', deleteDoc(doc(A,'hjsig/g1')), true);
 console.log(`\n${pass} passed, ${fail} failed`);
 await env.cleanup(); process.exit(fail?1:0);

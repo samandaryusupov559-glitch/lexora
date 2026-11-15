@@ -7766,7 +7766,7 @@ function vGame(){
     ${staff ? `<div class="seg" role="group"><button data-act="hj-tab" data-t="play" aria-pressed="${!watch}">${tr('hj.play')}</button><button data-act="hj-tab" data-t="watch" aria-pressed="${f.tab==='watch'}">${tr('hj.watch')}</button><button data-act="hj-tab" data-t="stats" aria-pressed="${f.tab==='stats'}">${tr('hj.stats')}</button></div>` : ''}</div>`;
   if(watch){ hjWatchStart(f.lang, f.day|0); return head+bar+(f.tab==='stats' ? hjStatsHtml() : hjWatchHtml()); }
   setTimeout(()=>hjPlayStart(f.lang),0);
-  return head+bar+`<iframe class="hj-frame" id="hj-frame" data-k="${esc(f.lang)}" src="lexora-city/index.html?embed=1" allow="fullscreen" title="${esc(tr('hj.h'))}"></iframe>`;
+  return head+bar+`<iframe class="hj-frame" id="hj-frame" data-k="${esc(f.lang)}" src="lexora-city/index.html?embed=1" allow="fullscreen; microphone" title="${esc(tr('hj.h'))}"></iframe>`;
 }
 function vLibrary(){
   const items=Object.entries(S.lib||{}).map(([id,x])=>({id,...x}));

@@ -24,7 +24,7 @@ function bubbleOf(root, text, y) {
 function addRemote(p) {
   const c = buildChar(lookOf(p.uid, p.lk)), lab = labelSprite(p.name || '?', 'rgba(23,26,41,0.88)', '#ffffff');
   lab.position.y = 3.0; c.root.add(lab); scene.add(c.root); c.root.position.set(p.x, 0, p.z);
-  const r = { uid: p.uid, c, tx: p.x, tz: p.z, tr: p.r || 0, walk: 0, lk: JSON.stringify(p.lk || null) };
+  const r = { uid: p.uid, c, tx: p.x, tz: p.z, tr: p.r || 0, walk: 0, lk: JSON.stringify(p.lk || null), name: p.name || '', vc: !!p.vc };
   LIVE.players.set(p.uid, r); return r;
 }
 function onPlayers(list) {
@@ -35,7 +35,7 @@ function onPlayers(list) {
     let r = LIVE.players.get(p.uid);
     if (r && p.lk && JSON.stringify(p.lk) !== r.lk) { const q = r.c.root.position.clone(); scene.remove(r.c.root); LIVE.players.delete(p.uid); r = null; p.x = q.x; p.z = q.z; }
     if (!r) r = addRemote(p);
-    r.tx = +p.x || 0; r.tz = +p.z || 0; r.tr = +p.r || 0;
+    r.tx = +p.x || 0; r.tz = +p.z || 0; r.tr = +p.r || 0; r.vc = !!p.vc; if (p.name) r.name = p.name;
   });
   for (const [uid, r] of LIVE.players) if (!ids.has(uid)) { scene.remove(r.c.root); LIVE.players.delete(uid); }
   $('#cOnline').textContent = (LIVE.players.size + 1) + ' online';
@@ -63,6 +63,7 @@ window.addEventListener('message', e => {
   const d = e.data; if (!d) return;
   if (d.type === 'hj-players') onPlayers(d.list);
   else if (d.type === 'hj-chat-list') onChat(d.list);
+  else if (d.type === 'hj-sig' && typeof d.from === 'string' && typeof d.sdp === 'string') vcOnSig(d);
 });
 function enterLive() {
   if (!ONLINE()) return;
@@ -75,12 +76,12 @@ function enterLive() {
   $('#cRoom').textContent = 'Shahar: ' + (LX.lang || 'English');
   const ph = PHRASES[LX.lang] || PHRASES.English;
   $('#cPhr').innerHTML = ph.map(p => '<button type="button" class="chip" data-p="' + esc(p) + '">' + esc(p) + '</button>').join('');
-  renderChat(); onPlayers([...LIVE.players.values()].map(r => ({ uid: r.uid, name: '', x: r.tx, z: r.tz, r: r.tr })));
+  renderChat(); onPlayers([...LIVE.players.values()].map(r => ({ uid: r.uid, name: r.name, vc: r.vc, x: r.tx, z: r.tz, r: r.tr })));
   LIVE.pt = 99; toast('Yozish uchun T yoki Enter bosing');
   const h = $('#hint'); h.classList.remove('hidden'); h.style.opacity = 1; setTimeout(() => { h.style.opacity = 0; }, 9000);
 }
 function exitLive() {
-  LIVE.on = false; app.classList.remove('live'); $('#chat').classList.add('hidden'); $('#cIn').blur();
+  vcStop(); LIVE.on = false; app.classList.remove('live'); $('#chat').classList.add('hidden'); $('#cIn').blur();
   for (const [uid, r] of LIVE.players) r.c.root.visible = false;
   if (locked()) document.exitPointerLock();
   showTitle();
@@ -127,9 +128,142 @@ function liveUpdate(dt) {
   LIVE.pt += dt;
   if (LIVE.on && ONLINE() && (S.mode === 'play' || S.mode === 'dialog') && LIVE.pt > 0.5) {
     const moved = Math.hypot(player.pos.x - LIVE.sx, player.pos.z - LIVE.sz) > 0.15 || Math.abs(angDiff(player.rot, LIVE.sr)) > 0.25;
-    if (moved || LIVE.pt > 8) { LIVE.pt = 0; LIVE.sx = player.pos.x; LIVE.sz = player.pos.z; LIVE.sr = player.rot; toParent({ type: 'hj-presence', x: +player.pos.x.toFixed(2), z: +player.pos.z.toFixed(2), r: +player.rot.toFixed(2), lk: lkOfMe() }); }
+    if (moved || LIVE.pt > 8) { LIVE.pt = 0; LIVE.sx = player.pos.x; LIVE.sz = player.pos.z; LIVE.sr = player.rot; toParent({ type: 'hj-presence', x: +player.pos.x.toFixed(2), z: +player.pos.z.toFixed(2), r: +player.rot.toFixed(2), lk: lkOfMe(), vc: VC.on }); }
+  }
+  VC.t += dt; if (VC.t > 0.5) { VC.t = 0; vcSync(); }
+}
+
+/* ---- Ovozli suhbat: yaqin atrofdagi o'yinchilar bilan (WebRTC). Ovoz o'yinchilar orasida to'g'ridan-to'g'ri o'tadi,
+   Firestore faqat qisqa taklif/javob xabarlari (hjsig) uchun ishlatiladi. Yaqin = VC_NEAR gacha, uzoqlashsa VC_FAR da uziladi. ---- */
+const VC = { on: false, mic: true, starting: false, stream: null, peers: new Map(), pend: {}, cool: {}, mutedUid: new Set(), t: 0, sig: '' };
+const VC_NEAR = 20, VC_FAR = 26, VC_FULL = 3, VC_MAX = 6;
+const VC_ICE = { iceServers: [{ urls: ['stun:stun.l.google.com:19302', 'stun:stun1.l.google.com:19302', 'stun:stun.cloudflare.com:3478'] }] };
+const vcCan = () => !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia && window.RTCPeerConnection);
+const vcDist = uid => { const r = LIVE.players.get(uid); return r ? Math.hypot(r.tx - player.pos.x, r.tz - player.pos.z) : 1e9; };
+const vcGathered = pc => new Promise(res => {
+  if (pc.iceGatheringState === 'complete') return res();
+  const f = () => { if (pc.iceGatheringState === 'complete') { pc.removeEventListener('icegatheringstatechange', f); res(); } };
+  pc.addEventListener('icegatheringstatechange', f); setTimeout(res, 3500);
+});
+function vcUi() {
+  $('#cVoice').classList.toggle('on', VC.on); $('#cVoice').textContent = VC.on ? 'Ovoz: yoqiq' : 'Ovoz';
+  $('#cVoiceBar').classList.toggle('hidden', !VC.on);
+  const m = $('#cMic'); m.classList.toggle('off', !VC.mic); m.textContent = VC.mic ? 'Mikrofon: yoqiq' : 'Mikrofon: o\'chiq';
+}
+function vcList() {
+  const el = $('#cVoicePeers'); if (!el) return;
+  const items = [...VC.peers.values()].filter(p => p.ok).map(p => {
+    const r = LIVE.players.get(p.uid), mu = VC.mutedUid.has(p.uid);
+    return '<span class="vp"><b>' + esc((r && r.name) || '?') + '</b><button type="button" class="chip" data-vm="' + esc(p.uid) + '">' + (mu ? 'Eshitish' : 'Ovozsiz') + '</button></span>';
+  });
+  const html = items.join('') || '<i>Yaqin atrofda ovozli o\'yinchi yo\'q</i>';
+  if (html !== VC.sig) { VC.sig = html; el.innerHTML = html; }
+}
+function vcVolumes() {
+  for (const [uid, p] of VC.peers) {
+    if (!p.audio) continue;
+    const d = vcDist(uid); p.audio.volume = VC.mutedUid.has(uid) ? 0 : Math.max(0, Math.min(1, 1 - (d - VC_FULL) / (VC_NEAR - VC_FULL)));
   }
 }
+function vcPeer(uid, sid) {
+  const pc = new RTCPeerConnection(VC_ICE), p = { uid, sid, pc, audio: null, t0: Date.now(), ok: false, bad: 0 };
+  VC.stream.getTracks().forEach(t => pc.addTrack(t, VC.stream));
+  pc.ontrack = e => {
+    if (p.audio) return;
+    const a = new Audio(); a.autoplay = true; a.playsInline = true; a.style.display = 'none';
+    a.srcObject = e.streams && e.streams[0] ? e.streams[0] : new MediaStream([e.track]);
+    document.body.appendChild(a); p.audio = a; const pr = a.play(); if (pr && pr.catch) pr.catch(() => {});
+    vcVolumes();
+  };
+  pc.onconnectionstatechange = () => {
+    const st = pc.connectionState;
+    if (st === 'connected') { p.ok = true; p.bad = 0; vcList(); }
+    else if (st === 'disconnected') { p.bad = p.bad || Date.now(); }
+    else if (st === 'failed' || st === 'closed') vcClose(uid, true);
+  };
+  VC.peers.set(uid, p); return p;
+}
+function vcClose(uid, cool) {
+  const p = VC.peers.get(uid); if (!p) return; VC.peers.delete(uid);
+  try { p.pc.ontrack = null; p.pc.onconnectionstatechange = null; p.pc.close(); } catch (e) {}
+  if (p.audio) { try { p.audio.pause(); p.audio.srcObject = null; p.audio.remove(); } catch (e) {} }
+  if (cool) VC.cool[uid] = Date.now() + 12000;
+  vcList();
+}
+async function vcOffer(uid) {
+  const sid = Math.random().toString(36).slice(2, 12), p = vcPeer(uid, sid);
+  try {
+    await p.pc.setLocalDescription(await p.pc.createOffer()); await vcGathered(p.pc);
+    if (VC.peers.get(uid) !== p) return;
+    toParent({ type: 'hj-sig-send', to: uid, kind: 'offer', sid, sdp: JSON.stringify(p.pc.localDescription) });
+  } catch (e) { vcClose(uid, true); }
+}
+async function vcAnswer(d) {
+  vcClose(d.from, false);
+  const p = vcPeer(d.from, d.sid);
+  try {
+    await p.pc.setRemoteDescription(JSON.parse(d.sdp)); await p.pc.setLocalDescription(await p.pc.createAnswer()); await vcGathered(p.pc);
+    if (VC.peers.get(d.from) !== p) return;
+    toParent({ type: 'hj-sig-send', to: d.from, kind: 'answer', sid: d.sid, sdp: JSON.stringify(p.pc.localDescription) });
+  } catch (e) { vcClose(d.from, true); }
+}
+async function vcOnSig(d) {
+  if (!VC.on || !LIVE.on) return;
+  if (d.kind === 'offer') {
+    if (!VC.peers.has(d.from) && VC.peers.size >= VC_MAX) return;
+    VC.pend[d.from] = { d, at: Date.now() }; vcSync();   // answered only while that player is nearby
+  } else if (d.kind === 'answer') {
+    const p = VC.peers.get(d.from); if (!p || p.sid !== d.sid || p.pc.signalingState !== 'have-local-offer') return;
+    try { await p.pc.setRemoteDescription(JSON.parse(d.sdp)); } catch (e) { vcClose(d.from, true); }
+  }
+}
+function vcSync() {
+  if (!VC.on) return; const now = Date.now();
+  for (const [uid, p] of [...VC.peers]) {
+    const r = LIVE.players.get(uid);
+    if (!r || !r.vc || vcDist(uid) > VC_FAR) { vcClose(uid, false); continue; }
+    if (!p.ok && now - p.t0 > 15000) { vcClose(uid, true); continue; }
+    if (p.bad && p.pc.connectionState === 'disconnected' && now - p.bad > 6000) { vcClose(uid, true); continue; }
+  }
+  for (const uid of Object.keys(VC.pend)) {
+    const x = VC.pend[uid], r = LIVE.players.get(uid);
+    if (now - x.at > 8000) { delete VC.pend[uid]; continue; }
+    if (r && vcDist(uid) <= VC_FAR && (VC.cool[uid] || 0) <= now) { delete VC.pend[uid]; vcAnswer(x.d); }
+  }
+  for (const [uid, r] of LIVE.players) {
+    if (!r.vc || VC.peers.has(uid) || (VC.cool[uid] || 0) > now || vcDist(uid) > VC_NEAR) continue;
+    if (VC.peers.size >= VC_MAX) break;
+    if (LX.uid < uid) vcOffer(uid);   // the player with the smaller id calls, so both never call at once
+  }
+  vcVolumes();
+}
+async function vcStart() {
+  if (VC.on || VC.starting || !ONLINE() || !LIVE.on) return;
+  if (!vcCan()) { toast('Bu brauzerda ovozli suhbat ishlamaydi.'); return; }
+  VC.starting = true; let st = null;
+  try { st = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true }, video: false }); }
+  catch (e) { VC.starting = false; toast(e && e.name === 'NotAllowedError' ? 'Mikrofonga ruxsat berilmadi. Brauzer sozlamalaridan ruxsat bering.' : 'Mikrofon topilmadi.'); return; }
+  VC.starting = false;
+  if (!LIVE.on) { st.getTracks().forEach(t => t.stop()); return; }
+  VC.stream = st; VC.on = true; VC.mic = true; VC.cool = {}; VC.pend = {};
+  toParent({ type: 'hj-voice', on: true }); LIVE.pt = 99; vcUi(); vcList();
+  toast('Ovoz yoqildi: yaqin atrofdagi o\'yinchilar sizni eshitadi. Naushnik bilan yaxshiroq.');
+}
+function vcStop() {
+  for (const uid of [...VC.peers.keys()]) vcClose(uid, false);
+  if (VC.stream) { VC.stream.getTracks().forEach(t => t.stop()); VC.stream = null; }
+  const was = VC.on; VC.on = false; VC.starting = false; VC.pend = {};
+  if (was) { toParent({ type: 'hj-voice', on: false }); LIVE.pt = 99; }
+  vcUi(); vcList();
+}
+$('#cVoice').addEventListener('click', () => { if (VC.on) vcStop(); else vcStart(); });
+$('#cMic').addEventListener('click', () => { VC.mic = !VC.mic; if (VC.stream) VC.stream.getAudioTracks().forEach(t => { t.enabled = VC.mic; }); vcUi(); });
+$('#cVoicePeers').addEventListener('click', e => {
+  const b = e.target.closest('[data-vm]'); if (!b) return; const u = b.dataset.vm;
+  if (VC.mutedUid.has(u)) VC.mutedUid.delete(u); else VC.mutedUid.add(u); vcVolumes(); vcList();
+});
+window.addEventListener('pagehide', vcStop);
+vcUi(); vcList();
 
 /* ---- Foydalanuvchi xatti-harakati statistikasi (anonim): sessiya hisoblagichlari ustoz panelida tahlil qilinadi ---- */
 const AN = { sid: Math.random().toString(36).slice(2, 10), t0: Date.now(), secs: 0, live: 0, steps: 0, dialogs: 0, done: 0, mistakes: 0, saved: 0, chat: 0, fb: 0, peers: 0, dirty: false };
