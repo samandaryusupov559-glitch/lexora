@@ -594,27 +594,37 @@ exports.callToken = onRequest({ cors: CALL_ORIGINS, invoker: 'public' }, async (
   catch (e) { logger.error('callToken', e); res.status(500).json({ ok: false, error: 'server', why: String((e && e.message) || e).slice(0, 100) + ' | ' + keyShape() }); }
 });
 
-/* ---------------- Speaking Buddy: 1 free conversation, then a paid monthly pass ----------------
+/* ---------------- Speaking Buddy: 1 free conversation, then paid minutes (a prepaid balance) ----------------
    The ElevenLabs agents are private (they only start with a signed link), so the only way in is this function.
-   speakUse/{uid}  {used, log:[{at,lang}]}   conversations started on the free trial (server only; the person may read their own)
-   passes/{uid}.speak.until                   the paid pass (written by the owner when the money arrived, like the newspaper)
+   speakUse/{uid}  {used, log:[{at,lang}], spent, pend:{at,lang,cid}, hist:[{at,secs,cid}]}   (server only; the person may read their own)
+        used  = free conversations taken;  spent = seconds of paid talking used up;  pend = a conversation that has started and is not settled yet
+   passes/{uid}.speak  {until, quota, hist}   written by the owner when the money arrived: quota = seconds bought in all, until = last day
+   Balance = quota - spent. After every conversation the real length is read from ElevenLabs and taken off the balance (settle).
+   A conversation never lasts longer than SPEAK_CAP seconds (the agents close it themselves), so that is the most one can cost.
    Only the owner is never limited; invited teachers do not use the Speaking Buddy (403 'teacher').
-   POST {action:'status'|'start', lang}  with  Authorization: Bearer <Firebase ID token>
+   POST {action:'status'|'start'|'end', lang}  with  Authorization: Bearer <Firebase ID token>
    Needs the ELEVENLABS_API_KEY setting (GitHub secret, written to functions/.env by the workflow). */
 const SPEAK_AGENTS = { English: 'agent_3201m7f6ds26e77rjbtk5df4k7qh', Russian: 'agent_8701m7f70eysf0aa39cfccvgqpvw' };
 const SPEAK_FREE = 1;
+const SPEAK_CAP = 300;          // seconds; the same as the agents' own limit
+const SPEAK_GRACE = 330 * 1000; // ms after a start in which a conversation may still be running
+const SPEAK_LEGACY = 3600;      // a pass written before minutes existed counts as this many seconds
+const elKey = () => String(process.env.ELEVENLABS_API_KEY || '').trim().replace(/^["']|["']$/g, '');   // a pasted key may carry a space, a line break or quotes
 async function speakState(uid, now) {
   const [u, p] = await Promise.all([db.doc('speakUse/' + uid).get(), db.doc('passes/' + uid).get()]);
-  const used = (u.exists && +u.data().used) || 0, until = +(((p.exists && p.data()) || {}).speak || {}).until || 0;
-  return { free: SPEAK_FREE, used, left: Math.max(0, SPEAK_FREE - used), until, paid: until > now };
+  const ud = (u.exists && u.data()) || {}, sp = ((p.exists && p.data()) || {}).speak || {};
+  const used = +ud.used || 0, until = +sp.until || 0, spent = +ud.spent || 0;
+  const quota = until || sp.quota != null ? (typeof sp.quota === 'number' ? Math.max(0, sp.quota) : SPEAK_LEGACY) : 0;
+  const secs = Math.max(0, quota - spent);
+  return { free: SPEAK_FREE, used, left: Math.max(0, SPEAK_FREE - used), until, quota, spent, secs, paid: until > now && secs > 0, pending: !!ud.pend };
 }
 // one trial is taken inside a transaction, so two tabs opened at once cannot both slip through
 async function speakTake(uid, lang, now) {
   const ref = db.doc('speakUse/' + uid);
   return db.runTransaction(async tx => {
     const cur = await tx.get(ref), d = (cur.exists && cur.data()) || {}, used = +d.used || 0;
-    if (used >= SPEAK_FREE) return false;
-    tx.set(ref, { used: used + 1, log: [...(d.log || []).slice(-9), { at: now, lang }] });
+    if (used >= SPEAK_FREE || d.pend) return false;
+    tx.set(ref, { ...d, used: used + 1, log: [...(d.log || []).slice(-9), { at: now, lang }] });
     return true;
   });
 }
@@ -622,27 +632,77 @@ async function speakGive(uid, now) {   // a trial taken for a link that could no
   const ref = db.doc('speakUse/' + uid);
   await db.runTransaction(async tx => { const cur = await tx.get(ref), d = (cur.exists && cur.data()) || {}; tx.set(ref, { ...d, used: Math.max(0, (+d.used || 0) - 1), log: (d.log || []).slice(0, -1) }); });
 }
+// a paid conversation is held before the link is asked for, so two tabs cannot run two conversations on one balance
+async function speakHold(uid, lang, now) {
+  const ref = db.doc('speakUse/' + uid);
+  return db.runTransaction(async tx => {
+    const cur = await tx.get(ref), d = (cur.exists && cur.data()) || {};
+    if (d.pend) return false;
+    tx.set(ref, { ...d, pend: { at: now, lang, cid: '' } });
+    return true;
+  });
+}
+async function speakRelease(uid, cid, keep) {   // keep: the conversation started, so only its id is written; otherwise the hold goes
+  const ref = db.doc('speakUse/' + uid);
+  await db.runTransaction(async tx => { const cur = await tx.get(ref), d = (cur.exists && cur.data()) || {}; if (d.pend) tx.set(ref, { ...d, pend: keep ? { ...d.pend, cid } : null }); });
+}
+// reads the real length of the held conversation from ElevenLabs and takes it off the balance
+// returns true when nothing is held any more
+async function speakSettle(uid, now) {
+  const ref = db.doc('speakUse/' + uid), cur = await ref.get(), d = (cur.exists && cur.data()) || {}, pd = d.pend;
+  if (!pd) return true;
+  const age = now - (+pd.at || 0), over = age > SPEAK_GRACE, key = elKey();
+  let secs = null;   // null = not known yet
+  if (pd.cid && key) {
+    try {
+      const r = await fetch('https://api.elevenlabs.io/v1/convai/conversations/' + encodeURIComponent(pd.cid), { headers: { 'xi-api-key': key } });
+      if (r.status === 404) { if (over) secs = 0; }   // it never started
+      else if (r.ok) {
+        const j = await r.json().catch(() => ({})), st = String(j.status || ''), m = j.metadata || {};
+        if (st === 'done' || st === 'failed') secs = Math.max(0, Math.round(+m.call_duration_secs || 0));
+        else if (over) secs = SPEAK_CAP;
+      }
+    } catch (e) { logger.warn('speakSettle', String((e && e.message) || e)); }
+  }
+  if (secs == null && over) secs = SPEAK_CAP;   // no way to know: the most it could have cost
+  if (secs == null) return false;
+  secs = Math.min(secs, SPEAK_CAP);
+  await db.runTransaction(async tx => {
+    const c = await tx.get(ref), x = (c.exists && c.data()) || {};
+    if (!x.pend) return;
+    tx.set(ref, { ...x, spent: (+x.spent || 0) + secs, pend: null, hist: [...(x.hist || []).slice(-19), { at: pd.at, secs, cid: pd.cid || '' }] });
+  });
+  return true;
+}
 async function speakRun(uid, body, now = Date.now()) {
-  const lang = String((body || {}).lang || ''), agent = SPEAK_AGENTS[lang];
+  const lang = String((body || {}).lang || ''), agent = SPEAK_AGENTS[lang], action = (body || {}).action;
   if (!agent) return { code: 400, body: { ok: false, error: 'lang' } };
-  const who = await senderOf(uid), staff = !!(who && who.owner), st = await speakState(uid, now), info = { ...st, staff };
-  if (who && !who.owner) return { code: 403, body: { ok: false, error: 'teacher', ...info } };   // invited teachers do not use it
-  if ((body || {}).action !== 'start') return { code: 200, body: { ok: true, ...info } };
-  const key = String(process.env.ELEVENLABS_API_KEY || '').trim().replace(/^["']|["']$/g, '');   // a pasted key may carry a space, a line break or quotes
+  const who = await senderOf(uid), staff = !!(who && who.owner);
+  if (who && !who.owner) return { code: 403, body: { ok: false, error: 'teacher', ...(await speakState(uid, now)) } };   // invited teachers do not use it
+  if (!staff) { try { await speakSettle(uid, now); } catch (e) { logger.error('speakSettle', e); } }   // yesterday's conversation is paid for before anything else
+  const st = await speakState(uid, now), info = { ...st, staff };
+  if (action !== 'start') return { code: 200, body: { ok: true, ...info } };
+  const key = elKey();
   if (!key) return { code: 503, body: { ok: false, error: 'off' } };
-  let trial = false;
-  if (!staff && !st.paid) {
-    if (!(await speakTake(uid, lang, now))) return { code: 402, body: { ok: false, error: 'paywall', ...info } };
-    trial = true;
+  let trial = false, held = false;
+  if (!staff) {
+    if (st.pending) return { code: 409, body: { ok: false, error: 'busy', ...info } };   // the last conversation is still running or being counted
+    if (st.paid) { if (!(await speakHold(uid, lang, now))) return { code: 409, body: { ok: false, error: 'busy', ...info } }; held = true; }
+    else {
+      if (!(await speakTake(uid, lang, now))) return { code: 402, body: { ok: false, error: 'paywall', ...info } };
+      trial = true;
+    }
   }
   try {
-    const r = await fetch('https://api.elevenlabs.io/v1/convai/conversation/get-signed-url?agent_id=' + encodeURIComponent(agent), { headers: { 'xi-api-key': key } });
+    const r = await fetch('https://api.elevenlabs.io/v1/convai/conversation/get-signed-url?agent_id=' + encodeURIComponent(agent) + (held ? '&include_conversation_id=true' : ''), { headers: { 'xi-api-key': key } });
     const j = await r.json().catch(() => ({}));
     if (!r.ok || !j.signed_url) { const e = new Error('elevenlabs ' + r.status); e.why = r.status + ' ' + JSON.stringify(j.detail || j).slice(0, 130) + ' | key: ' + key.length + ' chars, starts ' + key.slice(0, 3); throw e; }
-    const after = trial ? await speakState(uid, now) : st;
+    if (held) await speakRelease(uid, String(j.conversation_id || ''), true);   // keeps the hold, writes the conversation id
+    const after = trial || held ? await speakState(uid, now) : st;
     return { code: 200, body: { ok: true, signedUrl: j.signed_url, ...after, staff } };
   } catch (e) {
     if (trial) await speakGive(uid, now);
+    if (held) await speakRelease(uid, '');   // nothing started: the hold goes
     logger.error('speakToken', e); return { code: 502, body: { ok: false, error: 'upstream', why: String(e.why || e.message || e).slice(0, 200), staff } };
   }
 }
