@@ -1822,7 +1822,7 @@ h3{font-weight:700;letter-spacing:-.02em}
 <div id="toast" class="toast" hidden role="status" aria-live="polite"></div>
 
 <script type="module">
-import { LANGS, DICT } from './i18n.js?v=2026.11.15a';
+import { LANGS, DICT } from './i18n.js?v=2026.11.15b';
 /* ---------------- constants ---------------- */
 const TYPES = [['gr','Gr'],['t','T'],['art','Art'],['prep','Prep'],['ww','WW'],['sp','Sp'],['p','P'],['wo','WO'],['agr','Agr'],['st','St'],['good','★']]
   .map(([k,code])=>({k, code, get name(){ return tr('type.'+k); }}));
@@ -8149,7 +8149,12 @@ document.addEventListener('click', async ev => {
       b.disabled=true; try{ await S.au.sendPasswordResetEmail(S.auth,email); toast(tr('lo.resetSent')); S.view={name:'login',step:'signin',email}; renderMain(); }catch(e){ toast(authMsg(e)); b.disabled=false; } break; }
     case 'send-link': { const email=($('#login-email')?.value||'').trim(); if(!/^\S+@\S+\.\S+$/.test(email)){ toast(tr('lo.badEmail')); break; }
       b.disabled=true; b.textContent=tr('lo.sending');
-      try{ await S.au.sendSignInLinkToEmail(S.auth, email, {url: location.origin+location.pathname, handleCodeInApp:true}); LS.set('signin-email',email); S.view={name:'login',step:'sent',email}; renderMain(); }
+      try{
+        // a designed Lexora mail from our own domain (loginLink function); if it is not set up or fails, the plain Firebase mail is the fallback
+        const url=location.origin+location.pathname; let done=false;
+        try{ const r=await fetch(`https://europe-west1-${S.fbProject}.cloudfunctions.net/loginLink`, {method:'POST', headers:{'content-type':'application/json'}, body:JSON.stringify({email, url, lang:LANG})}); const j=await r.json().catch(()=>({})); if(r.status===429){ toast(tr('lo.wait')); b.disabled=false; b.textContent=tr('lo.sendLink'); break; } done=!!j.ok; }catch(e0){}
+        if(!done) await S.au.sendSignInLinkToEmail(S.auth, email, {url, handleCodeInApp:true});
+        LS.set('signin-email',email); S.view={name:'login',step:'sent',email}; renderMain(); }
       catch(e){ toast(authMsg(e)); b.disabled=false; b.textContent=tr('lo.sendLink'); } break; }
     case 'confirm-link': { const email=($('#login-email')?.value||'').trim(); if(!email){ toast(tr('lo.typeEmail')); break; } b.disabled=true; await completeSignIn(email); break; }
     case 'demo-role': startDemo(b.dataset.role); break;

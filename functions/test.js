@@ -21,7 +21,7 @@ function collection(path) {
 const fakeDb = { doc, collection, runTransaction: async fn => fn({ get: r => r.get(), set: (r, d) => r.set(d) }) };
 const users = { s1: { email: 'aziza@x.com', emailVerified: false }, own: { email: 'samandaryusupov559@gmail.com', emailVerified: true }, dil: { email: 'dil@x.com', emailVerified: true } };
 const fakeFirestore = () => fakeDb; fakeFirestore.FieldValue = { increment: n => ({ __inc: n }) };
-const fakeAdmin = { initializeApp() {}, firestore: fakeFirestore, auth: () => ({ getUser: async uid => { if (!users[uid]) throw new Error('no user'); return users[uid]; } }) };
+const fakeAdmin = { initializeApp() {}, firestore: fakeFirestore, auth: () => ({ getUser: async uid => { if (!users[uid]) throw new Error('no user'); return users[uid]; }, generateSignInWithEmailLink: async (e, s) => 'https://daybook.firebaseapp.com/__/auth/action?oobCode=abc&continueUrl=' + encodeURIComponent(s.url) }) };
 const load = Module._load;
 Module._load = function (req, ...rest) { return req === 'firebase-admin' ? fakeAdmin : load.call(this, req, ...rest); };
 let msgId = 100;
@@ -304,6 +304,24 @@ const ev = (params, after, before) => ({ params, data: before === undefined ? { 
   elOk = true;
   for (const who of ['own', 'dil']) { store.set('speakUse/' + who, { used: 9 }); sr = await sp(who, { action: 'start', lang: 'English' }); ok(who + ' (owner/teacher) is never limited', sr.code === 200 && store.get('speakUse/' + who).used === 9); }
   delete process.env.ELEVENLABS_API_KEY; global.fetch = tgFetch;
+
+  console.log('Teacher sign-in mail');
+  const mails = []; const fetch0 = global.fetch;
+  global.fetch = async (url, o) => { if (/api\.resend\.com/.test(url)) { mails.push(JSON.parse(o.body)); return { ok: mails.rsOk !== false, status: 200, json: async () => ({}) }; } return fetch0(url, o); };
+  const LU = 'https://lexoralc.uz/', lm = (email, extra = {}, now = 7e12) => bot._t.loginLinkRun({ email, url: LU, lang: 'ru', ...extra }, now);
+  ok('a bad address or a foreign site is refused', (await lm('nope')).code === 400 && (await lm('a@b.co', { url: 'https://evil.example/' })).code === 400);
+  ok('without keys it says off (the site falls back to Firebase)', (await lm('dil@x.com')).body.error === 'off');
+  process.env.RESEND_API_KEY = 'rk'; process.env.RESEND_FROM = 'Lexora <login@lexoralc.uz>';
+  let lr = await lm('dil@x.com');
+  ok('a teacher gets one branded mail with the link', lr.code === 200 && mails.length === 1 && mails[0].to[0] === 'dil@x.com' && mails[0].from.includes('lexoralc.uz') && /oobCode=abc/.test(mails[0].html) && /oobCode=abc/.test(mails[0].text) && /Войти в Lexora/.test(mails[0].html));
+  ok('a second request within a minute is held back', (await lm('dil@x.com')).code === 429 && mails.length === 1);
+  ok('after a minute it works again', (await lm('dil@x.com', {}, 7e12 + 61e3)).code === 200 && mails.length === 2);
+  lr = await lm('stranger@x.com');
+  ok('a stranger gets the same ok but no mail', lr.code === 200 && lr.body.ok === true && mails.length === 2);
+  ok('the owner gets a mail', (await lm('samandaryusupov559@gmail.com')).code === 200 && mails.length === 3);
+  ok('the mail exists in uz and en too', /Lexora’ga kirish/.test(bot._t.loginMail('uz', 'https://l').html) && /Sign in to Lexora/.test(bot._t.loginMail('en', 'https://l').html));
+  mails.rsOk = false; ok('a Resend failure is reported', (await lm('dil@x.com', {}, 7e12 + 200e3)).code === 502);
+  delete process.env.RESEND_API_KEY; delete process.env.RESEND_FROM; global.fetch = fetch0;
 
   console.log(`\n${pass} passed, ${fail} failed`); process.exit(fail ? 1 : 0);
 })().catch(e => { console.error(e); process.exit(1); });

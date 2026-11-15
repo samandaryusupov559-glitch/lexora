@@ -653,6 +653,56 @@ exports.speakToken = onRequest({ cors: CALL_ORIGINS, invoker: 'public' }, async 
   catch (e) { logger.error('speakToken', e); res.status(500).json({ ok: false, error: 'server' }); }
 });
 
+/* ---------------- teacher sign-in link, as a designed Lexora e-mail ----------------
+   The Firebase default mail is plain text from "daybook-4497a" and often lands in spam. This sends the same one-time link
+   from our own domain through Resend (RESEND_API_KEY, RESEND_FROM = 'Lexora <login@lexoralc.uz>'), as a branded HTML mail.
+   Only the owner and the teachers listed in staff/ get a mail; everyone else gets the same "ok" answer and nothing is sent,
+   so the form cannot be used to spam strangers or to find out who is a teacher. One mail per address per minute.
+   Without the keys it answers {error:'off'} and the site falls back to the Firebase mail. */
+const LOGIN_TXT = {
+  uz: { subj: 'Lexora: kirish havolasi', hi: 'Assalomu alaykum!', body: 'Lexora’ga kirish uchun quyidagi tugmani bosing. Havola bir martalik.', btn: 'Lexora’ga kirish', alt: 'Tugma ishlamasa, havolani brauzerga nusxalang:', ign: 'Bu so‘rovni siz yubormagan bo‘lsangiz, xatni e’tiborsiz qoldiring: hech narsa o‘zgarmaydi.', foot: 'Lexora · onlayn til markazi' },
+  ru: { subj: 'Lexora: ссылка для входа', hi: 'Здравствуйте!', body: 'Нажмите кнопку ниже, чтобы войти в Lexora. Ссылка одноразовая.', btn: 'Войти в Lexora', alt: 'Если кнопка не работает, скопируйте ссылку в браузер:', ign: 'Если вы не запрашивали вход, просто проигнорируйте письмо: ничего не изменится.', foot: 'Lexora · онлайн-центр языков' },
+  en: { subj: 'Lexora: your sign-in link', hi: 'Hello!', body: 'Press the button below to sign in to Lexora. The link works once.', btn: 'Sign in to Lexora', alt: 'If the button does not work, copy this link into your browser:', ign: 'If you did not ask to sign in, just ignore this e-mail: nothing will change.', foot: 'Lexora · online language centre' },
+};
+const escH = x => String(x).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+function loginMail(lang, link) {
+  const x = LOGIN_TXT[L(lang)] || LOGIN_TXT.en, u = escH(link);
+  const html = `<!doctype html><html><body style="margin:0;padding:0;background:#f7f4ec;">
+<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#f7f4ec;padding:28px 12px;"><tr><td align="center">
+<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:480px;background:#fffdf8;border:1px solid #e7e2d4;border-radius:20px;">
+<tr><td style="padding:32px 32px 8px;font-family:Georgia,'Times New Roman',serif;font-size:30px;line-height:1.1;color:#1f2540;"><span style="display:inline-block;background:#e3e9ff;color:#2a4fe0;font:700 13px Arial,sans-serif;padding:6px 12px;border-radius:999px;">Lexora</span></td></tr>
+<tr><td style="padding:8px 32px 0;font-family:Arial,Helvetica,sans-serif;font-size:22px;font-weight:700;color:#1f2540;">${escH(x.hi)}</td></tr>
+<tr><td style="padding:10px 32px 0;font-family:Arial,Helvetica,sans-serif;font-size:16px;line-height:1.55;color:#4b5068;">${escH(x.body)}</td></tr>
+<tr><td style="padding:24px 32px 8px;"><a href="${u}" style="display:inline-block;background:#2a4fe0;color:#ffffff;font:700 16px Arial,sans-serif;text-decoration:none;padding:14px 26px;border-radius:12px;">${escH(x.btn)}</a></td></tr>
+<tr><td style="padding:16px 32px 0;font-family:Arial,Helvetica,sans-serif;font-size:12px;line-height:1.5;color:#7a7f94;">${escH(x.alt)}<br><span style="word-break:break-all;color:#2a4fe0;">${u}</span></td></tr>
+<tr><td style="padding:20px 32px 0;font-family:Arial,Helvetica,sans-serif;font-size:13px;line-height:1.5;color:#7a7f94;">${escH(x.ign)}</td></tr>
+<tr><td style="padding:22px 32px 28px;font-family:Arial,Helvetica,sans-serif;font-size:12px;color:#a0a4b5;border-top:0;">${escH(x.foot)}</td></tr>
+</table></td></tr></table></body></html>`;
+  return { subject: x.subj, html, text: `${x.hi}\n\n${x.body}\n\n${link}\n\n${x.ign}\n\n${x.foot}` };
+}
+const LOGIN_URL = /^https:\/\/((www\.)?lexoralc\.uz|samandaryusupov559-glitch\.github\.io)(\/[\w./-]*)?$/;
+async function loginLinkRun(body, now = Date.now()) {
+  const email = String((body || {}).email || '').trim().toLowerCase(), url = String((body || {}).url || ''), lang = String((body || {}).lang || 'uz');
+  if (!/^[^\s@]{1,64}@[^\s@]{1,190}\.[^\s@]{2,}$/.test(email) || !LOGIN_URL.test(url)) return { code: 400, body: { ok: false, error: 'input' } };
+  const key = process.env.RESEND_API_KEY, from = process.env.RESEND_FROM;
+  if (!key || !from) return { code: 503, body: { ok: false, error: 'off' } };
+  const staff = email === OWNER() || (await db.doc('staff/' + email).get()).exists;
+  if (!staff) return { code: 200, body: { ok: true } };
+  const ref = db.doc('loginMail/' + crypto.createHash('sha256').update(email).digest('hex').slice(0, 40)), last = (await ref.get()).data();
+  if (last && now - (last.at || 0) < 60e3) return { code: 429, body: { ok: false, error: 'wait' } };
+  await ref.set({ at: now });
+  const link = await admin.auth().generateSignInWithEmailLink(email, { url, handleCodeInApp: true }), m = loginMail(lang, link);
+  const r = await fetch('https://api.resend.com/emails', { method: 'POST', headers: { authorization: 'Bearer ' + key, 'content-type': 'application/json' },
+    body: JSON.stringify({ from, to: [email], subject: m.subject, html: m.html, text: m.text }) });
+  if (!r.ok) { logger.error('loginLink resend ' + r.status); return { code: 502, body: { ok: false, error: 'upstream' } }; }
+  return { code: 200, body: { ok: true } };
+}
+exports.loginLink = onRequest({ cors: CALL_ORIGINS, invoker: 'public' }, async (req, res) => {
+  if (req.method !== 'POST') { res.status(405).json({ ok: false }); return; }
+  try { const r = await loginLinkRun(req.body || {}); res.status(r.code).json(r.body); }
+  catch (e) { logger.error('loginLink', e); res.status(500).json({ ok: false, error: 'server' }); }
+});
+
 /* attendance: who has stopped having lessons, and whose lesson time dropped (for the owner's report) */
 async function attendance(now = Date.now()) {
   const d28 = dayKey(now - 27 * 864e5), d14 = dayKey(now - 13 * 864e5), d7 = dayKey(now - 6 * 864e5);
@@ -827,4 +877,4 @@ exports.onPayClaim = onDocumentWritten('payClaims/{uid}', async ev => {
 });
 
 // for tests
-exports._t = { t, leadText, joinUrl, hookSecret, setupKey, newsText, reportText, dayKey, lessonSoonRun, dailyNudgesRun, money, hasContact, hideContact, jaasJwt, callRun, callOn, attendance, speakRun };
+exports._t = { t, leadText, joinUrl, hookSecret, setupKey, newsText, reportText, dayKey, lessonSoonRun, dailyNudgesRun, money, hasContact, hideContact, jaasJwt, callRun, callOn, attendance, speakRun, loginLinkRun, loginMail };

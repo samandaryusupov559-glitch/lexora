@@ -50,11 +50,15 @@ jobs:
           JAAS_KEY: ${{ secrets.JAAS_KEY }}
           # optional: Speaking Buddy (ElevenLabs API key). Without it the Speaking Buddy stays closed.
           ELEVENLABS_API_KEY: ${{ secrets.ELEVENLABS_API_KEY }}
+          # optional: branded sign-in e-mails for teachers (Resend). RESEND_FROM looks like: Lexora <login@lexoralc.uz>
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          RESEND_FROM: ${{ secrets.RESEND_FROM }}
         run: |
           printf 'TELEGRAM_TOKEN=%s\nSITE_URL=%s\nOWNER_EMAIL=%s\nREGION=%s\n' "$TELEGRAM_TOKEN" "$SITE_URL" "$OWNER_EMAIL" "$REGION" > functions/.env
           # the private key goes in as one base64 line, so its line breaks survive the .env file
           printf 'JAAS_APP_ID=%s\nJAAS_KID=%s\nJAAS_KEY=%s\n' "$JAAS_APP_ID" "$JAAS_KID" "$(printf '%s' "$JAAS_KEY" | base64 -w0)" >> functions/.env
           printf 'ELEVENLABS_API_KEY=%s\n' "$ELEVENLABS_API_KEY" >> functions/.env
+          printf 'RESEND_API_KEY=%s\nRESEND_FROM="%s"\n' "$RESEND_API_KEY" "$RESEND_FROM" >> functions/.env
 
       - uses: google-github-actions/auth@v2
         if: env.HAS_SA == 'true'
