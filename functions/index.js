@@ -606,6 +606,7 @@ exports.callToken = onRequest({ cors: CALL_ORIGINS, invoker: 'public' }, async (
    Needs the ELEVENLABS_API_KEY setting (GitHub secret, written to functions/.env by the workflow). */
 const SPEAK_AGENTS = { English: 'agent_3201m7f6ds26e77rjbtk5df4k7qh', Russian: 'agent_8701m7f70eysf0aa39cfccvgqpvw' };
 const SPEAK_FREE = 1;
+const SPEAK_TRIAL_SECS = 60;    // the free try is one minute of talking (the page closes the chat then)
 const SPEAK_CAP = 300;          // seconds; the same as the agents' own limit
 const SPEAK_GRACE = 330 * 1000; // ms after a start in which a conversation may still be running
 const SPEAK_LEGACY = 3600;      // a pass written before minutes existed counts as this many seconds
@@ -616,7 +617,7 @@ async function speakState(uid, now) {
   const used = +ud.used || 0, until = +sp.until || 0, spent = +ud.spent || 0;
   const quota = until || sp.quota != null ? (typeof sp.quota === 'number' ? Math.max(0, sp.quota) : SPEAK_LEGACY) : 0;
   const secs = Math.max(0, quota - spent);
-  return { free: SPEAK_FREE, used, left: Math.max(0, SPEAK_FREE - used), until, quota, spent, secs, paid: secs > 0 && (typeof sp.quota === 'number' || until > now), pending: !!ud.pend };
+  return { free: SPEAK_FREE, trialSecs: SPEAK_TRIAL_SECS, used, left: Math.max(0, SPEAK_FREE - used), until, quota, spent, secs, paid: secs > 0 && (typeof sp.quota === 'number' || until > now), pending: !!ud.pend };
 }
 // one trial is taken inside a transaction, so two tabs opened at once cannot both slip through
 async function speakTake(uid, lang, now) {

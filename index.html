@@ -7613,14 +7613,14 @@ async function sbApi(action, lang){
   const r=await fetch(`https://europe-west1-${S.fbProject}.cloudfunctions.net/speakToken`, {method:'POST', headers:{'content-type':'application/json', authorization:'Bearer '+tok}, body:JSON.stringify({action, lang})});
   try{ return await r.json(); }catch(e){ return {ok:false, error:'server'}; }
 }
-function sbMount(lang, url, limit){
+function sbMount(lang, url, limit, paid){
   const b=$('#sb-box'), x=sbSt(); if(!b || S.view.name!=='speak') return;
   x.live=lang; clearTimeout(x.t);
   b.dataset.l=lang;
   b.innerHTML=`<p>${tr('sb.ready')}</p><p class="small muted">${tr('sb.keep')}</p><elevenlabs-convai signed-url="${esc(url)}"></elevenlabs-convai>`;
   // the chat is closed after SB_MAX_MIN minutes (the link itself lives 15); a new start (a new trial) is needed
-  // paid minutes: the chat ends when they run out, even before 5 minutes (limit = seconds left; 0 = a free trial, only the 5 minutes count)
-  const cap=SB_MAX_MIN*60, secs=limit>0 ? Math.min(cap, limit) : cap, byBalance=limit>0 && limit<=cap;
+  // the chat ends when the minutes run out, even before 5 minutes (limit = seconds left); a free try lasts 1 minute
+  const cap=SB_MAX_MIN*60, secs=limit>0 ? Math.min(cap, limit) : cap, byBalance=!!paid && limit>0 && limit<=cap;
   x.t=setTimeout(()=>{ x.live=''; x.out=byBalance; if(S.view.name==='speak'){ $('#sb-box')?.querySelector('elevenlabs-convai')?.remove(); renderMain(); }
     setTimeout(()=>{ x.info=null; if(S.view.name==='speak') renderMain(); }, 8000); }, secs*1000);
 }
@@ -7657,7 +7657,7 @@ async function sbStart(){
   try{
     try{ await sbScript(); }catch(e){ x.err='script'; x.busy=false; renderMain(); return; }   // the widget code first, so a failed download never uses up a free conversation
     const r=await sbApi('start', lang);
-    if(r.ok && r.signedUrl){ x.busy=false; x.out=false; x.info=r; x.infoAt=Date.now(); sbMount(lang, r.signedUrl, r.paid ? +r.secs||0 : 0); renderMain(); return; }
+    if(r.ok && r.signedUrl){ x.busy=false; x.out=false; x.info=r; x.infoAt=Date.now(); sbMount(lang, r.signedUrl, r.paid ? +r.secs||0 : +r.trialSecs||60, !!r.paid); renderMain(); return; }
     if(r.error==='paywall'){ x.info=r; x.infoAt=Date.now(); x.err=''; }
     else if(r.error==='busy'){ x.err='busy'; x.info=null; }
     else { x.err = r.error==='off' ? 'off' : r.error==='upstream' ? 'up' : 'server'; x.why=r.why||''; }

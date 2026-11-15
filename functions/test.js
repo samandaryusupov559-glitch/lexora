@@ -287,7 +287,7 @@ const ev = (params, after, before) => ({ params, data: before === undefined ? { 
   const sp = (uid, body, now = 5e12) => bot._t.speakRun(uid, body, now);
   ok('an unknown language is refused', (await sp('s3', { action: 'start', lang: 'Klingon' })).code === 400);
   let sr = await sp('s3', { action: 'status', lang: 'English' });
-  ok('status shows 1 free left and does not use one', sr.code === 200 && sr.body.left === 1 && sr.body.used === 0 && !sr.body.paid && sr.body.secs === 0 && elCalls === 0);
+  ok('status shows 1 free left (a 1-minute try) and does not use one', sr.code === 200 && sr.body.trialSecs === 60 && sr.body.left === 1 && sr.body.used === 0 && !sr.body.paid && sr.body.secs === 0 && elCalls === 0);
   sr = await sp('s3', { action: 'start', lang: 'English' });
   ok('without the key nothing starts and no trial is used', sr.code === 503 && !store.has('speakUse/s3'));
   process.env.ELEVENLABS_API_KEY = 'k';
