@@ -1857,6 +1857,7 @@ const PROMPT_IDEAS = [
   'If you could spend tomorrow anywhere in Uzbekistan, where would you go and why?',
 ];
 const I = {
+  mic:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3M9 21h6"/></svg>',
   hw:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4h6v3H9z"/><path d="M15 5.5h3.5V21h-13V5.5H9"/><path d="M9 12.5l2 2 4-4.5M9 18h6"/></svg>',
   chat:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"><path d="M4 5.5h16v10.5H10l-4.5 3.5V16H4z"/><path d="M8 9.5h8M8 12.5h5"/></svg>',
   inbox:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M3 13l2.5-7.5h13L21 13v5.5H3z"/><path d="M3 13h5l1.5 2.5h5L16 13h5"/></svg>',
@@ -2382,7 +2383,7 @@ function renderNav(){
     const waiting = allEntries().filter(e=>e.status==='submitted').length;
     document.title = (waiting?`(${waiting}) `:'')+'Lexora · '+tr('title.teacher');
     n.innerHTML = navCollapseBtn() + navMenu([NI('home',tr('nav.home'),'home'), NI('chat',tr('dm.nav'),'chat',chatUnreadT()), STUDENTS_NAV(), NI('me',tr('c.meH'),'team'), NI('groups',tr('c.grpH'),'people'), NI('homework',tr('hw.nav'),'hw',waiting)],
-      [['lessons',tr('nav.gLessons'),[NI('exams',tr('ex.nav'),'cards'), NI('club',tr('c.clubNav'),'bulb',clubVideoOn()?'●':0), NI('library',tr('c.libNav'),'book'), NI('bank',tr('nav.bank'),'bank')]],
+      [['lessons',tr('nav.gLessons'),[NI('exams',tr('ex.nav'),'cards'), NI('club',tr('c.clubNav'),'bulb',clubVideoOn()?'●':0), NI('library',tr('c.libNav'),'book'), NI('speak',tr('sb.nav'),'mic'), NI('bank',tr('nav.bank'),'bank')]],
        ['centre',tr('nav.gCentre'),[NI('centre',tr('c.centreH'),'spark',Object.values(S.leads||{}).filter(l=>!l.st).length+pendingTorders())]]]) + `<div class="nav-foot">${tr('c.navFootStaff')}</div>`;
     return;
   }
@@ -2390,7 +2391,7 @@ function renderNav(){
     const waiting = allEntries().filter(e=>e.status==='submitted').length;
     document.title = (waiting?`(${waiting}) `:'')+'Lexora · '+tr('title.teacher');
     n.innerHTML = navCollapseBtn() + navMenu([NI('home',tr('nav.home'),'home'), NI('chat',tr('dm.nav'),'chat',chatUnreadT()), STUDENTS_NAV(), NI('groups',tr('c.grpH'),'people'), NI('homework',tr('hw.nav'),'hw',waiting)],
-      [['lessons',tr('nav.gLessons'),[NI('exams',tr('ex.nav'),'cards',S.role==='owner'?exOrderRows().length:0), NI('club',tr('c.clubNav'),'bulb',clubVideoOn()?'●':0), NI('library',tr('c.libNav'),'book'), NI('bank',tr('nav.bank'),'bank'), NI('prompt',tr('nav.prompt'),'bulb')]],
+      [['lessons',tr('nav.gLessons'),[NI('exams',tr('ex.nav'),'cards',S.role==='owner'?exOrderRows().length:0), NI('club',tr('c.clubNav'),'bulb',clubVideoOn()?'●':0), NI('library',tr('c.libNav'),'book'), NI('speak',tr('sb.nav'),'mic'), NI('bank',tr('nav.bank'),'bank'), NI('prompt',tr('nav.prompt'),'bulb')]],
        ['centre',tr('nav.gCentre'),[NI('team',tr('c.teamH'),'team',newLeads()+pendingStaffReq()+pendingApps()+pendingEnrolls()+pendingTorders()), (S.team?.[MAIN_TID]?NI('me',tr('c.meH'),'pen'):null), NI('ledger',tr('nav.ledger'),'coin',pendingClaims()||lgOwing(),!pendingClaims()), NI('bookings',tr('nav.book'),'spark',pendingRequests()), NI('market',tr('nav.shop'),'bag',pendingOrders()+pendingPasses()), NI('rating',tr('rt.h'),'trophy'), NI('board',tr('nav.board'),'flag'), NI('insights',tr('nav.insights'),'chart')]]]) +
       `<div class="nav-foot">${tr('nav.foot')}</div>`;
   } else {
@@ -2398,7 +2399,7 @@ function renderNav(){
     document.title = (unseen?`(${unseen}) `:'')+'Lexora · '+tr('title.student');
     const owe = S.myBalance && S.myBalance.left>0;
     n.innerHTML = navCollapseBtn() + navMenu([NI('home',tr('nav.home'),'home',unseen), NI('chat',tr('dm.nav'),'chat',chatUnreadS()), NI('write',tr('nav.write'),'pen'), NI('homework',tr('hw.nav'),'hw',hwOpenCount()), NI('exams',tr('ex.nav'),'cards')],
-      [['learn',tr('nav.gLearn'),[NI('mistakes',tr('nav.mistakes'),'flag'), NI('words',tr('nav.words'),'book',(S.myFeedback?.vocab||[]).length,true), NI('learn',tr('nav.learn'),'bulb',(S.board?.posts||[]).length,true), NI('club',tr('c.clubNav'),'bulb',clubVideoOn()?'●':0), NI('library',tr('c.libNav'),'book')]],
+      [['learn',tr('nav.gLearn'),[NI('mistakes',tr('nav.mistakes'),'flag'), NI('words',tr('nav.words'),'book',(S.myFeedback?.vocab||[]).length,true), NI('learn',tr('nav.learn'),'bulb',(S.board?.posts||[]).length,true), NI('club',tr('c.clubNav'),'bulb',clubVideoOn()?'●':0), NI('library',tr('c.libNav'),'book'), NI('speak',tr('sb.nav'),'mic')]],
        ['services',tr('nav.gServices'),[NI('teachers',tr('c.navTeachers'),'team',Object.values(S.myLiveFor||{}).some(isLive)?'●':(promoOn(S.promo)?'%':0)), NI('book',tr('nav.book'),'spark'), (S.rating?.on!==false && (S.rating?.list||[]).length ? NI('rating',tr('rt.h'),'trophy') : null), NI('services',tr('nav.services'),'cards',myServiceCount(),true), NI('market',tr('nav.shop'),'bag'), (S.myBalance? NI('pay',tr('nav.pay'),'coin',owe?'!':0,false) : null)]]]);
   }
 }
@@ -2482,7 +2483,7 @@ function renderMain0(){
   if(S.mode==='student' && S.myProfile===undefined){ m.innerHTML=`<div class="loading">${tr('load.student')}</div>`; return; }
   const fn = {inbox:vInbox, students:vStudents, student:vStudent, insights:vInsights, prompt:vPrompt, bank:vBank, review:vReview, ledger:vLedger, board:vBoard, bookings:vBookings, market:vMarket, learn:vLearn, book:vBook, rating:()=>S.mode==='teacher'?vRatingT():vRatingS(),
               home:()=>S.mode==='student'?vHome():vTeacherHome(), write:vWrite, entry:vEntry, mistakes:vMistakes, words:vWords, setup:vSetup, pay:vPay,
-              news:vNews, newsEdit:vNewsEdit, call:vCall, study:vStudy, services:vServices, set:vSet, setEdit:vSetEdit, team:vTeam, me:vMe, centre:vCentre, teachers:vStuTeachers, profile:vProfile, groups:vGroups, homework:vHomework, exams:vExams, exam:vExam, club:vClub, library:vLibrary, chat:vChat}[v];
+              news:vNews, newsEdit:vNewsEdit, call:vCall, study:vStudy, services:vServices, set:vSet, setEdit:vSetEdit, team:vTeam, me:vMe, centre:vCentre, teachers:vStuTeachers, profile:vProfile, groups:vGroups, homework:vHomework, exams:vExams, exam:vExam, club:vClub, library:vLibrary, speak:vSpeak, chat:vChat}[v];
   if(tgNeeded()){ m.innerHTML=vTgGate(); return; }
   if(S.role==='staff' && S.team?.[S.staffTid] && !S.team[S.staffTid].agreedAt){ m.innerHTML=vAgree(); return; }   // a teacher accepts the agreement once   // everyone (students, teachers, the owner) connects Telegram first
   m.innerHTML = fn ? fn() : '';
@@ -2495,6 +2496,7 @@ const after = {
   exam:()=>exTick(),
   set:()=>{ tsTick(); setTimeout(()=>{ const i=$('#qz-in'); if(i && !i.disabled && !matchMedia('(hover:none)').matches) i.focus(); },30); },
   setEdit:()=>steCount(),
+  speak:()=>sbLoad(),
 };
 
 /* ---------------- teacher: inbox ---------------- */
@@ -7526,6 +7528,37 @@ function libSync(){
   S._libUn = langs.map(l=>S.db.collection('library').where('lang',l).onSnapshot(q=>{ const o={}; q.docs.forEach(d=>{ if(d.exists) o[d.id]=d.data(); }); S.libBy[l]=o; S.lib=Object.assign({}, ...Object.values(S.libBy)); refreshAny(); }, ()=>{}));
 }
 const libIcon = k => k==='audio'?'🎧':k==='video'?'🎬':k==='link'?'🔗':'📘';
+/* ---------------- Speaking Buddy (ElevenLabs voice agent) ---------------- */
+const SB_AGENT = 'agent_3201m7f6ds26e77rjbtk5df4k7qh';
+const SB_SRC = 'https://unpkg.com/@elevenlabs/convai-widget-embed';
+let sbPromise = null;
+function sbScript(){
+  if(customElements.get('elevenlabs-convai')) return Promise.resolve();
+  if(sbPromise) return sbPromise;
+  sbPromise = new Promise((ok,bad)=>{
+    const s=document.createElement('script'); s.src=SB_SRC; s.async=true; s.type='text/javascript';
+    s.onload=()=>ok(); s.onerror=()=>{ sbPromise=null; s.remove(); bad(new Error('load')); };
+    document.head.appendChild(s);
+  });
+  return sbPromise;
+}
+function vSpeak(){
+  return `<div class="page-head"><div><h1>${tr('sb.h')}</h1><p>${tr('sb.p')}</p></div></div>
+    <div class="card section sb-card"><div id="sb-box" class="sb-box"><div class="loading">${tr('sb.loading')}</div></div></div>
+    <div class="card section" style="padding:16px 20px"><h3>${tr('sb.tipsH')}</h3><ol class="small muted lv-steps" style="margin-top:8px"><li>${tr('sb.t1')}</li><li>${tr('sb.t2')}</li><li>${tr('sb.t3')}</li></ol></div>
+    <div class="notice">${tr('sb.limit')}</div>`;
+}
+function sbLoad(){
+  const box=$('#sb-box'); if(!box) return;
+  sbScript().then(()=>{
+    const b=$('#sb-box'); if(!b || S.view.name!=='speak') return;
+    b.innerHTML=`<p>${tr('sb.ready')}</p><elevenlabs-convai agent-id="${SB_AGENT}"></elevenlabs-convai>`;
+  }).catch(()=>{
+    const b=$('#sb-box'); if(!b) return;
+    b.innerHTML=`<p class="muted">${tr('sb.err')}</p><button class="btn pen sm" data-act="sb-retry">${tr('sb.retry')}</button>`;
+  });
+}
+
 function vLibrary(){
   const items=Object.entries(S.lib||{}).map(([id,x])=>({id,...x}));
   const langs = S.role==='owner' ? [...new Set(items.map(x=>x.lang).filter(Boolean))].sort() : myLangs();
@@ -8042,6 +8075,7 @@ document.addEventListener('click', async ev => {
   switch(act){
     case 'go': if(b.dataset.v==='write'){ startEdit(); } else go(b.dataset.v); break;
     case 'lang': setLang(b.dataset.l); break;
+    case 'sb-retry': { const bx=$('#sb-box'); if(bx) bx.innerHTML=`<div class="loading">${tr('sb.loading')}</div>`; sbLoad(); break; }
     case 'sign-out': if(S.au) S.au.signOut(S.auth); break;
     case 'login-step': S.view={name:'login',step:b.dataset.s,email:($('#login-email')?.value||S.view.email||'').trim()}; renderMain(); break;
     case 'pw-signin': case 'pw-signup': { const email=($('#login-email')?.value||'').trim(), pass=$('#login-pass')?.value||'';
