@@ -594,6 +594,65 @@ exports.callToken = onRequest({ cors: CALL_ORIGINS, invoker: 'public' }, async (
   catch (e) { logger.error('callToken', e); res.status(500).json({ ok: false, error: 'server', why: String((e && e.message) || e).slice(0, 100) + ' | ' + keyShape() }); }
 });
 
+/* ---------------- Speaking Buddy: 2 free conversations, then a paid monthly pass ----------------
+   The ElevenLabs agents are private (they only start with a signed link), so the only way in is this function.
+   speakUse/{uid}  {used, log:[{at,lang}]}   conversations started on the free trial (server only; the person may read their own)
+   passes/{uid}.speak.until                   the paid pass (written by the owner when the money arrived, like the newspaper)
+   The owner and the teachers are never limited.
+   POST {action:'status'|'start', lang}  with  Authorization: Bearer <Firebase ID token>
+   Needs the ELEVENLABS_API_KEY setting (GitHub secret, written to functions/.env by the workflow). */
+const SPEAK_AGENTS = { English: 'agent_3201m7f6ds26e77rjbtk5df4k7qh', Russian: 'agent_8701m7f70eysf0aa39cfccvgqpvw' };
+const SPEAK_FREE = 2;
+async function speakState(uid, now) {
+  const [u, p] = await Promise.all([db.doc('speakUse/' + uid).get(), db.doc('passes/' + uid).get()]);
+  const used = (u.exists && +u.data().used) || 0, until = +(((p.exists && p.data()) || {}).speak || {}).until || 0;
+  return { free: SPEAK_FREE, used, left: Math.max(0, SPEAK_FREE - used), until, paid: until > now };
+}
+// one trial is taken inside a transaction, so two tabs opened at once cannot both slip through
+async function speakTake(uid, lang, now) {
+  const ref = db.doc('speakUse/' + uid);
+  return db.runTransaction(async tx => {
+    const cur = await tx.get(ref), d = (cur.exists && cur.data()) || {}, used = +d.used || 0;
+    if (used >= SPEAK_FREE) return false;
+    tx.set(ref, { used: used + 1, log: [...(d.log || []).slice(-9), { at: now, lang }] });
+    return true;
+  });
+}
+async function speakGive(uid, now) {   // a trial taken for a link that could not be made goes back
+  const ref = db.doc('speakUse/' + uid);
+  await db.runTransaction(async tx => { const cur = await tx.get(ref), d = (cur.exists && cur.data()) || {}; tx.set(ref, { ...d, used: Math.max(0, (+d.used || 0) - 1), log: (d.log || []).slice(0, -1) }); });
+}
+async function speakRun(uid, body, now = Date.now()) {
+  const lang = String((body || {}).lang || ''), agent = SPEAK_AGENTS[lang];
+  if (!agent) return { code: 400, body: { ok: false, error: 'lang' } };
+  const staff = !!(await senderOf(uid)), st = await speakState(uid, now), info = { ...st, staff };
+  if ((body || {}).action !== 'start') return { code: 200, body: { ok: true, ...info } };
+  const key = process.env.ELEVENLABS_API_KEY;
+  if (!key) return { code: 503, body: { ok: false, error: 'off' } };
+  let trial = false;
+  if (!staff && !st.paid) {
+    if (!(await speakTake(uid, lang, now))) return { code: 402, body: { ok: false, error: 'paywall', ...info } };
+    trial = true;
+  }
+  try {
+    const r = await fetch('https://api.elevenlabs.io/v1/convai/conversation/get-signed-url?agent_id=' + encodeURIComponent(agent), { headers: { 'xi-api-key': key } });
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok || !j.signed_url) throw new Error('elevenlabs ' + r.status);
+    const after = trial ? await speakState(uid, now) : st;
+    return { code: 200, body: { ok: true, signedUrl: j.signed_url, ...after, staff } };
+  } catch (e) {
+    if (trial) await speakGive(uid, now);
+    logger.error('speakToken', e); return { code: 502, body: { ok: false, error: 'upstream' } };
+  }
+}
+exports.speakToken = onRequest({ cors: CALL_ORIGINS, invoker: 'public' }, async (req, res) => {
+  if (req.method !== 'POST') { res.status(405).json({ ok: false }); return; }
+  const m = String(req.get('Authorization') || '').match(/^Bearer (.+)$/); let uid;
+  try { uid = (await admin.auth().verifyIdToken(m ? m[1] : '')).uid; } catch (e) { res.status(401).json({ ok: false, error: 'auth' }); return; }
+  try { const r = await speakRun(uid, req.body || {}); res.status(r.code).json(r.body); }
+  catch (e) { logger.error('speakToken', e); res.status(500).json({ ok: false, error: 'server' }); }
+});
+
 /* attendance: who has stopped having lessons, and whose lesson time dropped (for the owner's report) */
 async function attendance(now = Date.now()) {
   const d28 = dayKey(now - 27 * 864e5), d14 = dayKey(now - 13 * 864e5), d7 = dayKey(now - 6 * 864e5);
@@ -768,4 +827,4 @@ exports.onPayClaim = onDocumentWritten('payClaims/{uid}', async ev => {
 });
 
 // for tests
-exports._t = { t, leadText, joinUrl, hookSecret, setupKey, newsText, reportText, dayKey, lessonSoonRun, dailyNudgesRun, money, hasContact, hideContact, jaasJwt, callRun, callOn, attendance };
+exports._t = { t, leadText, joinUrl, hookSecret, setupKey, newsText, reportText, dayKey, lessonSoonRun, dailyNudgesRun, money, hasContact, hideContact, jaasJwt, callRun, callOn, attendance, speakRun };

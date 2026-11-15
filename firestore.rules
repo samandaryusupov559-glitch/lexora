@@ -231,6 +231,11 @@ service cloud.firestore {
       allow read: if isMe(uid) || isTeacher();
       allow write: if isTeacher();
     }
+    // Speaking Buddy: how many free conversations a person has used. Only the server writes it (the speakToken function).
+    match /speakUse/{uid} {
+      allow read: if isMe(uid) || isTeacher();
+      allow write: if false;
+    }
     // "I paid" requests for the newspaper / the pack. Changes nothing by itself.
     match /passOrders/{uid} {
       allow read: if isMe(uid) || isTeacher();

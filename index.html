@@ -1822,7 +1822,7 @@ h3{font-weight:700;letter-spacing:-.02em}
 <div id="toast" class="toast" hidden role="status" aria-live="polite"></div>
 
 <script type="module">
-import { LANGS, DICT } from './i18n.js?v=2026.11.08e';
+import { LANGS, DICT } from './i18n.js?v=2026.11.15a';
 /* ---------------- constants ---------------- */
 const TYPES = [['gr','Gr'],['t','T'],['art','Art'],['prep','Prep'],['ww','WW'],['sp','Sp'],['p','P'],['wo','WO'],['agr','Agr'],['st','St'],['good','★']]
   .map(([k,code])=>({k, code, get name(){ return tr('type.'+k); }}));
@@ -3346,17 +3346,19 @@ function vMarketS(){
   ${mine.length||pmMine.length?`<div class="notice info section" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;justify-content:space-between"><span>${tr('sv.inShop',{n:mine.length+pmMine.length})}</span><button class="btn sm primary" data-act="go" data-v="services">${I.cards} ${tr('sv.h')}</button></div>`:''}`;
 }
 /* student: "My services" — everything they bought, used here (the Shop is only for buying) */
-const myServiceCount = () => (hasNews()?1:0)+(hasStudy()?1:0)+Object.values(S.myTorders||{}).filter(o=>o.st==='ok').length+(S.myOrders?.items||[]).filter(o=>ordSt(S.myOStat?.[o.id])==='paid').length;
+const myServiceCount = () => (hasNews()?1:0)+(hasStudy()?1:0)+(speakUntil(S.myPass)>Date.now()?1:0)+Object.values(S.myTorders||{}).filter(o=>o.st==='ok').length+(S.myOrders?.items||[]).filter(o=>ordSt(S.myOStat?.[o.id])==='paid').length;
 function vServices(){
   const P=pmInfo(), po=myPassOrders(), now=Date.now();
   const orders=(S.myOrders?.items||[]).slice().sort((a,b)=>(b.at||0)-(a.at||0)).map(o=>{ const st=S.myOStat?.[o.id]; return {...o, st:ordSt(st), msg:st?.msg||'', file:st?.file||''}; });
   const cards=[];
-  const one = (kind, on, until, pend, title, line, open) => `<article class="svc sv-own ${on?'on':''}"><span class="label">${kind==='news'?tr('nw.tag'):tr('st.tag')}</span><h3>${title}</h3><p class="muted small">${line}</p>
+  const one = (kind, on, until, pend, title, line, open) => `<article class="svc sv-own ${on?'on':''}"><span class="label">${kind==='news'?tr('nw.tag'):kind==='speak'?tr('sb.tag'):tr('st.tag')}</span><h3>${title}</h3><p class="muted small">${line}</p>
     <div class="svc-foot"><span class="small ${on?'':'faint'}">${on?tr('st.activeTill',{d:esc(dayMonth(until))}):pend?tr('pm.pending'):until?tr('st.ended',{d:esc(dayMonth(until))}):''}</span>
       ${on?open:pend?'':`<button class="btn pen sm" data-act="pb-open" data-k="${kind}">${until?tr('st.extendBtn'):tr('mk.buy')}</button>`}</div></article>`;
   const nu=newsUntil(S.myPass), su=studyUntil(S.myPass), np=po.some(o=>o.kind==='news'&&o.st==='wait'), sp=po.some(o=>o.kind==='study'&&o.st==='wait'), nSets=(S.myIdx?.sets||[]).filter(x=>x.on!==false).length;
   if(hasNews()||np||nu) cards.push(one('news', hasNews(), nu, np, esc(P.news.name), tr('sv.newsLine',{h:hh(P.news.hour)}), `<button class="btn primary sm" data-act="go" data-v="news">${I.paper} ${tr('nw.read')}</button>`));
   if(hasStudy()||sp||su) cards.push(one('study', hasStudy(), su, sp, tr('st.name'), nSets?tr('sv.studyLine',{n:nSets}):tr('st.makingP'), `<button class="btn primary sm" data-act="go" data-v="study">${I.cards} ${tr('st.open')}</button>`));
+  const kp=po.some(o=>o.kind==='speak'&&o.st==='wait'), ku=speakUntil(S.myPass);
+  if(ku>now||kp||ku) cards.push(one('speak', ku>now, ku, kp, tr('sb.nav'), tr('sb.line'), `<button class="btn primary sm" data-act="go" data-v="speak">${I.mic} ${tr('sb.open')}</button>`));
   const tsec=myOrdersSection();
   const empty=!cards.length && !orders.length && !tsec && !po.length;
   return `<div class="page-head"><div><h1>${tr('sv.h')}</h1><p>${tr('sv.p')}</p></div><button class="btn" data-act="go" data-v="market">${I.bag} ${tr('sv.toShop')}</button></div>${rulesNote()}
@@ -3417,8 +3419,8 @@ const enDate = (s,o) => parseDate(s).toLocaleDateString('en-GB',o);
 const reEsc = s => s.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
 const str = (v,n=400) => String(v??'').trim().slice(0,n);
 
-const PM_DEF = {news:{on:true, name:'The Lexora Daily', price:50000, days:30, hour:7, city:'tashkent'}, study:{on:true, price:50000, days:30}, bundle:{on:false, price:80000, days:30}};
-function pmInfo(){ const p=S.pm||{}; return {news:{...PM_DEF.news, ...(p.news||{})}, study:{...PM_DEF.study, ...(p.study||{})}, bundle:{...PM_DEF.bundle, ...(p.bundle||{})}, langs:(Array.isArray(p.langs)?p.langs.filter(l=>typeof l==='string'):[]).length?p.langs.filter(l=>typeof l==='string'):['English']}; }
+const PM_DEF = {news:{on:true, name:'The Lexora Daily', price:50000, days:30, hour:7, city:'tashkent'}, study:{on:true, price:50000, days:30}, bundle:{on:false, price:80000, days:30}, speak:{on:true, price:50000, days:30}};
+function pmInfo(){ const p=S.pm||{}; return {news:{...PM_DEF.news, ...(p.news||{})}, study:{...PM_DEF.study, ...(p.study||{})}, bundle:{...PM_DEF.bundle, ...(p.bundle||{})}, speak:{...PM_DEF.speak, ...(p.speak||{})}, langs:(Array.isArray(p.langs)?p.langs.filter(l=>typeof l==='string'):[]).length?p.langs.filter(l=>typeof l==='string'):['English']}; }
 const langPill = l => l&&l!=='English' ? `<span class="pill">${esc(langName(l))}</span>` : '';
 async function savePm(mut, okMsg){
   const next=clone(S.pm)||{}; mut(next);
@@ -3468,9 +3470,10 @@ function stWatch(id){
 const passUntil = (p, k) => +(p?.[k]?.until)||0;
 const studyUntil = p => passUntil(p,'study'), newsUntil = p => passUntil(p,'news');
 const hasNews = () => S.mode==='teacher' || newsUntil(S.myPass)>Date.now();
+const speakUntil = p => passUntil(p,'speak'), hasSpeak = () => S.mode==='teacher' || speakUntil(S.myPass)>Date.now();
 const hasStudy = () => S.mode==='teacher' || studyUntil(S.myPass)>Date.now();
 const pmDays = k => Math.max(1, +pmInfo()[k].days || 30);
-const pmName = k => k==='news' ? pmInfo().news.name : k==='bundle' ? tr('pm.b.name') : tr('st.name');
+const pmName = k => k==='news' ? pmInfo().news.name : k==='bundle' ? tr('pm.b.name') : k==='speak' ? tr('sb.nav') : tr('st.name');
 const dayMonth = ms => dloc(new Date(ms),{day:'numeric',month:'long'});
 function nwDay(id){
   const x=S.nwDays[id]; if(!x) return {st: S.mode==='teacher' && S.pmL['w'+weekOf(id.slice(-10))] ? 'none' : 'wait'};
@@ -3503,21 +3506,21 @@ function allPassOrders(){
 }
 const pendingPasses = () => S.mode==='teacher' ? allPassOrders().filter(o=>o.st==='wait').length : 0;
 const myPassOrders = () => (S.myPOrders?.items||[]).map(it=>({...it, st:poStatus(S.myPass,it)})).sort((a,b)=>(b.at||0)-(a.at||0));
-const pmPrice = k => k==='news' ? pmInfo().news.price : k==='bundle' ? pmInfo().bundle.price : pmInfo().study.price;
+const pmPrice = k => k==='news' ? pmInfo().news.price : k==='bundle' ? pmInfo().bundle.price : k==='speak' ? pmInfo().speak.price : pmInfo().study.price;
 const pmWhat = o => `${esc(pmName(o.kind))} · ${esc(tr('st.days',{n:pmDays(o.kind)}))}`;
 function poRow(o, teacher){
   const btn=(act,label,cls='ghost')=>`<button class="btn sm ${cls}" data-act="${act}" data-uid="${esc(o.uid||'')}" data-id="${esc(o.id)}">${label}</button>`;
   let act='';
   if(teacher) act = o.st==='wait' ? `<span class="row" style="gap:6px">${btn('po-no',tr('pf.decline'))}${btn('po-ok',tr('mk.confirmPaid'),'primary')}</span>` : btn('po-undo','↺ '+tr('pf.undo'));
   else if(o.st==='wait') act=btn('po-cancel',tr('pf.cancel'));
-  return `<div class="req ${o.st}">${teacher?avatar(o.name,o.uid):`<span class="svc-ic sm">${I[o.kind==='news'?'paper':'cards']}</span>`}<div style="min-width:0">
+  return `<div class="req ${o.st}">${teacher?avatar(o.name,o.uid):`<span class="svc-ic sm">${I[o.kind==='news'?'paper':o.kind==='speak'?'mic':'cards']}</span>`}<div style="min-width:0">
       ${teacher?`<b>${esc(o.name)}</b> <span class="faint">·</span> `:''}<b>${pmWhat(o)}</b>${o.lang?` ${langPill(o.lang)||`<span class="pill">${esc(langName(o.lang))}</span>`}`:''} <span class="faint">·</span> <b class="num">${som(+o.price||pmPrice(o.kind))}</b>
       <div class="small muted">${o.method?esc(methodName(o.method))+' · ':''}${esc(ago(o.at))}</div>
       ${o.ref?`<div class="small req-note">${tr('pf.ref2',{ref:esc(o.ref)})}</div>`:''}</div>
     <div class="req-act"><span class="pill bk-${o.st}">${tr('pm.st.'+o.st)}</span>${act}</div></div>`;
 }
 // a bundle opens the newspaper and the practice pack together (the money is counted once, on the newspaper)
-const pmKinds = it => it.kind==='bundle' ? ['news','study'] : [it.kind==='news'?'news':'study'];
+const pmKinds = it => it.kind==='bundle' ? ['news','study'] : [it.kind==='news'||it.kind==='speak' ? it.kind : 'study'];
 async function pmGrant(uid, it, amount){
   const ks=pmKinds(it), cur=clone(S.passes[uid])||{}; cur.name=S.profiles[uid]?.name||cur.name||''; cur.no=cur.no||{}; delete cur.no[it.id];
   // paying again adds the days on top of what is left
@@ -3525,7 +3528,7 @@ async function pmGrant(uid, it, amount){
   ks.forEach((k,i)=>{ const st=cur[k]||{until:0,hist:[]}, from=Math.max(Date.now(), +st.until||0);
     st.until=from+days*DAY; st.hist=[...(st.hist||[]).slice(-23), {oid:it.id, at:nowTs(), amount:i?0:(+amount||0), days}]; st.lang=it.lang||st.lang||'English'; cur[k]=st; ends[k]=st.until; });
   await S.db.doc('passes/'+uid).set(cur);
-  notify('order',[uid],()=>({subject:tr('pm.emOk',{what:pmName(it.kind==='bundle'?'bundle':ks[0])}), kicker:tr('em.ordK'), lines:ks.map(k=>k==='news'?tr('pm.emNews',{d:dayMonth(ends.news),h:hh(pmInfo().news.hour)}):tr('pm.emStudy',{d:dayMonth(ends.study)}))}));
+  notify('order',[uid],()=>({subject:tr('pm.emOk',{what:pmName(it.kind==='bundle'?'bundle':ks[0])}), kicker:tr('em.ordK'), lines:ks.map(k=>k==='news'?tr('pm.emNews',{d:dayMonth(ends.news),h:hh(pmInfo().news.hour)}):k==='speak'?tr('sb.emSpeak',{d:dayMonth(ends.speak)}):tr('pm.emStudy',{d:dayMonth(ends.study)}))}));
 }
 async function pmUndo(uid, it){
   const cur=clone(S.passes[uid])||{}; if(cur.no) delete cur.no[it.id];
@@ -3547,13 +3550,13 @@ function openPassBuy(kind){
   if(mine.some(o=>o.kind===kind&&o.st==='wait')){ toast(tr('pm.already')); return; }
   const until=kind==='bundle'?Math.min(newsUntil(S.myPass),studyUntil(S.myPass)):passUntil(S.myPass,kind), days=pmDays(kind);
   showDlg(`<form id="pb-form" novalidate>${dlgHead(tr('mk.h'), esc(pmName(kind)))}
-    <div class="dlg-body"><p class="muted">${kind==='news'?tr('nw.buyP',{h:hh(P.news.hour),n:days}):kind==='bundle'?tr('pm.b.buyP',{n:days}):tr('st.buyP',{n:days})}</p>
+    <div class="dlg-body"><p class="muted">${kind==='speak'?tr('sb.buyP',{n:days}):kind==='news'?tr('nw.buyP',{h:hh(P.news.hour),n:days}):kind==='bundle'?tr('pm.b.buyP',{n:days}):tr('st.buyP',{n:days})}</p>
       ${until>Date.now()?`<p class="notice info small" style="margin:0">${tr('st.extend',{d:esc(dayMonth(until)),n:days})}</p>`:''}
       <div class="field"><span>${tr('mk.total')}</span><b class="num mk-total">${som(price)}</b></div>
       <div class="field"><span>${tr('pf.how')}</span>${ms.length?`<div class="list pm-list">${ms.map(m=>methodRow(m,false)).join('')}</div>`:`<p class="small faint">${tr('pf.noMethods')}</p>`}</div>
       <div class="lg-2"><label class="field"><span>${tr('pf.method')}</span><select class="inp" id="pb-method">${kinds.map(k=>`<option value="${k}">${tr('lg.m.'+k)}</option>`).join('')}</select></label>
         <label class="field"><span>${tr('pf.ref')} <span class="faint">${tr('optional')}</span></span><input class="inp" id="pb-ref" maxlength="80" placeholder="${tr('pf.refPh')}"></label></div>
-      ${P.langs.length>1?`<label class="field"><span>${tr('pm.l.pick')}</span><select class="inp" id="pb-lang">${langOpts(P.langs, P.langs[0])}</select></label>`:''}
+      ${P.langs.length>1&&kind!=='speak'?`<label class="field"><span>${tr('pm.l.pick')}</span><select class="inp" id="pb-lang">${langOpts(P.langs, P.langs[0])}</select></label>`:''}
       <p class="small faint">${tr('mk.safe')}</p><p class="lg-err" id="pb-err" role="alert"></p></div>
     <div class="dlg-foot"><button type="button" class="btn ghost" data-act="dlg-close">${tr('cancel')}</button><button class="btn pen" id="pb-save">${tr('mk.paidSend')}</button></div></form>`, {type:'pass', id:kind});
   $('#pb-form').addEventListener('submit', async e=>{
@@ -3567,10 +3570,10 @@ function openPassBuy(kind){
 function openPmGive(kind){
   const P=pmInfo(), studs=Object.entries(S.profiles).sort((a,b)=>(a[1].name||'').localeCompare(b[1].name||''));
   if(!studs.length){ toast(tr('task.noStudents')); return; }
-  showDlg(`<form id="pg-form" novalidate>${dlgHead(kind==='news'?esc(P.news.name):kind==='bundle'?tr('pm.b.name'):tr('st.name'), tr('pm.give'))}
+  showDlg(`<form id="pg-form" novalidate>${dlgHead(kind==='news'?esc(P.news.name):kind==='bundle'?tr('pm.b.name'):kind==='speak'?tr('sb.nav'):tr('st.name'), tr('pm.give'))}
     <div class="dlg-body"><label class="field"><span>${tr('student')}</span><select class="inp" id="pg-who">${studs.map(([uid,p])=>`<option value="${esc(uid)}">${esc(p.name||'?')}</option>`).join('')}</select></label>
       <p class="small muted">${tr('st.giveP',{n:pmDays(kind)})}</p>
-      ${P.langs.length>1?`<label class="field"><span>${tr('pm.l.pick')}</span><select class="inp" id="pg-lang">${langOpts(P.langs, P.langs[0])}</select></label>`:''}
+      ${P.langs.length>1&&kind!=='speak'?`<label class="field"><span>${tr('pm.l.pick')}</span><select class="inp" id="pg-lang">${langOpts(P.langs, P.langs[0])}</select></label>`:''}
       <label class="field"><span>${tr('pm.amount')}</span><input class="inp num" id="pg-amt" type="number" min="0" step="1000" value="${pmPrice(kind)}"></label>
       <p class="small faint">${tr('pm.giveP')}</p></div>
     <div class="dlg-foot"><button type="button" class="btn ghost" data-act="dlg-close">${tr('cancel')}</button><button class="btn primary" id="pg-save">${tr('pm.give')}</button></div></form>`, {type:'give'});
@@ -3589,8 +3592,9 @@ const pmBack = () => S.mode==='student' && (hasNews()||hasStudy()||myPassOrders(
 const newsArt = () => `<div class="pm-art-news" aria-hidden="true"><b>${esc(pmInfo().news.name)}</b><i></i><span></span><span></span><span class="s"></span><em></em><span></span><span class="s"></span></div>`;
 const bundleArt = () => `<div class="pm-art-cards" aria-hidden="true"><span>📰</span><span>Aa</span><span>✓</span></div>`;
 const cardsArt = () => `<div class="pm-art-cards" aria-hidden="true"><span>Aa</span><span>?</span><span>✓</span></div>`;
+const speakArt = () => `<div class="pm-art-cards" aria-hidden="true"><span>🎙</span><span>Hi</span><span>✓</span></div>`;
 function pmCard(kind, o){
-  return `<article class="pm-card pm-${kind}"><div class="pm-art">${kind==='news'?newsArt():kind==='bundle'?bundleArt():cardsArt()}</div><div class="pm-body">
+  return `<article class="pm-card pm-${kind}"><div class="pm-art">${kind==='news'?newsArt():kind==='bundle'?bundleArt():kind==='speak'?speakArt():cardsArt()}</div><div class="pm-body">
     <span class="label">${o.tag}</span><h3>${o.title}</h3><p class="muted">${o.pitch}</p>
     ${o.feats?`<ul class="pm-feats">${o.feats.map(f=>`<li>${f}</li>`).join('')}</ul>`:''}
     ${o.status?`<div class="pm-status ${o.ok?'ok':''}">${o.status}</div>`:''}
@@ -3606,6 +3610,10 @@ function pmShopS(){
     out.push(pmCard('study',{tag:tr('st.tag'), title:tr('st.name'), pitch:tr('st.pitch'), feats:['f1','f2','f3','f4'].map(k=>tr('st.'+k,{n})), price:P.study.price, per:tr('st.days',{n:P.study.days}),
       status: on?tr('st.activeTill',{d:esc(dloc(new Date(studyUntil(S.myPass)),{day:'numeric',month:'long'}))}) : pend?tr('pm.pending'):'', ok:on,
       btns: on?`<button class="btn primary" data-act="go" data-v="services">${I.cards} ${tr('sv.openIn')}</button>`:`<button class="btn ghost" data-act="go" data-v="study">${tr('pm.peek')}</button>${pend?'':`<button class="btn pen" data-act="pb-open" data-k="study">${tr('mk.buy')}</button>`}`})); }
+  if(P.speak.on){ const on=hasSpeak(), pend=mine.some(o=>o.kind==='speak'&&o.st==='wait');
+    out.push(pmCard('speak',{tag:tr('sb.tag'), title:tr('sb.nav'), pitch:tr('sb.pitch'), feats:['f1','f2','f3'].map(k=>tr('sb.'+k)), price:P.speak.price, per:tr('st.days',{n:P.speak.days}),
+      status: on?tr('st.activeTill',{d:esc(dayMonth(speakUntil(S.myPass)))}) : pend?tr('pm.pending'):'', ok:on,
+      btns: on?`<button class="btn primary" data-act="go" data-v="speak">${I.mic} ${tr('sv.openIn')}</button>`:`<button class="btn ghost" data-act="go" data-v="speak">${tr('pm.peek')}</button>${pend?'':`<button class="btn pen" data-act="pb-open" data-k="speak">${tr('mk.buy')}</button>`}`})); }
   if(P.bundle.on && P.news.on && P.study.on){
     const both=hasNews()&&hasStudy(), pend=mine.some(o=>o.kind==='bundle'&&o.st==='wait'), save=(+P.news.price||0)+(+P.study.price||0)-(+P.bundle.price||0);
     out.push(pmCard('bundle',{tag:tr('pm.b.tag'), title:tr('pm.b.name'), pitch:tr('pm.b.pitch'), feats:[tr('pm.b.f1'), tr('pm.b.f2'), ...(save>0?[tr('pm.b.f3',{n:som(save)})]:[])], price:P.bundle.price, per:tr('st.days',{n:pmDays('bundle')}),
@@ -3623,6 +3631,7 @@ function pmShopT(){
     ${pmCard('news',{tag:tr('nw.tag'), title:esc(P.news.name)+' '+off(P.news.on), pitch:tr('nw.statT',{r:readers.length}), status:todo?tr('nw.todo',{n:todo}):'', price:P.news.price, per:tr('st.days',{n:P.news.days}), btns:`<button class="btn primary" data-act="go" data-v="news">${tr('pm.manage')}</button>`})}
     ${pmCard('study',{tag:tr('st.tag'), title:tr('st.name')+' '+off(P.study.on), pitch:tr('st.statT',{a:active,s:Object.values(S.stIdx).reduce((a,x)=>a+(x?.sets||[]).length,0)}), price:P.study.price, per:tr('st.days',{n:P.study.days}), btns:`<button class="btn primary" data-act="go" data-v="study">${tr('pm.manage')}</button>`})}
     ${pmCard('bundle',{tag:tr('pm.b.tag'), title:tr('pm.b.name')+' '+off(P.bundle.on&&P.news.on&&P.study.on), pitch:tr('pm.b.statT',{n:Object.values(S.passes).filter(p=>newsUntil(p)>now&&studyUntil(p)>now).length}), price:P.bundle.price, per:tr('st.days',{n:P.bundle.days}), btns:`<button class="btn" data-act="pm-give" data-k="bundle">${tr('pm.give')}</button><button class="btn primary" data-act="pm-set" data-k="bundle">${tr('pm.settings')}</button>`})}
+    ${pmCard('speak',{tag:tr('sb.tag'), title:tr('sb.nav')+' '+off(P.speak.on), pitch:tr('sb.statT',{n:Object.values(S.passes).filter(p=>speakUntil(p)>now).length}), price:P.speak.price, per:tr('st.days',{n:P.speak.days}), btns:`<button class="btn" data-act="pm-give" data-k="speak">${tr('pm.give')}</button><button class="btn primary" data-act="pm-set" data-k="speak">${tr('pm.settings')}</button>`})}
   </div>${reqs.length?`<h3 class="pm-reqh">${tr('pm.reqH')}</h3><div class="list">${reqs.map(o=>poRow(o,true)).join('')}</div>`:''}</div>`;
 }
 function pmHome(){
@@ -3670,6 +3679,16 @@ function pmSettings(kind){
     $('#ps-form').addEventListener('submit', async e=>{ e.preventDefault();
       const bundle={on:$('#ps-on').checked, price:Math.max(0,Math.round(+$('#ps-price').value||0)), days:Math.min(366,Math.max(1,Math.round(+$('#ps-days').value||30)))};
       if(await savePm(n=>{ n.bundle=bundle; }, tr('bk.saved'))) closeDlg();
+    });
+  } else if(kind==='speak'){ const T=P.speak;
+    showDlg(`<form id="ps-form" novalidate>${dlgHead(tr('pm.settings'), tr('sb.nav'))}<div class="dlg-body">
+      <div class="lg-2"><label class="field"><span>${tr('nw.s.price')}</span><input class="inp num" id="ps-price" type="number" min="0" step="1000" value="${+T.price||0}"></label>
+        <label class="field"><span>${tr('st.s.days')}</span><input class="inp num" id="ps-days" type="number" min="1" max="366" value="${+T.days||30}"></label></div>
+      <label class="row" style="gap:8px"><input type="checkbox" id="ps-on" ${T.on?'checked':''}> <span>${tr('pm.sell')}</span></label></div>
+      <div class="dlg-foot"><button type="button" class="btn ghost" data-act="dlg-close">${tr('cancel')}</button><button class="btn primary">${tr('save')}</button></div></form>`, {type:'ps'});
+    $('#ps-form').addEventListener('submit', async e=>{ e.preventDefault();
+      const speak={on:$('#ps-on').checked, price:Math.max(0,Math.round(+$('#ps-price').value||0)), days:Math.min(366,Math.max(1,Math.round(+$('#ps-days').value||30)))};
+      if(await savePm(n=>{ n.speak=speak; }, tr('bk.saved'))) closeDlg();
     });
   } else { const T=P.study;
     showDlg(`<form id="ps-form" novalidate>${dlgHead(tr('pm.settings'), tr('st.name'))}<div class="dlg-body">
@@ -7530,7 +7549,7 @@ function libSync(){
 }
 const libIcon = k => k==='audio'?'🎧':k==='video'?'🎬':k==='link'?'🔗':'📘';
 /* ---------------- Speaking Buddy (ElevenLabs voice agents, one per language) ---------------- */
-const SB_AGENTS = { English:'agent_3201m7f6ds26e77rjbtk5df4k7qh', Russian:'agent_8701m7f70eysf0aa39cfccvgqpvw' };
+const SB_LANGS = ['English','Russian'];   // the agents themselves are private; the speakToken function holds their ids
 const SB_SRC = 'https://unpkg.com/@elevenlabs/convai-widget-embed';
 let sbPromise = null;
 function sbScript(){
@@ -7546,31 +7565,59 @@ function sbScript(){
 // the languages this person can practise: their own languages that have a Speaking Buddy
 // (a person whose languages are not known yet gets English, like everywhere else on the site)
 function sbLangs(){
-  const mine=myLangs(), ls=mine.filter(l=>SB_AGENTS[l]);
+  const mine=myLangs(), ls=mine.filter(l=>SB_LANGS.includes(l));
   return ls.length || mine.length ? ls : ['English'];
 }
 function sbCur(){ const ls=sbLangs(), f=S.view; if(!ls.includes(f.lang)) f.lang=ls[0]||''; return f.lang; }
+const sbSt = () => S.sb ||= {info:null, busy:false, err:'', live:'', t:0};
+async function sbApi(action, lang){
+  const tok=await S.user.getIdToken();
+  const r=await fetch(`https://europe-west1-${S.fbProject}.cloudfunctions.net/speakToken`, {method:'POST', headers:{'content-type':'application/json', authorization:'Bearer '+tok}, body:JSON.stringify({action, lang})});
+  try{ return await r.json(); }catch(e){ return {ok:false, error:'server'}; }
+}
+function sbMount(lang, url){
+  const b=$('#sb-box'), x=sbSt(); if(!b || S.view.name!=='speak') return;
+  x.live=lang; clearTimeout(x.t);
+  b.dataset.l=lang;
+  b.innerHTML=`<p>${tr('sb.ready')}</p><p class="small muted">${tr('sb.keep')}</p><elevenlabs-convai signed-url="${esc(url)}"></elevenlabs-convai>`;
+  // the link lives 15 minutes; after that the chat is closed and a new start (a new trial) is needed
+  x.t=setTimeout(()=>{ x.live=''; x.info=null; if(S.view.name==='speak'){ $('#sb-box')?.querySelector('elevenlabs-convai')?.remove(); renderMain(); } }, 14*60e3);
+}
 function vSpeak(){
-  const ready=langsReady(), ls=ready?sbLangs():[], cur=ready?sbCur():'';
+  const ready=langsReady(), ls=ready?sbLangs():[], cur=ready?sbCur():'', x=sbSt(), now=Date.now();
   const chips = ls.length>1 ? `<div class="lp-filter" role="group" aria-label="${tr('c.fLang')}">${ls.map(l=>`<button data-act="sb-lang" data-v="${esc(l)}" aria-pressed="${l===cur}">${esc(langName(l))}</button>`).join('')}</div>` : '';
-  const body = !ready ? `<div class="loading">${tr('sb.loading')}</div>`
-    : cur ? `<div id="sb-box" class="sb-box" data-l="${esc(cur)}"><div class="loading">${tr('sb.loading')}</div></div>`
-    : `<div class="notice">${tr('sb.noLang')}</div>`;
+  const staff=S.mode==='teacher', until=speakUntil(S.myPass), paid=!staff && until>now, left=x.info && x.info.left!=null ? x.info.left : null;
+  const pend=myPassOrders().some(o=>o.kind==='speak'&&o.st==='wait');
+  const start=`<button class="btn pen" data-act="sb-start" ${x.busy?'disabled':''}>${I.mic} ${tr(x.busy?'sb.starting':'sb.start')}</button>`;
+  let inner;
+  if(!ready) inner=`<div class="loading">${tr('sb.loading')}</div>`;
+  else if(!cur) inner=`<div class="notice">${tr('sb.noLang')}</div>`;
+  else if(S.demo || !S.user) inner=`<div class="notice">${tr('sb.demo')}</div>`;
+  else if(!staff && !paid && left===0) inner=`<h3>${tr('sb.payH')}</h3><p class="muted">${tr('sb.payP',{n:pmInfo().speak.days, p:som(pmInfo().speak.price)})}</p>${pend?`<div class="pm-status">${tr('pm.pending')}</div>`:`<button class="btn pen" data-act="pb-open" data-k="speak">${tr('mk.buy')}</button>`}`;
+  else inner=`<p class="muted">${staff?tr('sb.staff'):paid?tr('sb.pass',{d:esc(dayMonth(until))}):left==null?tr('sb.loading'):tr('sb.freeLeft',{n:left,t:x.info.free||2})}</p>${x.err?`<p class="lg-err" role="alert">${tr('sb.e.'+x.err)}</p>`:''}${start}`;
+  const body = cur ? `<div id="sb-box" class="sb-box" data-l="${esc(cur)}">${inner}</div>` : `<div id="sb-box" class="sb-box">${inner}</div>`;
   return `<div class="page-head"><div><h1>${tr('sb.h')}</h1><p>${tr('sb.p')}</p></div></div>${chips}
     <div class="card section sb-card">${body}</div>
     <div class="card section" style="padding:16px 20px"><h3>${tr('sb.tipsH')}</h3><ol class="small muted lv-steps" style="margin-top:8px"><li>${tr('sb.t1')}</li><li>${tr('sb.t2')}</li><li>${tr('sb.t3')}</li></ol></div>
     <div class="notice">${tr('sb.limit')}</div>`;
 }
+// after each draw: students without a pass ask the server how many free conversations are left
 function sbLoad(){
-  const box=$('#sb-box'); if(!box) return;
-  const lang=box.dataset.l, agent=SB_AGENTS[lang]; if(!agent) return;
-  sbScript().then(()=>{
-    const b=$('#sb-box'); if(!b || S.view.name!=='speak' || b.dataset.l!==lang) return;
-    b.innerHTML=`<p>${tr('sb.ready')}</p><elevenlabs-convai agent-id="${agent}"></elevenlabs-convai>`;
-  }).catch(()=>{
-    const b=$('#sb-box'); if(!b) return;
-    b.innerHTML=`<p class="muted">${tr('sb.err')}</p><button class="btn pen sm" data-act="sb-retry">${tr('sb.retry')}</button>`;
-  });
+  const x=sbSt(); if(S.mode==='teacher' || S.demo || !S.user || !langsReady() || x.info || x.asking || hasSpeak()) return;
+  x.asking=true;
+  sbApi('status', sbCur()||'English').then(r=>{ x.info=r && r.ok ? r : {left:null}; }).catch(()=>{ x.info={left:null}; }).finally(()=>{ x.asking=false; if(S.view.name==='speak') renderMain(); });
+}
+async function sbStart(){
+  const x=sbSt(), lang=sbCur(); if(x.busy || !lang) return;
+  x.busy=true; x.err=''; renderMain();
+  try{
+    await sbScript();   // the widget code first, so a failed download never uses up a free conversation
+    const r=await sbApi('start', lang);
+    if(r.ok && r.signedUrl){ x.busy=false; x.info=r; sbMount(lang, r.signedUrl); renderMain(); return; }
+    if(r.error==='paywall'){ x.info=r; x.err=''; }
+    else x.err = r.error==='off' ? 'off' : r.error==='upstream' ? 'net' : 'server';
+  }catch(e){ x.err='net'; }
+  x.busy=false; renderMain();
 }
 
 function vLibrary(){
@@ -8090,7 +8137,7 @@ document.addEventListener('click', async ev => {
     case 'go': if(b.dataset.v==='write'){ startEdit(); } else go(b.dataset.v); break;
     case 'lang': setLang(b.dataset.l); break;
     case 'sb-lang': S.view.lang=b.dataset.v; renderMain(); break;
-    case 'sb-retry': { const bx=$('#sb-box'); if(bx) bx.innerHTML=`<div class="loading">${tr('sb.loading')}</div>`; sbLoad(); break; }
+    case 'sb-start': sbStart(); break;
     case 'sign-out': if(S.au) S.au.signOut(S.auth); break;
     case 'login-step': S.view={name:'login',step:b.dataset.s,email:($('#login-email')?.value||S.view.email||'').trim()}; renderMain(); break;
     case 'pw-signin': case 'pw-signup': { const email=($('#login-email')?.value||'').trim(), pass=$('#login-pass')?.value||'';

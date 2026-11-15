@@ -275,5 +275,35 @@ const ev = (params, after, before) => ({ params, data: before === undefined ? { 
   ok('a teacher whose lesson time dropped is listed', at.drop.some(x => /Dilso‘z/.test(x) && /400 → 80/.test(x)));
   store.delete('tg/own');
 
+  console.log('Speaking Buddy');
+  const tgFetch = global.fetch; let elCalls = 0, elOk = true;
+  global.fetch = async (url) => { if (!/api\.elevenlabs\.io/.test(url)) return tgFetch(url); elCalls++;
+    return { ok: elOk, status: elOk ? 200 : 500, json: async () => (elOk ? { signed_url: 'wss://x/?agent=' + /agent_id=([^&]+)/.exec(url)[1] } : {}) }; };
+  users.s3 = { email: 'kid@x.com', emailVerified: true };
+  const sp = (uid, body, now = 5e12) => bot._t.speakRun(uid, body, now);
+  ok('an unknown language is refused', (await sp('s3', { action: 'start', lang: 'Klingon' })).code === 400);
+  let sr = await sp('s3', { action: 'status', lang: 'English' });
+  ok('status shows 2 free left and does not use one', sr.code === 200 && sr.body.left === 2 && sr.body.used === 0 && !sr.body.paid && elCalls === 0);
+  sr = await sp('s3', { action: 'start', lang: 'English' });
+  ok('without the key nothing starts and no trial is used', sr.code === 503 && !store.has('speakUse/s3'));
+  process.env.ELEVENLABS_API_KEY = 'k';
+  sr = await sp('s3', { action: 'start', lang: 'English' });
+  ok('first conversation: signed link, 1 left', sr.code === 200 && /agent_3201/.test(sr.body.signedUrl) && sr.body.left === 1);
+  sr = await sp('s3', { action: 'start', lang: 'Russian' });
+  ok('second conversation (Russian): its own agent, 0 left', sr.code === 200 && /agent_8701/.test(sr.body.signedUrl) && sr.body.left === 0);
+  const calls0 = elCalls; sr = await sp('s3', { action: 'start', lang: 'English' });
+  ok('third is refused with 402 and no link is asked for', sr.code === 402 && sr.body.error === 'paywall' && elCalls === calls0);
+  store.set('passes/s3', { name: 'Kid', speak: { until: 5e12 + 864e5, hist: [] } });
+  sr = await sp('s3', { action: 'start', lang: 'English' });
+  ok('with a paid pass it starts and uses no trial', sr.code === 200 && sr.body.paid && store.get('speakUse/s3').used === 2);
+  sr = await sp('s3', { action: 'start', lang: 'English' }, 5e12 + 2 * 864e5);
+  ok('after the pass ends it is refused again', sr.code === 402);
+  store.set('speakUse/s3', { used: 2 }); store.delete('passes/s3'); elOk = false; store.set('speakUse/s4', { used: 1, log: [{ at: 1, lang: 'English' }] }); users.s4 = { email: 'b@x.com', emailVerified: true };
+  sr = await sp('s4', { action: 'start', lang: 'English' });
+  ok('if ElevenLabs fails the trial is given back', sr.code === 502 && store.get('speakUse/s4').used === 1);
+  elOk = true;
+  for (const who of ['own', 'dil']) { store.set('speakUse/' + who, { used: 9 }); sr = await sp(who, { action: 'start', lang: 'English' }); ok(who + ' (owner/teacher) is never limited', sr.code === 200 && store.get('speakUse/' + who).used === 9); }
+  delete process.env.ELEVENLABS_API_KEY; global.fetch = tgFetch;
+
   console.log(`\n${pass} passed, ${fail} failed`); process.exit(fail ? 1 : 0);
 })().catch(e => { console.error(e); process.exit(1); });
