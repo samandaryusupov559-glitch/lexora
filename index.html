@@ -471,6 +471,10 @@ textarea.hand:focus{outline:none;border-color:var(--pen);box-shadow:0 0 0 3px co
 .lg-amt{font-family:var(--f-num);font-size:24px;padding:8px 12px}
 .lg-err{color:var(--pen);font-size:14.5px;font-weight:600;min-height:1.2em}
 .lg-err:empty{display:none}
+.card.sb-card{padding:22px 24px}
+.sb-box{display:grid;gap:14px;justify-items:start;align-content:start}
+.sb-box>*{margin:0}
+.sb-box h3{font-size:20px}
 .lg-hist{display:flex;flex-direction:column;gap:4px;max-height:230px;overflow:auto}
 .lg-hist .h{display:grid;grid-template-columns:auto minmax(0,1fr) auto auto;gap:10px;align-items:center;padding:6px 6px 6px 10px;border-radius:10px;background:var(--sheet-2);font-size:14.5px}
 dialog.dlg{border:1px solid var(--line);border-top:4px solid var(--pen);border-radius:8px 8px 18px 18px;background:var(--sheet);color:var(--ink);padding:0;width:min(560px,calc(100% - 24px));max-height:calc(100dvh - 32px);box-shadow:0 30px 70px -20px var(--shadow);overflow:hidden}
@@ -1822,7 +1826,7 @@ h3{font-weight:700;letter-spacing:-.02em}
 <div id="toast" class="toast" hidden role="status" aria-live="polite"></div>
 
 <script type="module">
-import { LANGS, DICT } from './i18n.js?v=2026.11.15b';
+import { LANGS, DICT } from './i18n.js?v=2026.11.15c';
 /* ---------------- constants ---------------- */
 const TYPES = [['gr','Gr'],['t','T'],['art','Art'],['prep','Prep'],['ww','WW'],['sp','Sp'],['p','P'],['wo','WO'],['agr','Agr'],['st','St'],['good','★']]
   .map(([k,code])=>({k, code, get name(){ return tr('type.'+k); }}));
@@ -7594,12 +7598,12 @@ function vSpeak(){
   else if(!cur) inner=`<div class="notice">${tr('sb.noLang')}</div>`;
   else if(S.demo || !S.user) inner=`<div class="notice">${tr('sb.demo')}</div>`;
   else if(!staff && !paid && left===0) inner=`<h3>${tr('sb.payH')}</h3><p class="muted">${tr('sb.payP',{n:pmInfo().speak.days, p:som(pmInfo().speak.price)})}</p>${pend?`<div class="pm-status">${tr('pm.pending')}</div>`:`<button class="btn pen" data-act="pb-open" data-k="speak">${tr('mk.buy')}</button>`}`;
-  else inner=`<p class="muted">${staff?tr('sb.staff'):paid?tr('sb.pass',{d:esc(dayMonth(until))}):left==null?tr('sb.loading'):tr('sb.freeLeft',{n:left,t:x.info.free||2})}</p>${x.err?`<p class="lg-err" role="alert">${tr('sb.e.'+x.err)}</p>`:''}${start}`;
+  else inner=`<p class="muted">${staff?tr('sb.staff'):paid?tr('sb.pass',{d:esc(dayMonth(until))}):left==null?tr('sb.loading'):tr('sb.freeLeft',{n:left,t:x.info.free||2})}</p>${x.err?`<div class="notice" role="alert" style="margin:0">${tr('sb.e.'+(x.err==='off'&&staff?'offT':x.err))}</div>`:''}${start}`;
   const body = cur ? `<div id="sb-box" class="sb-box" data-l="${esc(cur)}">${inner}</div>` : `<div id="sb-box" class="sb-box">${inner}</div>`;
   return `<div class="page-head"><div><h1>${tr('sb.h')}</h1><p>${tr('sb.p')}</p></div></div>${chips}
     <div class="card section sb-card">${body}</div>
     <div class="card section" style="padding:16px 20px"><h3>${tr('sb.tipsH')}</h3><ol class="small muted lv-steps" style="margin-top:8px"><li>${tr('sb.t1')}</li><li>${tr('sb.t2')}</li><li>${tr('sb.t3')}</li></ol></div>
-    <div class="notice">${tr('sb.limit')}</div>`;
+    <div class="notice" style="margin-top:16px">${tr('sb.limit')}</div>`;
 }
 // after each draw: students without a pass ask the server how many free conversations are left
 function sbLoad(){
