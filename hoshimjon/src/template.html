@@ -9,6 +9,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&family=Nunito:wght@500;700;800&display=swap" rel="stylesheet">
 <style>
 #dlg.hard .choice small{display:none!important}
+.join{display:flex;gap:8px;flex-wrap:wrap;margin:14px 0 6px}.join input,.join select{border:2px solid #171a29;border-radius:12px;padding:10px 12px;font:inherit;background:#fff;min-width:0}.join input{flex:1 1 140px}
 #av{position:absolute;right:12px;top:12px;bottom:12px;display:flex;align-items:center;z-index:8;pointer-events:none}
 #av.hidden{display:none}
 .av-card{pointer-events:auto;background:rgba(246,238,221,.96);color:#171a29;border-radius:18px;padding:14px;width:min(310px,calc(100vw - 24px));max-height:100%;overflow:auto;display:flex;flex-direction:column;gap:10px;box-shadow:0 10px 30px rgba(0,0,0,.3)}
@@ -242,6 +243,7 @@ h1 span{color:var(--gold)}
   <div id="toast" class="hidden"></div>
 </div>
 <script src="lib/three.min.js"></script>
+<script src="bridge.js"></script>
 <script src="lib/GLTFLoader.js"></script>
 <script>
 const IMG = __IMG_JSON__;

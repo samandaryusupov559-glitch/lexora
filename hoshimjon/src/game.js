@@ -28,7 +28,7 @@ const EMBED = /[?&]embed=1/.test(location.search);
 const HOSTED = /(^|\.)lexoralc\.uz$|\.github\.io$|^localhost$|^127\./.test(location.hostname);
 const DEMO = !EMBED && !HOSTED;
 let LX = null;              // ilovadan kelgan {hasPack, uid}
-const SKEY = () => 'hj_saved' + (LX && LX.uid ? '_' + LX.uid : '');
+const SKEY = () => 'hj_saved' + (LX && LX.uid && !LX.anon ? '_' + LX.uid : '');
 const S = {
   mode: 'title',            // title | story | play | dialog | summary | catalog | end
   chapter: 1, hearts: 3, mistakes: 0,
@@ -629,6 +629,7 @@ function openDialog(npc) {
     const i = def.idle;
     tree = { n1: { say: i.say, uz: i.uz, choices: [{ t: i.reply, uz: i.replyUz, ok: true, next: 'END' }] } };
   }
+  trk('dialogs');
   D = { npc, tree, id: startId, run, adv, locked: false, npcTalk: false, heroTalk: false, nodeMiss: false };
   $('#dlg').classList.toggle('hard', S.level === 2);
   S.mode = 'dialog';
@@ -679,7 +680,7 @@ function choose(i) {
       if (c.next === 'END') endDialog(true); else { D.id = c.next; showNode(); }
     }, 750);
   } else {
-    if (!D.nodeMiss) { D.nodeMiss = true; note(node, false); }
+    if (!D.nodeMiss) { D.nodeMiss = true; note(node, false); trk('mistakes'); }
     btn.classList.add('wrong'); btn.disabled = true;
     const w = document.createElement('div'); w.className = 'why'; w.textContent = c.why; btn.after(w);
     if (D.run) {
@@ -699,6 +700,7 @@ function exhausted() {
 }
 function closeDialog() { endDialog(false); }
 function endDialog(done) {
+  if (done && D) trk('done');
   const wasRun = D && D.run && D.npc.def.chapter === S.chapter, after = D && D.npc.def.afterEnd;
   if (done && D && D.adv) { S.topics[D.npc.def.id] = (S.topics[D.npc.def.id] || 0) + 1; persist(); }
   $('#dlg').classList.add('hidden'); dCard.classList.add('hidden'); app.classList.remove('in-dlg');
@@ -723,7 +725,7 @@ dCard.addEventListener('click', e => {
   if (a === 'save') { toggleSave(k, D && D.run ? D.npc.def.chapter : 0); showCard(k); }
 });
 function toggleSave(k, ch) {
-  if (S.saved[k]) delete S.saved[k]; else S.saved[k] = { ch: ch || 0 };
+  if (S.saved[k]) delete S.saved[k]; else { S.saved[k] = { ch: ch || 0 }; trk('saved'); }
   persist(); $('#wCount').textContent = savedCount();
   document.querySelectorAll('#dLog .w').forEach(b => { if (b.dataset.w === k) b.classList.toggle('saved', !!S.saved[k]); });
 }
@@ -760,10 +762,11 @@ function showTitle() {
   showOv('<div class="scr"><div class="t-right" style="max-width:640px"><p class="eyebrow">Jonli 3D til shahri</p>'
     + '<h1>Lexora <span>City</span></h1>'
     + '<p class="lead">Shaharda boshqa o\'yinchilar bilan o\'zingiz o\'rganayotgan tilda gaplashing, NPClar bilan mashq qiling va yangi so\'zlarni saqlang. Saqlangan so\'zlar katalogga tushadi.</p>'
-    + '<div class="btns">' + (on ? '<button class="btn primary" data-act="live">Jonli shaharga kirish' + (LX && LX.lang ? ' (' + esc(LX.lang) + ')' : '') + '</button>' : '')
+    + (EMBED ? '' : '<div class="join"><input id="jName" maxlength="20" placeholder="Ismingiz (nik)" value="' + esc(store.get('hj_nick', '') === 'Mehmon' ? '' : store.get('hj_nick', '')) + '"><select id="jLang">' + PUB_LANGS.map(l => '<option' + (l === store.get('hj_lang', 'English') ? ' selected' : '') + '>' + l + '</option>').join('') + '</select><button class="btn primary" data-act="join">Jonli shaharga kirish</button></div>')
+    + '<div class="btns">' + (EMBED && on ? '<button class="btn primary" data-act="live">Jonli shaharga kirish' + (LX && LX.lang ? ' (' + esc(LX.lang) + ')' : '') + '</button>' : '')
     + '<button class="btn" data-act="avatar">Qahramonni sozlash</button>'
-    + '<button class="btn' + (on ? '' : ' primary') + '" data-act="start">Missiyalar (yakka)</button><button class="btn" data-act="catalog">So\'zlar katalogi (' + savedCount() + ')</button></div>'
-    + (on ? '' : '<p class="note" style="margin-top:14px">Jonli shahar ulanishi hozir yo\'q. Missiyalar yakka o\'ynaladi.</p>')
+    + '<button class="btn" data-act="start">Missiyalar (yakka)</button><button class="btn" data-act="catalog">So\'zlar katalogi (' + savedCount() + ')</button></div>'
+    + (EMBED ? '' : '<p class="note" style="margin-top:14px">O\'yin anonim foydalanish statistikasini yig\'adi (vaqt, bosilgan joylar, xatolar). Chat ochiq: shaxsiy ma\'lumot yozmang.</p>')
     + '</div></div>');
 }
 function beginPlay() {
@@ -860,6 +863,7 @@ ov.addEventListener('click', e => {
   const t = e.target.closest('[data-act]'); if (!t) return;
   const a = t.dataset.act, ks = Object.keys(S.saved).filter(k => LEX[k]);
   if (a === 'start') beginPlay();
+  else if (a === 'join') joinPublic();
   else if (a === 'avatar') openAvatar(showTitle);
   else if (a === 'live') enterLive();
   else if (a === 'catalog') { const m = S.mode; openCatalog(() => { if (m === 'title') showTitle(); else if (m === 'summary') completeChapter(); else if (m === 'end') showEnd(); else { hideOv(); S.mode = 'play'; } }); }
@@ -894,7 +898,7 @@ ov.addEventListener('click', e => {
 window.addEventListener('message', e => {
   if (e.origin !== location.origin) return;
   const d = e.data; if (!d || d.type !== 'lexora-user') return;
-  LX = { hasPack: !!d.hasPack, uid: String(d.uid || '').replace(/[^\w-]/g, '').slice(0, 64), name: String(d.name || '').slice(0, 30), lang: String(d.lang || 'English').slice(0, 20), online: !!d.online };
+  LX = { hasPack: !!d.hasPack, uid: String(d.uid || '').replace(/[^\w-]/g, '').slice(0, 64), name: String(d.name || '').slice(0, 30), lang: String(d.lang || 'English').slice(0, 20), online: !!d.online, anon: !!d.anon };
   applyHeroLook();
   S.saved = store.get(SKEY(), {}); loadProg(); S.hasPack = LX.hasPack; $('#wCount').textContent = savedCount();
   if (S.mode === 'catalog') renderCatalog(); else if (S.mode === 'title') showTitle();

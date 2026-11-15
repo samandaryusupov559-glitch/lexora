@@ -1030,6 +1030,10 @@ td.nwc.off{color:var(--ink-3);font-size:18px}
 .hj-row{padding:8px 0;border-top:1px solid var(--line)}
 .hj-row:first-of-type{border-top:0}
 .hj-weak{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px}
+.hj-tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-bottom:12px}
+.hj-bar2{display:grid;grid-template-columns:120px 1fr 44px;align-items:center;gap:8px;margin:5px 0;font-size:14px}
+.hj-bar2 i{display:block;height:10px;border-radius:6px;background:var(--accent,#2f9e9a)}
+.hj-bar2 b{text-align:right}
 .hj-fix{display:flex;gap:6px;margin-top:4px}.hj-fix .inp{flex:1;min-width:0}
 .hj-frame{display:block;width:100%;height:calc(100vh - 210px);min-height:480px;max-height:1100px;border:1px solid var(--line);border-radius:14px;background:#1d2340}
 .club{display:grid;grid-template-columns:minmax(260px,.9fr) minmax(0,1.6fr);gap:16px;align-items:start}
@@ -2495,7 +2499,7 @@ function renderMain0(){
   if(v==='call' && S.callRoom===S.view.room && $('#call-box')) return;
   if(v!=='call' && S.callRoom) callStop();
   if(v!=='game' && (HJ.bridge || HJ.unsubs.length)) hjStop();
-  if(v==='game' && S.view.tab!=='watch' && $('#hj-frame') && $('#hj-frame').dataset.k===S.view.lang) return;   // a running game is never redrawn
+  if(v==='game' && S.view.tab!=='watch' && S.view.tab!=='stats' && $('#hj-frame') && $('#hj-frame').dataset.k===S.view.lang) return;   // a running game is never redrawn
   if(v==='speak' && $('#sb-box elevenlabs-convai') && $('#sb-box').dataset.l===sbCur()) return;   // a running Speaking Buddy chat is never redrawn
   if(v==='login'){ m.innerHTML=vLogin(); setTimeout(()=>$('#login-email')?.focus(),50); return; }
   if(v==='landing'){ m.innerHTML=vLanding(); return; }
@@ -7693,7 +7697,7 @@ async function sbStart(){
 
 /* Lexora City (Hoshimjon): a 3D language town in a same-origin frame. hoshimjon/bridge.js moves chat, positions,
    progress and feedback between the frame and Firestore; teachers get a "Watch" tab with chats, mistakes and feedback. */
-const HJ = {bridge:null, key:'', unsubs:[], chat:[], prog:[], feed:[]};
+const HJ = {bridge:null, key:'', unsubs:[], chat:[], prog:[], feed:[], sess:[]};
 const hjName = () => (S.mode==='student' ? S.myProfile?.name : '') || S.me?.name || (S.me?.email||'').split('@')[0] || 'Student';
 const hjLangs = () => { const l=myLangs(); return l.length ? l : ['English']; };
 function hjStop(){ if(HJ.bridge){ try{HJ.bridge.stop();}catch(e){} HJ.bridge=null; } HJ.unsubs.splice(0).forEach(f=>{ try{f();}catch(e){} }); HJ.key=''; }
@@ -7707,14 +7711,15 @@ function hjPlayStart(lang){
 function hjDay(off){ const d=new Date(Date.now()-(off||0)*864e5); return d.toISOString().slice(0,10); }
 function hjWatchStart(lang, off){
   const key='w:'+lang+':'+off; if(HJ.key===key) return;
-  hjStop(); HJ.key=key; HJ.chat=[]; HJ.prog=[]; HJ.feed=[];
+  hjStop(); HJ.key=key; HJ.chat=[]; HJ.prog=[]; HJ.feed=[]; HJ.sess=[];
   const sub=(col,f,v,set)=>HJ.unsubs.push(S.db.collection(col).where(f,v).onSnapshot(q=>{ set(q.docs.map(d=>({id:d.id,...d.data()}))); hjWatchRefresh(); }, ()=>{}));
   sub('hjchat','room',lang+'_'+hjDay(off), a=>{ HJ.chat=a.sort((x,y)=>(x.ts||0)-(y.ts||0)); });
   sub('hjprog','lang',lang, a=>{ HJ.prog=a.sort((x,y)=>(y.ts||0)-(x.ts||0)); });
   sub('hjfeed','lang',lang, a=>{ HJ.feed=a.sort((x,y)=>(y.ts||0)-(x.ts||0)); });
+  HJ.unsubs.push(S.db.collection('hjsessions').onSnapshot(q=>{ HJ.sess=q.docs.map(d=>({id:d.id,...d.data()})); hjWatchRefresh(); }, ()=>{}));
 }
 function hjWatchRefresh(){
-  if(S.view.name!=='game' || S.view.tab!=='watch') return;
+  if(S.view.name!=='game' || (S.view.tab!=='watch' && S.view.tab!=='stats')) return;
   const ae=document.activeElement; if(ae && /INPUT|TEXTAREA/.test(ae.tagName) && ae.closest('#hj-watch')) return;   // never wipe a correction being typed
   renderMain();
 }
@@ -7724,20 +7729,42 @@ function hjWatchHtml(){
   const prog = HJ.prog.length ? HJ.prog.map(p=>`<div class="hj-row"><b>${esc(p.name||'?')}</b> <span class="muted">${tr('hj.lv'+(p.level|0))} · ${tr('hj.saved',{n:p.saved|0})} · ${tr('hj.mis',{n:p.mistakes|0})} · ${hjWhen(p.ts)}</span>
       <div class="hj-weak">${(p.weak||[]).length ? (p.weak||[]).map(w=>`<span class="pill">${esc(w.w)} ×${w.miss}</span>`).join(' ') : `<span class="muted">${tr('hj.noWeak')}</span>`}</div></div>`).join('') : `<p class="muted">${tr('hj.noProg')}</p>`;
   const chat = HJ.chat.length ? HJ.chat.map(m=>`<div class="hj-row"><span class="muted">${hjTime(m.ts)}</span> <b>${esc(m.name||'?')}</b> ${esc(m.text)}
-      <div class="hj-fix"><input class="inp" maxlength="300" placeholder="${esc(tr('hj.fixPh'))}" value="${esc(m.fix||'')}"><button class="btn sm" data-act="hj-fix" data-id="${esc(m.id)}">${tr('hj.fix')}</button></div></div>`).join('') : `<p class="muted">${tr('hj.noChat')}</p>`;
+      <div class="hj-fix"><input class="inp" maxlength="300" placeholder="${esc(tr('hj.fixPh'))}" value="${esc(m.fix||'')}"><button class="btn sm" data-act="hj-fix" data-id="${esc(m.id)}">${tr('hj.fix')}</button><button class="btn sm" data-act="hj-del" data-id="${esc(m.id)}" aria-label="${esc(tr('hj.del'))}">&times;</button></div></div>`).join('') : `<p class="muted">${tr('hj.noChat')}</p>`;
   const feed = HJ.feed.length ? HJ.feed.map(m=>`<div class="hj-row"><b>${esc(m.name||'?')}</b> <span class="muted">${hjWhen(m.ts)}</span><div>${esc(m.text)}</div></div>`).join('') : `<p class="muted">${tr('hj.noFeed')}</p>`;
   const off=S.view.day|0;
   return `<div id="hj-watch"><div class="card"><h2>${tr('hj.prog')}</h2>${prog}</div>
     <div class="card"><h2>${tr('hj.chat')}</h2><div class="lp-filter" role="group">${[0,1,2].map(d=>`<button data-act="hj-day" data-d="${d}" aria-pressed="${off===d}">${d===0?tr('hj.today'):hjDay(d)}</button>`).join('')}</div>${chat}</div>
     <div class="card"><h2>${tr('hj.feed')}</h2>${feed}</div></div>`;
 }
+function hjStatsHtml(){
+  const all=HJ.sess, bar=(label,n,max)=>`<div class="hj-bar2"><span>${esc(label)}</span><i style="width:${max?Math.max(2,Math.round(n/max*100)):0}%"></i><b>${n}</b></div>`;
+  if(!all.length) return `<div class="card"><p class="muted">${tr('hj.noSess')}</p></div>`;
+  const N=all.length, users=new Set(all.map(x=>x.uid)).size, sum=k=>all.reduce((a,x)=>a+(+x[k]||0),0), cnt=f=>all.filter(f).length;
+  const by=(k)=>{ const m={}; all.forEach(x=>{ const v=x[k]||'—'; m[v]=(m[v]||0)+1; }); return Object.entries(m).sort((a,b)=>b[1]-a[1]).slice(0,8); };
+  const list=(k)=>{ const e=by(k), mx=e[0]?e[0][1]:0; return e.map(([v,n])=>bar(v,n,mx)).join(''); };
+  const avgMin=Math.round(sum('secs')/N/6)/10, dlg=sum('dialogs'), mis=sum('mistakes');
+  const steps=[[tr('hj.fOpen'),N],[tr('hj.fLive'),cnt(x=>x.live>0)],[tr('hj.fDlg'),cnt(x=>x.dialogs>0)],[tr('hj.fDone'),cnt(x=>x.done>0)],[tr('hj.fSave'),cnt(x=>x.saved>0)],[tr('hj.fChat'),cnt(x=>x.chat>0)],[tr('hj.fFb'),cnt(x=>x.fb>0)]];
+  const days={}; all.forEach(x=>{ const d=new Date(x.start||x.last||0).toISOString().slice(0,10); days[d]=(days[d]||0)+1; });
+  const dk=Object.keys(days).sort().slice(-7), dmx=Math.max(...dk.map(d=>days[d]));
+  const wk={}; HJ.prog.forEach(p=>(p.weak||[]).forEach(w=>{ wk[w.w]=(wk[w.w]||0)+w.miss; }));
+  const wl=Object.entries(wk).sort((a,b)=>b[1]-a[1]).slice(0,10);
+  const tile=(v,l)=>`<div class="dash-tile"><b>${v}</b><span>${esc(l)}</span></div>`;
+  return `<div class="hj-tiles">${tile(N,tr('hj.sSess'))}${tile(users,tr('hj.sUsers'))}${tile(Math.round(cnt(x=>x.anon)/N*100)+'%',tr('hj.sAnon'))}${tile(Math.round(cnt(x=>x.ret)/N*100)+'%',tr('hj.sRet'))}${tile(avgMin,tr('hj.sMin'))}${tile(dlg?(mis/dlg).toFixed(1):'0',tr('hj.sMis'))}</div>
+    <div class="card"><h2>${tr('hj.funnel')}</h2>${steps.map(([l,n])=>bar(l,n,N)).join('')}</div>
+    <div class="card"><h2>${tr('hj.daily')}</h2>${dk.map(d=>bar(d.slice(5),days[d],dmx)).join('')}</div>
+    <div class="card"><h2>${tr('hj.byDev')}</h2>${list('device')}</div>
+    <div class="card"><h2>${tr('hj.bySrc')}</h2>${list('src')}</div>
+    <div class="card"><h2>${tr('hj.byLang')}</h2>${list('lang')}</div>
+    <div class="card"><h2>${tr('hj.topWeak')}</h2>${wl.length?wl.map(([w,n])=>bar(w,n,wl[0][1])).join(''):`<p class="muted">${tr('hj.noWeak')}</p>`}</div>`;
+}
 function vGame(){
   const langs=hjLangs(), f=S.view; if(!langs.includes(f.lang)) f.lang=langs[0]; if(!f.tab) f.tab='play';
-  const staff=S.mode==='teacher', watch=staff && f.tab==='watch';
+  const staff=S.mode==='teacher', watch=staff && (f.tab==='watch'||f.tab==='stats');
   const head=`<div class="page-head"><div><span class="label">${tr('nav.game')}</span><h1>${tr('hj.h')}</h1><p>${tr('hj.p')}</p></div></div>`;
   const bar=`<div class="hj-bar">${langs.length>1 ? `<div class="lp-filter" role="group">${langs.map(l=>`<button data-act="hj-lang" data-v="${esc(l)}" aria-pressed="${l===f.lang}">${esc(langName(l))}</button>`).join('')}</div>` : `<span class="pill">${esc(langName(f.lang))}</span>`}
-    ${staff ? `<div class="seg" role="group"><button data-act="hj-tab" data-t="play" aria-pressed="${!watch}">${tr('hj.play')}</button><button data-act="hj-tab" data-t="watch" aria-pressed="${watch}">${tr('hj.watch')}</button></div>` : ''}</div>`;
-  if(watch){ hjWatchStart(f.lang, f.day|0); return head+bar+hjWatchHtml(); }
+    <button class="btn sm" data-act="hj-copy">${tr('hj.share')}</button>
+    ${staff ? `<div class="seg" role="group"><button data-act="hj-tab" data-t="play" aria-pressed="${!watch}">${tr('hj.play')}</button><button data-act="hj-tab" data-t="watch" aria-pressed="${f.tab==='watch'}">${tr('hj.watch')}</button><button data-act="hj-tab" data-t="stats" aria-pressed="${f.tab==='stats'}">${tr('hj.stats')}</button></div>` : ''}</div>`;
+  if(watch){ hjWatchStart(f.lang, f.day|0); return head+bar+(f.tab==='stats' ? hjStatsHtml() : hjWatchHtml()); }
   setTimeout(()=>hjPlayStart(f.lang),0);
   return head+bar+`<iframe class="hj-frame" id="hj-frame" data-k="${esc(f.lang)}" src="hoshimjon/index.html?embed=1" allow="fullscreen" title="${esc(tr('hj.h'))}"></iframe>`;
 }
@@ -8258,6 +8285,8 @@ document.addEventListener('click', async ev => {
     case 'hj-lang': go('game',{lang:b.dataset.v, tab:S.view.tab}); break;
     case 'hj-tab': go('game',{lang:S.view.lang, tab:b.dataset.t}); break;
     case 'hj-day': go('game',{lang:S.view.lang, tab:'watch', day:+b.dataset.d}); break;
+    case 'hj-copy': { const u=location.origin+'/hoshimjon/?src=share'; (navigator.clipboard?navigator.clipboard.writeText(u):Promise.reject()).then(()=>toast(tr('hj.copied')),()=>{ prompt(tr('hj.share'),u); }); break; }
+    case 'hj-del': S.db.doc('hjchat/'+b.dataset.id).delete().catch(()=>toast(tr('hj.err'))); break;
     case 'hj-fix': { const v=b.closest('.hj-row').querySelector('input').value.trim().slice(0,300);
       S.db.doc('hjchat/'+b.dataset.id).update({fix:v, fixBy:hjName()}).then(()=>toast(tr('hj.saved0'))).catch(()=>toast(tr('hj.err'))); break; }
     case 'go': if(b.dataset.v==='write'){ startEdit(); } else go(b.dataset.v); break;

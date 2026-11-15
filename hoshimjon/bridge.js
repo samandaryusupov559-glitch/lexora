@@ -21,7 +21,7 @@
       }, () => {}));
       timer = setInterval(sendPlayers, 5000);
     }
-    const hello = () => post({ type: 'lexora-user', hasPack: !!(o.hasPack && o.hasPack()), uid: u.uid, name: u.name, lang: u.lang, online: true });
+    const hello = () => post({ type: 'lexora-user', hasPack: !!(o.hasPack && o.hasPack()), uid: u.uid, name: u.name, lang: u.lang, online: true, anon: !!u.anon });
     function onMsg(e) {
       const f = frame(); if (stopped || !f || e.source !== f.contentWindow || e.origin !== origin) return;
       const m = e.data; if (!m || typeof m.type !== 'string') return;
@@ -40,6 +40,11 @@
       } else if (m.type === 'hj-feed') {
         const text = str(m.text, 600); if (!text) return;
         safe(db.collection('hjfeed').doc().set({ uid: u.uid, name: u.name, lang: room, text, ts: now }));
+      } else if (m.type === 'hj-stat') {
+        const sid = String(m.sid || '').replace(/[^a-z0-9]/gi, '').slice(0, 12); if (!sid) return;
+        const n = (v, mx) => Math.floor(Math.max(0, Math.min(mx || 999999, +v || 0))), t = (v, k) => String(v || '').slice(0, k);
+        safe(db.doc('hjsessions/' + u.uid + '_' + sid).set({ uid: u.uid, name: u.name, lang: room, anon: !!u.anon, sid, device: t(m.device, 10), src: t(m.src, 40), ret: !!m.ret, start: n(m.start, 9e15), last: now,
+          secs: n(m.secs), live: n(m.live), steps: n(m.steps), dialogs: n(m.dialogs), done: n(m.done), mistakes: n(m.mistakes), saved: n(m.saved), chat: n(m.chat), fb: n(m.fb), peers: n(m.peers, 999), av: !!m.av, chapter: n(m.chapter, 99), level: n(m.level, 2) }, { merge: true }));
       } else if (m.type === 'hj-buy') { if (o.onBuy) o.onBuy(); }
     }
     window.addEventListener('message', onMsg);
