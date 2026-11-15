@@ -29,7 +29,8 @@
       if (m.type === 'hj-ready') { hello(); if (listening) { sendPlayers(); post({ type: 'hj-chat-list', list: lastList }); } else listen(); }
       else if (m.type === 'hj-presence') {
         if (now - lastPres < 400) return; lastPres = now;
-        safe(db.doc('hjplayers/' + u.uid).set({ uid: u.uid, name: u.name, room, x: num(m.x), z: num(m.z), r: num(m.r), ts: now }));
+        const lk = Array.isArray(m.lk) ? m.lk.slice(0, 6).map(v => Math.max(0, Math.min(15, v | 0))) : [];
+        safe(db.doc('hjplayers/' + u.uid).set({ uid: u.uid, name: u.name, room, x: num(m.x), z: num(m.z), r: num(m.r), lk, ts: now }));
       } else if (m.type === 'hj-chat') {
         const text = str(m.text, 200); if (!text || now - lastChat < 800) return; lastChat = now;
         safe(db.collection('hjchat').doc().set({ uid: u.uid, name: u.name, room: croom, lang: room, text, ts: now }));

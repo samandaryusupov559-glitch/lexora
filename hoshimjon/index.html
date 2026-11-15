@@ -3,12 +3,25 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Hoshimjon va sehrli qalpoqcha</title>
+<title>Lexora City</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&family=Nunito:wght@500;700;800&display=swap" rel="stylesheet">
 <style>
 #dlg.hard .choice small{display:none!important}
+#av{position:absolute;right:12px;top:12px;bottom:12px;display:flex;align-items:center;z-index:8;pointer-events:none}
+#av.hidden{display:none}
+.av-card{pointer-events:auto;background:rgba(246,238,221,.96);color:#171a29;border-radius:18px;padding:14px;width:min(310px,calc(100vw - 24px));max-height:100%;overflow:auto;display:flex;flex-direction:column;gap:10px;box-shadow:0 10px 30px rgba(0,0,0,.3)}
+.av-row>span{font-size:12px;font-weight:700;opacity:.7}
+.av-opts{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px}
+.sw{width:28px;height:28px;border-radius:50%;border:3px solid transparent;box-shadow:0 0 0 1px rgba(23,26,41,.35);cursor:pointer;background:#ddd}
+.sw.tx{width:auto;height:auto;border-radius:12px;padding:4px 10px;font:inherit;font-size:12px;background:#fff}
+.sw.on{border-color:#f2b035;box-shadow:0 0 0 2px #171a29}
+.av-btns{display:flex;gap:8px;justify-content:flex-end}
+.av-card .chip{background:#fff;color:#171a29;border:1px solid #171a29}
+.av-card .chip.pri{background:#f2b035}
+@media (max-width:700px){#av{top:auto;align-items:flex-end}.av-card{max-height:46vh}}
+
 #chat{position:absolute;left:12px;bottom:12px;width:min(360px,calc(100vw - 24px));max-height:46vh;display:flex;flex-direction:column;background:rgba(23,26,41,.88);color:#fff;border-radius:16px;padding:10px;z-index:6;box-shadow:0 10px 30px rgba(0,0,0,.3)}
 #chat.hidden{display:none}
 #chat .c-head{display:flex;align-items:center;gap:8px;font-size:13px;margin-bottom:6px}
@@ -33,7 +46,7 @@
 .live .obj,.live .compass,.live .hearts{display:none}
 @media (max-width:700px){#chat{max-height:38vh;bottom:78px}}
 
-/* Yo'nalish: Toshkent kechki quyoshi. Indigo fon, qalpoq kremi, firuza va oltin urg'u. Bitta dunyo, bitta mavzu. */
+/* Yo'nalish: Toshkent kechki quyoshi. Indigo fon, krem, firuza va oltin urg'u. Bitta dunyo, bitta mavzu. */
 :root{
   --ink:#171a29; --ink2:#232840; --ink3:#2f3556;
   --paper:#f7edd8; --paper2:#ecdcb8; --line:#d9c79f;
@@ -212,6 +225,7 @@ h1 span{color:var(--gold)}
     <div id="cPhr"></div>
     <form id="cForm"><input id="cIn" maxlength="200" autocomplete="off" placeholder="Yozing va Enter bosing"><button class="chip" type="submit">Yuborish</button></form>
   </div>
+  <div id="av" class="hidden"><div class="av-card"><b>Qahramoningiz</b><div id="avBody"></div><div class="av-btns"><button class="chip" id="avRand" type="button">Tasodifiy</button><button class="chip pri" id="avOk" type="button">Tayyor</button></div></div></div>
   <div id="fb" class="hidden"><div class="fb-card"><b>Fikringizni yozing</b><textarea id="fbIn" maxlength="600" rows="4" placeholder="O'yin haqida fikr, taklif yoki xato"></textarea><div><button class="chip" id="fbNo" type="button">Bekor</button> <button class="chip pri" id="fbYes" type="button">Yuborish</button></div></div></div>
   <button id="prompt" class="hidden"></button>
   <div id="joy"><div id="stick"></div></div>
@@ -230,7 +244,7 @@ h1 span{color:var(--gold)}
 <script src="lib/three.min.js"></script>
 <script src="lib/GLTFLoader.js"></script>
 <script>
-const IMG = {"main": "img/main.jpg", "happy": "img/happy.jpg", "surprised": "img/surprised.jpg", "thinking": "img/thinking.jpg", "confident": "img/confident.jpg", "excited": "img/excited.jpg", "focused": "img/focused.jpg"};
+const IMG = {};
 </script>
 <script>
 /* ---------- Lug'at: {kalit} bilan belgilangan so'z va iboralar ---------- */
@@ -282,14 +296,8 @@ const LEX = {
   'word list': { uz: "so'zlar ro'yxati", g: "Ikki ot birikmasi: word + list. Birinchi ot sifat vazifasida, ko'plikda ishlatilmaydi.", ex: "Please check your word list." },
   'review': { uz: "takrorlamoq, ko'rib chiqmoq", g: "review - o'tilgan narsani qayta ko'rib chiqish. Imtihondan oldin: review the lesson.", ex: "I review my notes every night." },
   'every day': { uz: "har kuni", g: "Ikki so'z: every day (har kuni, ravish). everyday - bir so'z - kundalik (sifat).", ex: "I read English every day." },
-  'lost': { uz: "yo'qotdi, yo'qotgan (lose fe'lining o'tgan zamoni)", g: "lose - lost - lost (tartibsiz fe'l). I lost my hat - men qalpog'imni yo'qotdim.", ex: "I lost my keys yesterday." },
-  'hat': { uz: "qalpoq", g: "Sanaladigan ot: a hat, two hats. cap - soyabonli kepka, hat - umumiy qalpoq.", ex: "He wears a red hat." },
-  'describe': { uz: "tasvirlamoq, ta'riflamoq", g: "Sifatlar otdan oldin: a big, white, woolly hat. Tartib: o'lcham, rang, material.", ex: "Can you describe your friend?" },
-  'clue': { uz: "iz, ma'lumot (topishga yordam beradigan)", g: "Sanaladigan ot: a clue, two clues. have a clue about - biror narsa haqida ma'lumotga ega bo'lmoq.", ex: "The police found a clue." },
-  'found': { uz: "topdi, topgan (find fe'lining o'tgan zamoni)", g: "find - found - found (tartibsiz fe'l).", ex: "I found my keys yesterday." },
+  'lost': { uz: "adashgan; yo'qotilgan (lose fe'lining o'tgan zamoni)", g: "be lost - adashmoq. lose - lost - lost (tartibsiz fe'l). I lost my keys - kalitlarimni yo'qotdim.", ex: "I am lost. Where is the station?" },
   'fountain': { uz: "favvora", g: "Joy oldidan near/by: near the fountain (favvora yonida).", ex: "We met near the fountain." },
-  'Here you go': { uz: "Mana, marhamat", g: "Biror narsa uzatayotganda aytiladi. Here you are bilan bir xil ma'noda.", ex: "Here you go. Enjoy your meal." },
-  'take care': { uz: "ehtiyot qilmoq, qarab turmoq", g: "take care of + ot: biror narsaga/kimgadir qaramoq. of ni unutmang: Take care of it.", ex: "Please take care of your health." },
 
   'straight ahead': { uz: "to'g'riga", g: "Yo'l ko'rsatishda: go straight ahead - to'g'ri yuring.", ex: "Go straight ahead for two blocks." },
   'turn left': { uz: "chapga burilmoq", g: "Yo'nalish: turn left (chapga), turn right (o'ngga). Buyruq shaklida fe'l boshlanadi.", ex: "Turn left at the fountain." },
@@ -302,7 +310,7 @@ const CHAPTERS = [
   { n: 1, title: "Ovqat topish", goal: "Bozorga boring va Farid bilan gaplashib non sotib oling.", npc: 'farid', place: "Farid's Market" },
   { n: 2, title: "Ish topish", goal: "Kafega boring va Maya bilan suhbatdan o'ting.", npc: 'maya', place: "Corner Cafe" },
   { n: 3, title: "Tunash joyi", goal: "Hostelga boring va Elena bilan xona band qiling.", npc: 'elena', place: "Sunny Hostel" },
-  { n: 4, title: "Yo'qolgan qalpoqcha", goal: "Favvora yonidagi Keeper bilan gaplashing va qalpoqchani qaytarib oling.", npc: 'keeper', place: "Fountain" }
+  { n: 4, title: "Shaharni bilish", goal: "Favvora yonidagi Keeper bilan gaplashib, bekatga yo'l so'rang.", npc: 'keeper', place: "Fountain" }
 ];
 
 /* ---------- Personajlar va suhbat daraxtlari ----------
@@ -346,11 +354,11 @@ const NPCS = [
     tree: {
       n1: { say: "Hi! I heard you are {looking for} a {job}. I am Maya. What is your name?", uz: "Salom! Eshitdimki, siz ish izlayapsiz. Men Mayaman. Ismingiz nima?",
         choices: [
-          { t: "My name is Hoshimjon.", uz: "Mening ismim Hoshimjon.", ok: true, next: 'n2' },
-          { t: "I name Hoshimjon.", uz: "Men ismlayman Hoshimjon.", ok: false, why: "Ism aytish qolipi: My name is ... yoki I am ..." },
+          { t: "My name is Sam.", uz: "Mening ismim Sam.", ok: true, next: 'n2' },
+          { t: "I name Sam.", uz: "Men ismlayman Sam.", ok: false, why: "Ism aytish qolipi: My name is ... yoki I am ..." },
           { t: "Yes, I am hungry.", uz: "Ha, men ochman.", ok: false, why: "Savol ism haqida (What is your name?), ochlik haqida emas." }
         ] },
-      n2: { say: "{Nice to meet you}, Hoshimjon! {Where are you from}?", uz: "Tanishganimdan xursandman, Hoshimjon! Qayerdansiz?",
+      n2: { say: "{Nice to meet you}, Sam! {Where are you from}?", uz: "Tanishganimdan xursandman, Sam! Qayerdansiz?",
         choices: [
           { t: "I am from Uzbekistan.", uz: "Men O'zbekistondanman.", ok: true, next: 'n3' },
           { t: "I come Uzbekistan from.", uz: "Men keldim O'zbekiston dan.", ok: false, why: "Gap tartibi buzilgan. Eng oddiy qolip: I am from + mamlakat." },
@@ -408,23 +416,23 @@ const NPCS = [
     idle: { say: "Hello! The hostel is {open} all day and all night.", uz: "Salom! Hostel kechayu kunduz ochiq.", reply: "Thank you. Goodbye.", replyUz: "Rahmat. Xayr." }
   },
   {
-    id: 'keeper', name: "Keeper", role: "Qalpoqcha izidan boruvchi", chapter: 4, file: '06_Quest_Keeper.glb',
+    id: 'keeper', name: "Keeper", role: "Shahar yo'lboshchisi", chapter: 4, file: '06_Quest_Keeper.glb',
     look: { skin: 0xd79867, hair: 0x24222a, hairStyle: 'short', shirt: 0x6c4c88, pants: 0x3a2f4a, hat: 'flatcap' },
     tree: {
-      n1: { say: "Hello again! I heard you {lost} your {hat}. Can you {describe} it?", uz: "Yana salom! Eshitdimki, qalpog'ingizni yo'qotibsiz. Uni tasvirlab bera olasizmi?",
+      n1: { say: "Hello! You look {lost}. Can I help you?", uz: "Salom! Adashganga o'xshaysiz. Yordam bera olamanmi?",
         choices: [
-          { t: "It is a big, white, woolly hat.", uz: "U katta, oq, jun qalpoq.", ok: true, next: 'n2' },
-          { t: "It is a hat white woolly big.", uz: "U qalpoq oq jun katta.", ok: false, why: "Ingliz tilida sifat otdan oldin keladi: a big, white, woolly hat." },
-          { t: "I am a white hat.", uz: "Men oq qalpoqman.", ok: false, why: "Siz qalpoq emassiz. Narsani tasvirlashda 'It is ...' deyiladi." }
+          { t: "Yes, please. Where is the station?", uz: "Ha, iltimos. Bekat qayerda?", ok: true, next: 'n2' },
+          { t: "Yes, please. Where the station is?", uz: "Ha, iltimos. Bekat qayerda?", ok: false, why: "Savol gapda fe'l oldin keladi: Where is the station?" },
+          { t: "No, I am a station.", uz: "Yo'q, men bekatman.", ok: false, why: "Mantiqsiz gap. Yo'l so'rash: Where is ...?" }
         ] },
-      n2: { say: "I {found} it near the {fountain}! {Here you go}. Please {take care} of it.", uz: "Men uni favvora yonidan topdim! Marhamat. Iltimos, uni asrang.",
+      n2: { say: "Go {straight ahead} and {turn left} at the fountain. {Have a nice day}!", uz: "To'g'riga yuring va favvorada chapga buriling. Kuningiz yaxshi o'tsin!",
         choices: [
-          { t: "Thank you so much! I will take care of it.", uz: "Katta rahmat! Uni asrayman.", ok: true, next: 'END' },
-          { t: "Thank you. I will take care you.", uz: "Rahmat. Men sizni asrayman.", ok: false, why: "take care of + ot: 'of' ni unutmang. Take care of it." },
-          { t: "No, this is not hat.", uz: "Yo'q, bu qalpoq emas.", ok: false, why: "Bu sizning qalpog'ingiz. Minnatdorchilik bildiring: Thank you so much!" }
+          { t: "Thank you so much for your help!", uz: "Yordamingiz uchun katta rahmat!", ok: true, next: 'END' },
+          { t: "Thank you so much for you help!", uz: "Yordamingiz uchun katta rahmat!", ok: false, why: "your - sizning (egalik olmoshi). you - siz. To'g'risi: your help." },
+          { t: "Yes, I am straight ahead.", uz: "Ha, men to'g'riman.", ok: false, why: "Bu minnatdorchilik o'rni. Thank you so much!" }
         ] }
     },
-    idle: { say: "Hello! I have a {clue} about your {hat}. Come back when you can speak English.", uz: "Salom! Qalpog'ingiz haqida menda bir iz bor. Ingliz tilida gaplasha olganingizda qaytib keling.", reply: "Okay, I will come back.", replyUz: "Yaxshi, qaytib kelaman." }
+    idle: { say: "Hello! I know every street here. Come back and I can show you the {fountain}.", uz: "Salom! Men bu yerdagi har bir ko'chani bilaman. Qaytib keling, favvorani ko'rsataman.", reply: "Okay, I will come back.", replyUz: "Yaxshi, qaytib kelaman." }
   },
   {
     id: 'leo', name: "Leo", role: "Do'stona sayyoh", chapter: 0, file: '04_Street_Leo.glb',
@@ -833,12 +841,30 @@ function markerSprite() {
   sp.scale.set(1.1, 1.1, 1); return sp;
 }
 
-/* ---- Hoshimjon ---- */
-const hero = buildChar({ shirt: 0x3b6ea5, skin: 0xf1c09b, hair: 0x2b1b14, pants: 0x24262f, hairStyle: 'short', hat: 'beanie' });
+/* ---- O'yinchi qahramoni (sozlanadi) ---- */
+function hashN(s) { let h = 2166136261; s = String(s || 'x'); for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); } return h >>> 0; }
+const AVP = {
+  skin: [0xf6d3b5, 0xf1c09b, 0xd5a16d, 0xb9825b, 0x855339, 0x5c3a26],
+  hair: [0x24222a, 0x2b1d17, 0x5a3a22, 0xb07a3b, 0xd9b66a, 0xd4d2cf, 0xa83a3a],
+  style: ['short', 'long', 'ponytail', 'bald'],
+  shirt: [0xe05d5d, 0x3b6ea5, 0x58a55c, 0xe8a548, 0x8a63c9, 0x2f9e9a, 0xd9709f, 0xf3f3f3],
+  pants: [0x2b2d36, 0x3a4a6b, 0x6b5a45, 0x4a6b4f, 0x7a3b3b],
+  hat: [null, 'beanie', 'flatcap']
+};
+const AVK = ['skin', 'hair', 'style', 'shirt', 'pants', 'hat'];
+const AVL = { skin: 'Teri rangi', hair: 'Soch rangi', style: 'Soch uslubi', shirt: 'Ust kiyim', pants: 'Shim', hat: 'Bosh kiyim' };
+const avFromUid = uid => { const h = hashN(uid); return { skin: h % 6, hair: (h >> 3) % 7, style: (h >> 6) % 3, shirt: (h >> 9) % 8, pants: (h >> 12) % 5, hat: 0 }; };
+const avClean = a => { const o = {}; AVK.forEach((k, i) => { const n = AVP[k].length, v = Array.isArray(a) ? a[i] : a && a[k]; o[k] = Number.isInteger(v) && v >= 0 && v < n ? v : 0; }); return o; };
+const avOpts = a => ({ skin: AVP.skin[a.skin], hair: AVP.hair[a.hair], hairStyle: AVP.style[a.style], shirt: AVP.shirt[a.shirt], pants: AVP.pants[a.pants], hat: AVP.hat[a.hat] });
+S.av = store.get('hj_avatar', null); if (S.av) S.av = avClean(S.av);
+const hero = buildChar(avOpts(S.av || { skin: 1, hair: 1, style: 0, shirt: 1, pants: 0, hat: 0 }));
+function rebuildHero() {
+  const old = hero.root, pos = old.position.clone(), rot = old.rotation.y; scene.remove(old);
+  Object.assign(hero, buildChar(avOpts(S.av))); hero.root.position.copy(pos); hero.root.rotation.y = rot; scene.add(hero.root);
+  if (typeof LIVE !== 'undefined' && LIVE.heroLabel) hero.root.add(LIVE.heroLabel);
+}
 scene.add(hero.root);
 const player = { pos: new THREE.Vector3(0, 0, 32), rot: Math.PI, walkT: 0, talking: false };
-function setCap(on) { hero.P.hat.visible = !!on; }
-setCap(false);
 
 /* ---- NPClar: 3D modellar (GLB). Model yuklanguncha oddiy shakldagi nusxa turadi ---- */
 const PLACE = {
@@ -982,6 +1008,8 @@ function updateCamera(dt) {
   let tx, ty, tz, dist = 10, pitch = camPitch;
   if (S.mode === 'title' || S.mode === 'story' || S.mode === 'summary' || S.mode === 'end' || S.mode === 'catalog' && !S.started) {
     camYaw += dt * 0.1; tx = 0; ty = 2.5; tz = 0; dist = 34; pitch = 0.33;
+  } else if (S.mode === 'avatar') {
+    camYaw += dt * 0.5; player.rot = camYaw; tx = player.pos.x; ty = 1.9; tz = player.pos.z; dist = 6; pitch = 0.16;
   } else if (S.mode === 'dialog' && D) {
     const mx = (player.pos.x + D.npc.pos.x) / 2, mz = (player.pos.z + D.npc.pos.z) / 2;
     tx = mx; ty = camera.aspect < 1 ? -0.6 : 0.0; tz = mz; dist = camera.aspect < 1 ? 10.5 : 8.6; pitch = 0.2;
@@ -1174,7 +1202,7 @@ function choose(i) {
 }
 function exhausted() {
   if (!D) return;
-  logRow('sys', "Hoshimjon charchadi. Dam olib, suhbatni qaytadan boshlaysiz.");
+  logRow('sys', "Kuchingiz tugadi. Dam olib, suhbatni qaytadan boshlaysiz.");
   dChoices.innerHTML = '<button class="choice" id="again"><span class="k">1</span>Qaytadan boshlash</button>';
   $('#again').addEventListener('click', () => {
     S.hearts = 3; S.mistakes = 0; renderHearts();
@@ -1214,30 +1242,41 @@ function toggleSave(k, ch) {
 
 /* ================= EKRANLAR ================= */
 const ov = $('#ov');
+/* ---- Qahramonni sozlash ---- */
+let avBack = null;
+function swatchHex(k, i) { const v = AVP[k][i]; return v == null ? null : '#' + v.toString(16).padStart(6, '0'); }
+function renderAvatarPanel() {
+  const a = S.av;
+  $('#avBody').innerHTML = AVK.map(k => '<div class="av-row"><span>' + AVL[k] + '</span><div class="av-opts">' + AVP[k].map((v, i) => {
+    const hex = swatchHex(k, i), label = k === 'style' ? ['Qisqa', 'Uzun', 'Quyruq', 'Kal'][i] : k === 'hat' ? ['Yo\'q', 'Qalpoq', 'Kepka'][i] : '';
+    return '<button type="button" class="sw' + (label ? ' tx' : '') + (a[k] === i ? ' on' : '') + '" data-k="' + k + '" data-i="' + i + '"' + (hex && !label ? ' style="background:' + hex + '"' : '') + ' aria-label="' + AVL[k] + ' ' + (i + 1) + '">' + label + '</button>';
+  }).join('') + '</div></div>').join('');
+}
+function openAvatar(back) {
+  avBack = back || null; if (!S.av) S.av = avFromUid(LX && LX.uid || String(Math.random())); rebuildHero();
+  player.pos.set(0, 0, 32); S.mode = 'avatar'; hideOv(); $('#hud').classList.add('hidden'); $('#chat').classList.add('hidden');
+  renderAvatarPanel(); $('#av').classList.remove('hidden');
+}
+function closeAvatar() { $('#av').classList.add('hidden'); store.set('hj_avatar', S.av); const b = avBack; avBack = null; if (b) b(); else showTitle(); }
+$('#avBody').addEventListener('click', e => {
+  const b = e.target.closest('.sw'); if (!b) return;
+  S.av[b.dataset.k] = +b.dataset.i; rebuildHero(); renderAvatarPanel();
+});
+$('#avRand').addEventListener('click', () => { S.av = avFromUid(String(Math.random())); rebuildHero(); renderAvatarPanel(); });
+$('#avOk').addEventListener('click', closeAvatar);
 function showOv(html) { ov.innerHTML = html; ov.classList.remove('hidden'); ov.scrollTop = 0; }
 function hideOv() { ov.classList.add('hidden'); ov.innerHTML = ''; }
-const FACES = [['happy', 'Xursand'], ['surprised', 'Hayron'], ['thinking', "O'ylanmoqda"], ['confident', 'Ishonchli'], ['excited', 'Hayajonda'], ['focused', 'Diqqatli']];
 function showTitle() {
-  S.mode = 'title'; $('#hud').classList.add('hidden'); $('#hint').classList.add('hidden'); $('#chat').classList.add('hidden'); app.classList.remove('live');
+  S.mode = 'title'; $('#hud').classList.add('hidden'); $('#hint').classList.add('hidden'); $('#chat').classList.add('hidden'); $('#av').classList.add('hidden'); app.classList.remove('live');
   const on = ONLINE();
   showOv('<div class="scr"><div class="t-right" style="max-width:640px"><p class="eyebrow">Jonli 3D til shahri</p>'
     + '<h1>Lexora <span>City</span></h1>'
-    + '<p class="lead">Shaharda boshqa o\'quvchilar bilan o\'zingiz o\'rganayotgan tilda gaplashing, NPClar bilan mashq qiling va yangi so\'zlarni saqlang. Saqlangan so\'zlar katalogga tushadi.</p>'
+    + '<p class="lead">Shaharda boshqa o\'yinchilar bilan o\'zingiz o\'rganayotgan tilda gaplashing, NPClar bilan mashq qiling va yangi so\'zlarni saqlang. Saqlangan so\'zlar katalogga tushadi.</p>'
     + '<div class="btns">' + (on ? '<button class="btn primary" data-act="live">Jonli shaharga kirish' + (LX && LX.lang ? ' (' + esc(LX.lang) + ')' : '') + '</button>' : '')
-    + '<button class="btn' + (on ? '' : ' primary') + '" data-act="start">Sarguzasht: qalpoqcha qissasi</button><button class="btn" data-act="catalog">So\'zlar katalogi (' + savedCount() + ')</button></div>'
-    + (on ? '' : '<p class="note" style="margin-top:14px">Jonli shahar Lexora ichida ishlaydi: lexoralc.uz saytiga kirib, «O\'yin» bo\'limini oching.</p>')
+    + '<button class="btn" data-act="avatar">Qahramonni sozlash</button>'
+    + '<button class="btn' + (on ? '' : ' primary') + '" data-act="start">Missiyalar (yakka)</button><button class="btn" data-act="catalog">So\'zlar katalogi (' + savedCount() + ')</button></div>'
+    + (on ? '' : '<p class="note" style="margin-top:14px">Jonli shahar ulanishi hozir yo\'q. Missiyalar yakka o\'ynaladi.</p>')
     + '</div></div>');
-}
-const SLIDES = [
-  { img: 'excited', text: "Hoshimjon sehrli qalpoqchasi bilan dunyodagi istalgan tilni tushunardi. Bugun u birinchi marta chet elga keldi." },
-  { img: 'surprised', text: "Birdan kuchli shamol esdi va qalpoqcha uchib ketdi! Hoshimjon uni ushlay olmadi." },
-  { img: 'thinking', text: "Endi u hech kimni tushunmaydi. Non sotib olish, ish topish va tunash uchun ingliz tilini o'zi o'rganishi kerak. Gaplashing, noma'lum so'zlar ustiga bosing va saqlang." }
-];
-let slideI = 0;
-function showSlide() {
-  S.mode = 'story'; const s = SLIDES[slideI];
-  showOv('<div class="scr"><div class="card"><div class="story"><img src="' + IMG[s.img] + '" alt=""><div class="txt">' + esc(s.text) + '</div></div>'
-    + '<div class="row-b"><button class="btn primary" data-act="next">' + (slideI < SLIDES.length - 1 ? 'Davom etish' : "Shaharga tushish") + '</button><span class="note">' + (slideI + 1) + ' / ' + SLIDES.length + '</span></div></div></div>');
 }
 function beginPlay() {
   S.started = true; S.mode = 'play'; hideOv();
@@ -1263,16 +1302,16 @@ function completeChapter() {
     + '<div class="row-b"><button class="btn" data-act="catalog">So\'zlar katalogi</button><button class="btn primary" data-act="nextch">' + (S.chapter < CHAPTERS.length ? 'Keyingi qism' : 'Davom etish') + '</button></div></div></div>');
 }
 function showEnd() {
-  S.mode = 'end'; setCap(true); $('#hud').classList.add('hidden');
-  showOv('<div class="scr"><img class="hero" src="' + IMG.happy + '" style="height:auto;width:200px" alt="Hoshimjon xursand"><div class="card"><p class="eyebrow" style="color:#c98a12">Final</p><h2>Qalpoqcha topildi</h2>'
-    + '<p>Keeper qalpoqchani favvora yonidan topib berdi. Lekin endi Hoshimjon bilib oldi: sehrli qalpoqchasiz ham, bilim bilan har qanday tilda gaplasha oladi.</p>'
+  S.mode = 'end'; $('#hud').classList.add('hidden');
+  showOv('<div class="scr"><div class="card"><p class="eyebrow" style="color:#c98a12">Final</p><h2>Barcha missiyalar tugadi</h2>'
+    + '<p>Siz bozorda, kafede, hostelda va ko\'chada gaplashdingiz. Endi jonli shaharda boshqa o\'yinchilar bilan mashq qiling.</p>'
     + '<p>Siz <b>' + savedCount() + '</b> ta so\'z va ibora saqladingiz. Ularni katalogda takrorlang.</p>'
     + '<div class="row-b"><button class="btn primary" data-act="catalog">So\'zlar katalogi</button><button class="btn" data-act="restart">Qaytadan o\'ynash</button></div></div></div>');
 }
 function restart() {
-  S.chapter = 1; S.hearts = 3; S.mistakes = 0; setCap(false);
+  S.chapter = 1; S.hearts = 3; S.mistakes = 0;
   player.pos.set(0, 0, 32); player.rot = Math.PI; camYaw = 0; S.started = false;
-  slideI = 0; showSlide();
+  showTitle();
 }
 function nextChapter() {
   if (S.chapter >= CHAPTERS.length) { S.chapter = CHAPTERS.length + 1; showEnd(); return; }
@@ -1284,7 +1323,7 @@ let catBack = null, catTab = 'words';
 const PK = { fc: 0, flip: false, q: 0, score: 0, items: null, answered: false };
 function openCatalog(back) { catBack = back; S.mode = 'catalog'; catTab = 'words'; renderCatalog(); }
 function closeCatalog() { const b = catBack; catBack = null; if (b) b(); }
-const GROUPS = [[1, 'Qism 1. Ovqat topish'], [2, 'Qism 2. Ish topish'], [3, 'Qism 3. Tunash joyi'], [4, "Qism 4. Yo'qolgan qalpoqcha"], [0, 'Boshqa suhbatlar']];
+const GROUPS = [[1, 'Qism 1. Ovqat topish'], [2, 'Qism 2. Ish topish'], [3, 'Qism 3. Tunash joyi'], [4, "Qism 4. Shaharni bilish"], [0, 'Boshqa suhbatlar']];
 function wordItem(k) {
   const e = LEX[k];
   return '<div class="wi"><b>' + esc(k) + '</b><span class="u">' + esc(e.uz) + '</span><div class="g">' + esc(e.g) + '</div><div class="e">' + esc(e.ex) + '</div><button class="rm" data-act="rm" data-k="' + esc(k) + '" aria-label="Olib tashlash">&times;</button></div>';
@@ -1332,9 +1371,9 @@ function buildQuiz(ks) {
 ov.addEventListener('click', e => {
   const t = e.target.closest('[data-act]'); if (!t) return;
   const a = t.dataset.act, ks = Object.keys(S.saved).filter(k => LEX[k]);
-  if (a === 'start') { slideI = 0; showSlide(); }
+  if (a === 'start') beginPlay();
+  else if (a === 'avatar') openAvatar(showTitle);
   else if (a === 'live') enterLive();
-  else if (a === 'next') { if (slideI < SLIDES.length - 1) { slideI++; showSlide(); } else beginPlay(); }
   else if (a === 'catalog') { const m = S.mode; openCatalog(() => { if (m === 'title') showTitle(); else if (m === 'summary') completeChapter(); else if (m === 'end') showEnd(); else { hideOv(); S.mode = 'play'; } }); }
   else if (a === 'closecat') closeCatalog();
   else if (a === 'tab') { catTab = t.dataset.t; renderCatalog(); }
@@ -1397,26 +1436,19 @@ const PHRASES = {
   Japanese: ['こんにちは！お元気ですか？', '私の名前は……です。', 'どこから来ましたか？', 'はじめまして！', 'お仕事は何ですか？', 'またね！'],
   Spanish: ['¡Hola! ¿Cómo estás?', 'Me llamo ...', '¿De dónde eres?', '¡Mucho gusto!', '¿A qué te dedicas?', '¡Hasta luego!']
 };
-/* har bir o'quvchining tashqi ko'rinishi uid dan olinadi: hamma uni bir xil ko'radi */
-function hashN(s) { let h = 2166136261; s = String(s || 'x'); for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); } return h >>> 0; }
-const SHIRTS = [0xe05d5d, 0x3b6ea5, 0x58a55c, 0xe8a548, 0x8a63c9, 0x2f9e9a, 0xd9709f, 0xc9893f];
-const HAIRS = [0x24222a, 0x2b1d17, 0x5a3a22, 0xb07a3b, 0xd4d2cf];
-const SKINS = [0xf1c09b, 0xd5a16d, 0x855339, 0xf0bf9b, 0xb9825b];
-function lookOf(uid) { const h = hashN(uid); return { shirt: SHIRTS[h % 8], hair: HAIRS[(h >> 3) % 5], skin: SKINS[(h >> 6) % 5], hairStyle: 'short', pants: 0x2b2d36 }; }
-function applyHeroLook() {
-  if (!LX || !LX.uid) return;
-  const l = lookOf(LX.uid), m = hero.P.mats;
-  m.shirt.color.setHex(l.shirt); m.hair.color.setHex(l.hair); m.skin.color.setHex(l.skin);
-}
+/* tashqi ko'rinish: o'yinchi tanlagan (lk) yoki uid dan olingan */
+const lookOf = (uid, lk) => avOpts(lk ? avClean(lk) : avFromUid(uid));
+const lkOfMe = () => AVK.map(k => S.av ? S.av[k] : 0);
+function applyHeroLook() { if (!S.av && LX && LX.uid) { S.av = avFromUid(LX.uid); rebuildHero(); } }
 function bubbleOf(root, text, y) {
   const old = root.userData.bub; if (old) { root.remove(old); }
   const s = labelSprite(text.length > 44 ? text.slice(0, 43) + '…' : text, '#fffbe8', '#171a29');
   s.position.y = y; root.add(s); root.userData.bub = s; root.userData.bubT = 6.5;
 }
 function addRemote(p) {
-  const c = buildChar(lookOf(p.uid)), lab = labelSprite(p.name || '?', 'rgba(23,26,41,0.88)', '#ffffff');
+  const c = buildChar(lookOf(p.uid, p.lk)), lab = labelSprite(p.name || '?', 'rgba(23,26,41,0.88)', '#ffffff');
   lab.position.y = 3.0; c.root.add(lab); scene.add(c.root); c.root.position.set(p.x, 0, p.z);
-  const r = { uid: p.uid, c, tx: p.x, tz: p.z, tr: p.r || 0, walk: 0 };
+  const r = { uid: p.uid, c, tx: p.x, tz: p.z, tr: p.r || 0, walk: 0, lk: JSON.stringify(p.lk || null) };
   LIVE.players.set(p.uid, r); return r;
 }
 function onPlayers(list) {
@@ -1424,7 +1456,9 @@ function onPlayers(list) {
   (list || []).forEach(p => {
     if (!p || !p.uid || (LX && p.uid === LX.uid)) return;
     ids.add(p.uid);
-    const r = LIVE.players.get(p.uid) || addRemote(p);
+    let r = LIVE.players.get(p.uid);
+    if (r && p.lk && JSON.stringify(p.lk) !== r.lk) { const q = r.c.root.position.clone(); scene.remove(r.c.root); LIVE.players.delete(p.uid); r = null; p.x = q.x; p.z = q.z; }
+    if (!r) r = addRemote(p);
     r.tx = +p.x || 0; r.tz = +p.z || 0; r.tr = +p.r || 0;
   });
   for (const [uid, r] of LIVE.players) if (!ids.has(uid)) { scene.remove(r.c.root); LIVE.players.delete(uid); }
@@ -1455,7 +1489,8 @@ window.addEventListener('message', e => {
 });
 function enterLive() {
   if (!ONLINE()) return;
-  S.started = true; S.mode = 'play'; hideOv(); LIVE.on = true; LIVE.loaded = LIVE.loaded && true;
+  if (!store.get('hj_avatar', null)) { openAvatar(enterLive); return; }
+  S.started = true; S.mode = 'play'; hideOv(); $('#av').classList.add('hidden'); LIVE.on = true; LIVE.loaded = LIVE.loaded && true;
   app.classList.add('live'); $('#hud').classList.remove('hidden'); $('#chat').classList.remove('hidden');
   player.pos.set((Math.random() - 0.5) * 8, 0, 30); player.rot = Math.PI; camYaw = 0;
   applyHeroLook();
@@ -1514,7 +1549,7 @@ function liveUpdate(dt) {
   LIVE.pt += dt;
   if (LIVE.on && ONLINE() && (S.mode === 'play' || S.mode === 'dialog') && LIVE.pt > 0.5) {
     const moved = Math.hypot(player.pos.x - LIVE.sx, player.pos.z - LIVE.sz) > 0.15 || Math.abs(angDiff(player.rot, LIVE.sr)) > 0.25;
-    if (moved || LIVE.pt > 8) { LIVE.pt = 0; LIVE.sx = player.pos.x; LIVE.sz = player.pos.z; LIVE.sr = player.rot; toParent({ type: 'hj-presence', x: +player.pos.x.toFixed(2), z: +player.pos.z.toFixed(2), r: +player.rot.toFixed(2) }); }
+    if (moved || LIVE.pt > 8) { LIVE.pt = 0; LIVE.sx = player.pos.x; LIVE.sz = player.pos.z; LIVE.sr = player.rot; toParent({ type: 'hj-presence', x: +player.pos.x.toFixed(2), z: +player.pos.z.toFixed(2), r: +player.rot.toFixed(2), lk: lkOfMe() }); }
   }
 }
 

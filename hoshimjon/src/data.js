@@ -47,14 +47,8 @@ const LEX = {
   'word list': { uz: "so'zlar ro'yxati", g: "Ikki ot birikmasi: word + list. Birinchi ot sifat vazifasida, ko'plikda ishlatilmaydi.", ex: "Please check your word list." },
   'review': { uz: "takrorlamoq, ko'rib chiqmoq", g: "review - o'tilgan narsani qayta ko'rib chiqish. Imtihondan oldin: review the lesson.", ex: "I review my notes every night." },
   'every day': { uz: "har kuni", g: "Ikki so'z: every day (har kuni, ravish). everyday - bir so'z - kundalik (sifat).", ex: "I read English every day." },
-  'lost': { uz: "yo'qotdi, yo'qotgan (lose fe'lining o'tgan zamoni)", g: "lose - lost - lost (tartibsiz fe'l). I lost my hat - men qalpog'imni yo'qotdim.", ex: "I lost my keys yesterday." },
-  'hat': { uz: "qalpoq", g: "Sanaladigan ot: a hat, two hats. cap - soyabonli kepka, hat - umumiy qalpoq.", ex: "He wears a red hat." },
-  'describe': { uz: "tasvirlamoq, ta'riflamoq", g: "Sifatlar otdan oldin: a big, white, woolly hat. Tartib: o'lcham, rang, material.", ex: "Can you describe your friend?" },
-  'clue': { uz: "iz, ma'lumot (topishga yordam beradigan)", g: "Sanaladigan ot: a clue, two clues. have a clue about - biror narsa haqida ma'lumotga ega bo'lmoq.", ex: "The police found a clue." },
-  'found': { uz: "topdi, topgan (find fe'lining o'tgan zamoni)", g: "find - found - found (tartibsiz fe'l).", ex: "I found my keys yesterday." },
+  'lost': { uz: "adashgan; yo'qotilgan (lose fe'lining o'tgan zamoni)", g: "be lost - adashmoq. lose - lost - lost (tartibsiz fe'l). I lost my keys - kalitlarimni yo'qotdim.", ex: "I am lost. Where is the station?" },
   'fountain': { uz: "favvora", g: "Joy oldidan near/by: near the fountain (favvora yonida).", ex: "We met near the fountain." },
-  'Here you go': { uz: "Mana, marhamat", g: "Biror narsa uzatayotganda aytiladi. Here you are bilan bir xil ma'noda.", ex: "Here you go. Enjoy your meal." },
-  'take care': { uz: "ehtiyot qilmoq, qarab turmoq", g: "take care of + ot: biror narsaga/kimgadir qaramoq. of ni unutmang: Take care of it.", ex: "Please take care of your health." },
 
   'straight ahead': { uz: "to'g'riga", g: "Yo'l ko'rsatishda: go straight ahead - to'g'ri yuring.", ex: "Go straight ahead for two blocks." },
   'turn left': { uz: "chapga burilmoq", g: "Yo'nalish: turn left (chapga), turn right (o'ngga). Buyruq shaklida fe'l boshlanadi.", ex: "Turn left at the fountain." },
@@ -67,7 +61,7 @@ const CHAPTERS = [
   { n: 1, title: "Ovqat topish", goal: "Bozorga boring va Farid bilan gaplashib non sotib oling.", npc: 'farid', place: "Farid's Market" },
   { n: 2, title: "Ish topish", goal: "Kafega boring va Maya bilan suhbatdan o'ting.", npc: 'maya', place: "Corner Cafe" },
   { n: 3, title: "Tunash joyi", goal: "Hostelga boring va Elena bilan xona band qiling.", npc: 'elena', place: "Sunny Hostel" },
-  { n: 4, title: "Yo'qolgan qalpoqcha", goal: "Favvora yonidagi Keeper bilan gaplashing va qalpoqchani qaytarib oling.", npc: 'keeper', place: "Fountain" }
+  { n: 4, title: "Shaharni bilish", goal: "Favvora yonidagi Keeper bilan gaplashib, bekatga yo'l so'rang.", npc: 'keeper', place: "Fountain" }
 ];
 
 /* ---------- Personajlar va suhbat daraxtlari ----------
@@ -111,11 +105,11 @@ const NPCS = [
     tree: {
       n1: { say: "Hi! I heard you are {looking for} a {job}. I am Maya. What is your name?", uz: "Salom! Eshitdimki, siz ish izlayapsiz. Men Mayaman. Ismingiz nima?",
         choices: [
-          { t: "My name is Hoshimjon.", uz: "Mening ismim Hoshimjon.", ok: true, next: 'n2' },
-          { t: "I name Hoshimjon.", uz: "Men ismlayman Hoshimjon.", ok: false, why: "Ism aytish qolipi: My name is ... yoki I am ..." },
+          { t: "My name is Sam.", uz: "Mening ismim Sam.", ok: true, next: 'n2' },
+          { t: "I name Sam.", uz: "Men ismlayman Sam.", ok: false, why: "Ism aytish qolipi: My name is ... yoki I am ..." },
           { t: "Yes, I am hungry.", uz: "Ha, men ochman.", ok: false, why: "Savol ism haqida (What is your name?), ochlik haqida emas." }
         ] },
-      n2: { say: "{Nice to meet you}, Hoshimjon! {Where are you from}?", uz: "Tanishganimdan xursandman, Hoshimjon! Qayerdansiz?",
+      n2: { say: "{Nice to meet you}, Sam! {Where are you from}?", uz: "Tanishganimdan xursandman, Sam! Qayerdansiz?",
         choices: [
           { t: "I am from Uzbekistan.", uz: "Men O'zbekistondanman.", ok: true, next: 'n3' },
           { t: "I come Uzbekistan from.", uz: "Men keldim O'zbekiston dan.", ok: false, why: "Gap tartibi buzilgan. Eng oddiy qolip: I am from + mamlakat." },
@@ -173,23 +167,23 @@ const NPCS = [
     idle: { say: "Hello! The hostel is {open} all day and all night.", uz: "Salom! Hostel kechayu kunduz ochiq.", reply: "Thank you. Goodbye.", replyUz: "Rahmat. Xayr." }
   },
   {
-    id: 'keeper', name: "Keeper", role: "Qalpoqcha izidan boruvchi", chapter: 4, file: '06_Quest_Keeper.glb',
+    id: 'keeper', name: "Keeper", role: "Shahar yo'lboshchisi", chapter: 4, file: '06_Quest_Keeper.glb',
     look: { skin: 0xd79867, hair: 0x24222a, hairStyle: 'short', shirt: 0x6c4c88, pants: 0x3a2f4a, hat: 'flatcap' },
     tree: {
-      n1: { say: "Hello again! I heard you {lost} your {hat}. Can you {describe} it?", uz: "Yana salom! Eshitdimki, qalpog'ingizni yo'qotibsiz. Uni tasvirlab bera olasizmi?",
+      n1: { say: "Hello! You look {lost}. Can I help you?", uz: "Salom! Adashganga o'xshaysiz. Yordam bera olamanmi?",
         choices: [
-          { t: "It is a big, white, woolly hat.", uz: "U katta, oq, jun qalpoq.", ok: true, next: 'n2' },
-          { t: "It is a hat white woolly big.", uz: "U qalpoq oq jun katta.", ok: false, why: "Ingliz tilida sifat otdan oldin keladi: a big, white, woolly hat." },
-          { t: "I am a white hat.", uz: "Men oq qalpoqman.", ok: false, why: "Siz qalpoq emassiz. Narsani tasvirlashda 'It is ...' deyiladi." }
+          { t: "Yes, please. Where is the station?", uz: "Ha, iltimos. Bekat qayerda?", ok: true, next: 'n2' },
+          { t: "Yes, please. Where the station is?", uz: "Ha, iltimos. Bekat qayerda?", ok: false, why: "Savol gapda fe'l oldin keladi: Where is the station?" },
+          { t: "No, I am a station.", uz: "Yo'q, men bekatman.", ok: false, why: "Mantiqsiz gap. Yo'l so'rash: Where is ...?" }
         ] },
-      n2: { say: "I {found} it near the {fountain}! {Here you go}. Please {take care} of it.", uz: "Men uni favvora yonidan topdim! Marhamat. Iltimos, uni asrang.",
+      n2: { say: "Go {straight ahead} and {turn left} at the fountain. {Have a nice day}!", uz: "To'g'riga yuring va favvorada chapga buriling. Kuningiz yaxshi o'tsin!",
         choices: [
-          { t: "Thank you so much! I will take care of it.", uz: "Katta rahmat! Uni asrayman.", ok: true, next: 'END' },
-          { t: "Thank you. I will take care you.", uz: "Rahmat. Men sizni asrayman.", ok: false, why: "take care of + ot: 'of' ni unutmang. Take care of it." },
-          { t: "No, this is not hat.", uz: "Yo'q, bu qalpoq emas.", ok: false, why: "Bu sizning qalpog'ingiz. Minnatdorchilik bildiring: Thank you so much!" }
+          { t: "Thank you so much for your help!", uz: "Yordamingiz uchun katta rahmat!", ok: true, next: 'END' },
+          { t: "Thank you so much for you help!", uz: "Yordamingiz uchun katta rahmat!", ok: false, why: "your - sizning (egalik olmoshi). you - siz. To'g'risi: your help." },
+          { t: "Yes, I am straight ahead.", uz: "Ha, men to'g'riman.", ok: false, why: "Bu minnatdorchilik o'rni. Thank you so much!" }
         ] }
     },
-    idle: { say: "Hello! I have a {clue} about your {hat}. Come back when you can speak English.", uz: "Salom! Qalpog'ingiz haqida menda bir iz bor. Ingliz tilida gaplasha olganingizda qaytib keling.", reply: "Okay, I will come back.", replyUz: "Yaxshi, qaytib kelaman." }
+    idle: { say: "Hello! I know every street here. Come back and I can show you the {fountain}.", uz: "Salom! Men bu yerdagi har bir ko'chani bilaman. Qaytib keling, favvorani ko'rsataman.", reply: "Okay, I will come back.", replyUz: "Yaxshi, qaytib kelaman." }
   },
   {
     id: 'leo', name: "Leo", role: "Do'stona sayyoh", chapter: 0, file: '04_Street_Leo.glb',

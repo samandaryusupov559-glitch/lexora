@@ -12,26 +12,19 @@ const PHRASES = {
   Japanese: ['こんにちは！お元気ですか？', '私の名前は……です。', 'どこから来ましたか？', 'はじめまして！', 'お仕事は何ですか？', 'またね！'],
   Spanish: ['¡Hola! ¿Cómo estás?', 'Me llamo ...', '¿De dónde eres?', '¡Mucho gusto!', '¿A qué te dedicas?', '¡Hasta luego!']
 };
-/* har bir o'quvchining tashqi ko'rinishi uid dan olinadi: hamma uni bir xil ko'radi */
-function hashN(s) { let h = 2166136261; s = String(s || 'x'); for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); } return h >>> 0; }
-const SHIRTS = [0xe05d5d, 0x3b6ea5, 0x58a55c, 0xe8a548, 0x8a63c9, 0x2f9e9a, 0xd9709f, 0xc9893f];
-const HAIRS = [0x24222a, 0x2b1d17, 0x5a3a22, 0xb07a3b, 0xd4d2cf];
-const SKINS = [0xf1c09b, 0xd5a16d, 0x855339, 0xf0bf9b, 0xb9825b];
-function lookOf(uid) { const h = hashN(uid); return { shirt: SHIRTS[h % 8], hair: HAIRS[(h >> 3) % 5], skin: SKINS[(h >> 6) % 5], hairStyle: 'short', pants: 0x2b2d36 }; }
-function applyHeroLook() {
-  if (!LX || !LX.uid) return;
-  const l = lookOf(LX.uid), m = hero.P.mats;
-  m.shirt.color.setHex(l.shirt); m.hair.color.setHex(l.hair); m.skin.color.setHex(l.skin);
-}
+/* tashqi ko'rinish: o'yinchi tanlagan (lk) yoki uid dan olingan */
+const lookOf = (uid, lk) => avOpts(lk ? avClean(lk) : avFromUid(uid));
+const lkOfMe = () => AVK.map(k => S.av ? S.av[k] : 0);
+function applyHeroLook() { if (!S.av && LX && LX.uid) { S.av = avFromUid(LX.uid); rebuildHero(); } }
 function bubbleOf(root, text, y) {
   const old = root.userData.bub; if (old) { root.remove(old); }
   const s = labelSprite(text.length > 44 ? text.slice(0, 43) + '…' : text, '#fffbe8', '#171a29');
   s.position.y = y; root.add(s); root.userData.bub = s; root.userData.bubT = 6.5;
 }
 function addRemote(p) {
-  const c = buildChar(lookOf(p.uid)), lab = labelSprite(p.name || '?', 'rgba(23,26,41,0.88)', '#ffffff');
+  const c = buildChar(lookOf(p.uid, p.lk)), lab = labelSprite(p.name || '?', 'rgba(23,26,41,0.88)', '#ffffff');
   lab.position.y = 3.0; c.root.add(lab); scene.add(c.root); c.root.position.set(p.x, 0, p.z);
-  const r = { uid: p.uid, c, tx: p.x, tz: p.z, tr: p.r || 0, walk: 0 };
+  const r = { uid: p.uid, c, tx: p.x, tz: p.z, tr: p.r || 0, walk: 0, lk: JSON.stringify(p.lk || null) };
   LIVE.players.set(p.uid, r); return r;
 }
 function onPlayers(list) {
@@ -39,7 +32,9 @@ function onPlayers(list) {
   (list || []).forEach(p => {
     if (!p || !p.uid || (LX && p.uid === LX.uid)) return;
     ids.add(p.uid);
-    const r = LIVE.players.get(p.uid) || addRemote(p);
+    let r = LIVE.players.get(p.uid);
+    if (r && p.lk && JSON.stringify(p.lk) !== r.lk) { const q = r.c.root.position.clone(); scene.remove(r.c.root); LIVE.players.delete(p.uid); r = null; p.x = q.x; p.z = q.z; }
+    if (!r) r = addRemote(p);
     r.tx = +p.x || 0; r.tz = +p.z || 0; r.tr = +p.r || 0;
   });
   for (const [uid, r] of LIVE.players) if (!ids.has(uid)) { scene.remove(r.c.root); LIVE.players.delete(uid); }
@@ -70,7 +65,8 @@ window.addEventListener('message', e => {
 });
 function enterLive() {
   if (!ONLINE()) return;
-  S.started = true; S.mode = 'play'; hideOv(); LIVE.on = true; LIVE.loaded = LIVE.loaded && true;
+  if (!store.get('hj_avatar', null)) { openAvatar(enterLive); return; }
+  S.started = true; S.mode = 'play'; hideOv(); $('#av').classList.add('hidden'); LIVE.on = true; LIVE.loaded = LIVE.loaded && true;
   app.classList.add('live'); $('#hud').classList.remove('hidden'); $('#chat').classList.remove('hidden');
   player.pos.set((Math.random() - 0.5) * 8, 0, 30); player.rot = Math.PI; camYaw = 0;
   applyHeroLook();
@@ -129,6 +125,6 @@ function liveUpdate(dt) {
   LIVE.pt += dt;
   if (LIVE.on && ONLINE() && (S.mode === 'play' || S.mode === 'dialog') && LIVE.pt > 0.5) {
     const moved = Math.hypot(player.pos.x - LIVE.sx, player.pos.z - LIVE.sz) > 0.15 || Math.abs(angDiff(player.rot, LIVE.sr)) > 0.25;
-    if (moved || LIVE.pt > 8) { LIVE.pt = 0; LIVE.sx = player.pos.x; LIVE.sz = player.pos.z; LIVE.sr = player.rot; toParent({ type: 'hj-presence', x: +player.pos.x.toFixed(2), z: +player.pos.z.toFixed(2), r: +player.rot.toFixed(2) }); }
+    if (moved || LIVE.pt > 8) { LIVE.pt = 0; LIVE.sx = player.pos.x; LIVE.sz = player.pos.z; LIVE.sr = player.rot; toParent({ type: 'hj-presence', x: +player.pos.x.toFixed(2), z: +player.pos.z.toFixed(2), r: +player.rot.toFixed(2), lk: lkOfMe() }); }
   }
 }

@@ -3,12 +3,25 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Hoshimjon va sehrli qalpoqcha</title>
+<title>Lexora City</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&family=Nunito:wght@500;700;800&display=swap" rel="stylesheet">
 <style>
 #dlg.hard .choice small{display:none!important}
+#av{position:absolute;right:12px;top:12px;bottom:12px;display:flex;align-items:center;z-index:8;pointer-events:none}
+#av.hidden{display:none}
+.av-card{pointer-events:auto;background:rgba(246,238,221,.96);color:#171a29;border-radius:18px;padding:14px;width:min(310px,calc(100vw - 24px));max-height:100%;overflow:auto;display:flex;flex-direction:column;gap:10px;box-shadow:0 10px 30px rgba(0,0,0,.3)}
+.av-row>span{font-size:12px;font-weight:700;opacity:.7}
+.av-opts{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px}
+.sw{width:28px;height:28px;border-radius:50%;border:3px solid transparent;box-shadow:0 0 0 1px rgba(23,26,41,.35);cursor:pointer;background:#ddd}
+.sw.tx{width:auto;height:auto;border-radius:12px;padding:4px 10px;font:inherit;font-size:12px;background:#fff}
+.sw.on{border-color:#f2b035;box-shadow:0 0 0 2px #171a29}
+.av-btns{display:flex;gap:8px;justify-content:flex-end}
+.av-card .chip{background:#fff;color:#171a29;border:1px solid #171a29}
+.av-card .chip.pri{background:#f2b035}
+@media (max-width:700px){#av{top:auto;align-items:flex-end}.av-card{max-height:46vh}}
+
 #chat{position:absolute;left:12px;bottom:12px;width:min(360px,calc(100vw - 24px));max-height:46vh;display:flex;flex-direction:column;background:rgba(23,26,41,.88);color:#fff;border-radius:16px;padding:10px;z-index:6;box-shadow:0 10px 30px rgba(0,0,0,.3)}
 #chat.hidden{display:none}
 #chat .c-head{display:flex;align-items:center;gap:8px;font-size:13px;margin-bottom:6px}
@@ -33,7 +46,7 @@
 .live .obj,.live .compass,.live .hearts{display:none}
 @media (max-width:700px){#chat{max-height:38vh;bottom:78px}}
 
-/* Yo'nalish: Toshkent kechki quyoshi. Indigo fon, qalpoq kremi, firuza va oltin urg'u. Bitta dunyo, bitta mavzu. */
+/* Yo'nalish: Toshkent kechki quyoshi. Indigo fon, krem, firuza va oltin urg'u. Bitta dunyo, bitta mavzu. */
 :root{
   --ink:#171a29; --ink2:#232840; --ink3:#2f3556;
   --paper:#f7edd8; --paper2:#ecdcb8; --line:#d9c79f;
@@ -212,6 +225,7 @@ h1 span{color:var(--gold)}
     <div id="cPhr"></div>
     <form id="cForm"><input id="cIn" maxlength="200" autocomplete="off" placeholder="Yozing va Enter bosing"><button class="chip" type="submit">Yuborish</button></form>
   </div>
+  <div id="av" class="hidden"><div class="av-card"><b>Qahramoningiz</b><div id="avBody"></div><div class="av-btns"><button class="chip" id="avRand" type="button">Tasodifiy</button><button class="chip pri" id="avOk" type="button">Tayyor</button></div></div></div>
   <div id="fb" class="hidden"><div class="fb-card"><b>Fikringizni yozing</b><textarea id="fbIn" maxlength="600" rows="4" placeholder="O'yin haqida fikr, taklif yoki xato"></textarea><div><button class="chip" id="fbNo" type="button">Bekor</button> <button class="chip pri" id="fbYes" type="button">Yuborish</button></div></div></div>
   <button id="prompt" class="hidden"></button>
   <div id="joy"><div id="stick"></div></div>
