@@ -1,0 +1,66 @@
+/* Lexora Editorial · global Light / Dark / Auto support
+   Uses the existing data-theme preference and resolved data-lx-appearance.
+   The theme control and application data remain managed by index.html. */
+:root[data-lx-appearance="dark"] body:has(.ed-stage){
+  --desk:#0F1424;--dot:#0F1424;--sheet:#171E34;--sheet-2:#1E2644;--sheet-3:#27315A;
+  --ink:#EEF1FA;--ink-2:#BCC4DA;--ink-3:#9DA9C1;--line:#303A56;
+  --pen:#9DB4FF;--pen-soft:#1E2C55;--blue:#9DB4FF;--blue-soft:#1E2C55;
+  --violet:#9DB4FF;--plum:#2946A2;--shadow:rgba(0,0,0,.5);
+  background:#0F1424;color:#EEF1FA;color-scheme:dark;
+}
+:root[data-lx-appearance="dark"] body:has(.ed-stage) .top{background:#0F1424;border-color:#303A56}
+:root[data-lx-appearance="dark"] body:has(.ed-stage) .top .brand .logo,
+:root[data-lx-appearance="dark"] body:has(.ed-stage) .lx-nav a:hover,
+:root[data-lx-appearance="dark"] #main:has(.ed-stage) .lx-k,
+:root[data-lx-appearance="dark"] #main:has(.ed-stage) .lx-go,
+:root[data-lx-appearance="dark"] #main:has(.ed-stage) .lx .tcard-go{color:#A9BEFF}
+:root[data-lx-appearance="dark"] #main:has(.ed-stage) .lx :is(h1,h2,h3){color:#EEF1FA}
+:root[data-lx-appearance="dark"] #main:has(.ed-stage) .lx-head>p,
+:root[data-lx-appearance="dark"] #main:has(.ed-stage) .lx-desc,
+:root[data-lx-appearance="dark"] #main:has(.ed-stage) .lx-motto,
+:root[data-lx-appearance="dark"] #main:has(.ed-stage) .lx-marq span,
+:root[data-lx-appearance="dark"] #main:has(.ed-stage) .lx-nav a{color:#BCC4DA}
+:root[data-lx-appearance="dark"] #main:has(.ed-stage) .lx .tcard,
+:root[data-lx-appearance="dark"] #main:has(.ed-stage) .lx-lv,
+:root[data-lx-appearance="dark"] #main:has(.ed-stage) .lx-aud,
+:root[data-lx-appearance="dark"] #main:has(.ed-stage) .lx-card,
+:root[data-lx-appearance="dark"] #main:has(.ed-stage) .lx-f:not(.main){background:#171E34;border-color:#303A56}
+:root[data-lx-appearance="dark"] #main:has(.ed-stage) .lx-f.main,
+:root[data-lx-appearance="dark"] #main:has(.ed-stage) .lx-story{background:#2845A3;color:#FFFFFF}
+:root[data-lx-appearance="dark"] #main:has(.ed-stage) .lx-story h2,
+:root[data-lx-appearance="dark"] #main:has(.ed-stage) .lx-f.main h3{color:#FFFFFF}
+:root[data-lx-appearance="dark"] #main:has(.ed-stage) .lx-f.main p,
+:root[data-lx-appearance="dark"] #main:has(.ed-stage) .lx-story p{color:#D6E1FF}
+:root[data-lx-appearance="dark"] #main:has(.ed-stage) .lx-f.lime{background:#382A23}
+:root[data-lx-appearance="dark"] #main:has(.ed-stage) .lx-f.lime p{color:#F3CEB6}
+:root[data-lx-appearance="dark"] #main:has(.ed-stage) .lx-f.lilac{background:#222E55}
+:root[data-lx-appearance="dark"] #main:has(.ed-stage) .lx-f.lilac .lx-sym{color:#A9BEFF}
+:root[data-lx-appearance="dark"] #main:has(.ed-stage) .lx-prev,
+:root[data-lx-appearance="dark"] #main:has(.ed-stage) .lx-out,
+:root[data-lx-appearance="dark"] #main:has(.ed-stage) .lx-end{background:#202E55;border-color:#303A56}
+:root[data-lx-appearance="dark"] #main:has(.ed-stage) .lx-out:hover{background:#2B3C67}
+:root[data-lx-appearance="dark"] #main:has(.ed-stage) .lx-fmt button,
+:root[data-lx-appearance="dark"] #main:has(.ed-stage) .lx-seg{background:#222D46;border-color:#37435E;color:#EAF0FC}
+:root[data-lx-appearance="dark"] #main:has(.ed-stage) .lx-fmt button[aria-pressed="true"]{background:#283C6D;border-color:#6784D3;color:#C6D5FF}
+:root[data-lx-appearance="dark"] #main:has(.ed-stage) .lx-btn.primary,
+:root[data-lx-appearance="dark"] #main:has(.ed-stage) .lx-seg button[aria-selected="true"],
+:root[data-lx-appearance="dark"] #main:has(.ed-stage) .lx .lp-filter button[aria-pressed="true"],
+:root[data-lx-appearance="dark"] body:has(.ed-stage) .lx-top-start{background:#4167E9;border-color:#4167E9;color:#FFFFFF}
+:root[data-lx-appearance="dark"] #main:has(.ed-stage) .lx-f.main .btn,
+:root[data-lx-appearance="dark"] #main:has(.ed-stage) .lx-story .btn{color:#2845A3;background:#FFFFFF;border-color:#FFFFFF}
+:root[data-lx-appearance="dark"] #main:has(.ed-stage) .ed-stage{background:#1A2B50;border-color:#344A78}
+:root[data-lx-appearance="dark"] #main:has(.ed-stage) .ed-arch::after{background:#1A2B50}
+:root[data-lx-appearance="dark"] #main:has(.ed-stage) .ed-hello{color:#A9BEFF;text-shadow:0 2px 0 #1A2B50}
+:root[data-lx-appearance="dark"] #main:has(.ed-stage) .lx-marq,
+:root[data-lx-appearance="dark"] #main:has(.ed-stage) .lx-ann,
+:root[data-lx-appearance="dark"] #main:has(.ed-stage) .lx-foot{border-color:#303A56}
+:root[data-lx-appearance="dark"] #main:has(.ed-stage) .lx-ann b,
+:root[data-lx-appearance="dark"] #main:has(.ed-stage) .lx-card h2{color:#EEF1FA}
+:root[data-lx-appearance="dark"] #main:has(.ed-stage) .lx-pbadge{background:#5A3C2B;color:#FFE3C4}
+:root[data-lx-appearance="dark"] #main:has(.ed-stage) .lx-pfoot{background:#304DA9}
+:root[data-lx-appearance="dark"] #main:has(.ed-stage) .lx-acc summary::after{background:#263E70;color:#C8D6FF}
+:root[data-lx-appearance="dark"] #main:has(.ed-stage) .lx-acc details[open] summary::after{background:#4167E9;color:#FFFFFF}
+/* Keep dynamic app surfaces, input controls and modal dialogs legible. */
+:root[data-lx-appearance="dark"] :is(input,textarea,select){color-scheme:dark}
+:root[data-lx-appearance="dark"] :is(input,textarea,select)::placeholder{color:var(--ink-3);opacity:1}
+:root[data-lx-appearance="light"] :is(input,textarea,select){color-scheme:light}
