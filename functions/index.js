@@ -605,6 +605,8 @@ exports.callToken = onRequest({ cors: CALL_ORIGINS, invoker: 'public' }, async (
    POST {action:'status'|'start'|'end', lang}  with  Authorization: Bearer <Firebase ID token>
    Needs the ELEVENLABS_API_KEY setting (GitHub secret, written to functions/.env by the workflow). */
 const SPEAK_AGENTS = { English: 'agent_3201m7f6ds26e77rjbtk5df4k7qh', Russian: 'agent_8701m7f70eysf0aa39cfccvgqpvw' };
+// The free try uses its own copies of the agents whose own limit is 60 seconds, so ElevenLabs closes the chat itself (the page timer alone could be bypassed).
+const SPEAK_TRIAL_AGENTS = { English: 'agent_2301m7sc8x8vfx0tej03jprhdgxz', Russian: 'agent_2001m7sc8y8qesm9nv2ka4gvptes' };
 const SPEAK_FREE = 1;
 const SPEAK_TRIAL_SECS = 60;    // the free try is one minute of talking (the page closes the chat then)
 const SPEAK_CAP = 300;          // seconds; the same as the agents' own limit
@@ -695,7 +697,7 @@ async function speakRun(uid, body, now = Date.now()) {
     }
   }
   try {
-    const r = await fetch('https://api.elevenlabs.io/v1/convai/conversation/get-signed-url?agent_id=' + encodeURIComponent(agent) + (held ? '&include_conversation_id=true' : ''), { headers: { 'xi-api-key': key } });
+    const r = await fetch('https://api.elevenlabs.io/v1/convai/conversation/get-signed-url?agent_id=' + encodeURIComponent(trial ? SPEAK_TRIAL_AGENTS[lang] : agent) + (held ? '&include_conversation_id=true' : ''), { headers: { 'xi-api-key': key } });
     const j = await r.json().catch(() => ({}));
     if (!r.ok || !j.signed_url) { const e = new Error('elevenlabs ' + r.status); e.why = r.status + ' ' + JSON.stringify(j.detail || j).slice(0, 130) + ' | key: ' + key.length + ' chars, starts ' + key.slice(0, 3); throw e; }
     if (held) await speakRelease(uid, String(j.conversation_id || ''), true);   // keeps the hold, writes the conversation id
